@@ -1311,7 +1311,7 @@ function renderTalk(){
 }
 $("topicSeg").onclick=e=>{const b=e.target.closest("[data-t]");if(!b)return;topic=b.dataset.t;$("topicSeg").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b));renderTalk()};
 $("talkForm").onsubmit=async e=>{e.preventDefault();const t=$("talkX").value.trim(),err=check(t,$("talkRobot").checked);if(err){toast(err);return}
-  if(!db){try{await api("post",null,{room:"talk-"+topic,n:$("talkN").value,t,aid:AID,ms:Date.now()-apiOpen});lastSend=Date.now();$("talkX").value="";toast("Опубликовано.");pullTalk()}catch(err){toast(err.message)}return}
+  if(!db){saveNick($("talkN").value);try{await api("post",null,{room:"talk-"+topic,n:$("talkN").value,t,aid:AID,ms:Date.now()-apiOpen});lastSend=Date.now();$("talkX").value="";toast("Опубликовано.");pullTalk()}catch(err){toast(err.message)}return}
   if(!UID){toast("Писать в обсуждения можно после входа.");return}
   const mine=ARR(TD[UID]&&TD[UID].posts);
   try{await db.collection("talk").doc(UID).set({n:nick($("talkN").value),posts:mine.concat([{topic,t,ts:Date.now()}]).slice(-50)});lastSend=Date.now();$("talkX").value="";toast("Опубликовано.")}catch(_){toast("Не удалось отправить.")}};
@@ -1619,7 +1619,7 @@ function renderLive(){const L=LV.slice().sort((a,b)=>(a.ts||0)-(b.ts||0)).slice(
 $("lcBtn").onclick=()=>{$("lc").hidden=!$("lc").hidden;if(!$("lc").hidden)renderLive()};
 $("lcClose").onclick=()=>$("lc").hidden=true;
 $("lcForm").onsubmit=async e=>{e.preventDefault();const t=$("lcIn").value.trim(),err=check(t,$("lcRobot").checked);if(err){toast(err);return}
-  if(!db){try{await api("post",null,{room:"live",n:$("lcName").value,t,aid:AID,ms:Date.now()-apiOpen});lastSend=Date.now();$("lcIn").value="";pullLive()}catch(err){toast(err.message)}return}
+  if(!db){saveNick($("lcName").value);try{await api("post",null,{room:"live",n:$("lcName").value,t,aid:AID,ms:Date.now()-apiOpen});lastSend=Date.now();$("lcIn").value="";pullLive()}catch(err){toast(err.message)}return}
   if(!UID){toast("Чат доступен после входа.");return}
   const mine=ARR(LVD[UID]&&LVD[UID].msgs);
   try{await db.collection("live").doc(UID).set({n:nick($("lcName").value),msgs:mine.concat([{t,ts:Date.now()}]).slice(-20)});lastSend=Date.now();$("lcIn").value=""}catch(_){toast("Не удалось отправить.")}};
@@ -1641,6 +1641,8 @@ $("lcBtn").addEventListener("click",()=>setTimeout(pullLive,0));
 $("topicSeg").addEventListener("click",()=>setTimeout(pullTalk,0));
 addEventListener("hashchange",()=>{if(location.hash==="#talk")pullTalk()});
 if(location.hash==="#talk")pullTalk();
+const NICK_K="iigry-nick",getNick=()=>{try{return S(localStorage.getItem(NICK_K),30)}catch(_){return ""}},saveNick=v=>{v=S(v,30).trim().replace(/^@/,"");if(v)try{localStorage.setItem(NICK_K,v)}catch(_){}};
+if(getNick()){if(!$("lcName").value)$("lcName").value=getNick();if(!$("talkN").value)$("talkN").value=getNick()}
 route();render();renderNews();renderTalk();
 (async()=>{
   db=window.claude&&window.claude.use?await window.claude.use("db"):null;
