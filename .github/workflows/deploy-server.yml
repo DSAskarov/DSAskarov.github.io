@@ -1,5 +1,5 @@
-# Выкладка серверных функций «ИИгр онлайн» в Yandex Cloud.
-# Вход — через федерацию github-iigry (без ключей и секретов).
+# Выкладка сервера «ИИгр онлайн» в Yandex Cloud.
+# Вход — через федерацию github-iigry (без ключей и секретов). Всё создаётся само, если ещё нет.
 name: Выкладка сервера
 on:
   push:
@@ -9,24 +9,68 @@ on:
 permissions:
   id-token: write   # нужно, чтобы получить разовый пропуск у GitHub
   contents: read
+concurrency: { group: deploy-server, cancel-in-progress: false }
 env:
   FOLDER_ID: b1g52stf4nhegsql0vgk
   SA_ID: ajef13mhfm448b63m3ic
+  DB_NAME: iigry-db
+  FN_NAME: iigry-api
 jobs:
-  ping:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Проверочная функция iigry-ping
+      - name: Пропуск в Yandex Cloud
+        id: tok
+        run: |
+          JWT=$(curl -sS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=https://github.com/DSAskarov" | jq -r .value)
+          IAM=$(curl -sS -X POST https://auth.yandex.cloud/oauth/token \
+            -d grant_type=urn:ietf:params:oauth:grant-type:token-exchange \
+            -d requested_token_type=urn:ietf:params:oauth:token-type:access_token \
+            -d audience=$SA_ID -d subject_token_type=urn:ietf:params:oauth:token-type:id_token \
+            -d subject_token="$JWT" | jq -r .access_token)
+          [ -n "$IAM" ] && [ "$IAM" != null ] || { echo "Нет пропуска"; exit 1; }
+          echo "::add-mask::$IAM"; echo "iam=$IAM" >> $GITHUB_OUTPUT
+      - name: База данных (создаётся один раз)
+        id: db
+        env: { IAM: "${{ steps.tok.outputs.iam }}" }
+        run: |
+          API=https://ydb.api.cloud.yandex.net/ydb/v1/databases
+          find_db(){ curl -sS -H "Authorization: Bearer $IAM" "$API?folderId=$FOLDER_ID" | jq -c --arg n "$DB_NAME" '[.databases[]?|select(.name==$n)][0] // empty'; }
+          D=$(find_db)
+          if [ -z "$D" ]; then
+            echo "Создаю базу $DB_NAME"
+            curl -sS -X POST -H "Authorization: Bearer $IAM" -H "Content-Type: application/json" "$API" -d "{\"folderId\":\"$FOLDER_ID\",\"name\":\"$DB_NAME\",\"description\":\"База ИИгр онлайн: чат и обсуждения\",\"serverlessDatabase\":{},\"labels\":{\"project\":\"iigry\",\"owner\":\"dsaskarov\",\"source\":\"github\"}}" | jq '{done, error}'
+          fi
+          for i in $(seq 1 40); do D=$(find_db); S=$(echo "$D" | jq -r .status); echo "Статус базы: $S"; [ "$S" = RUNNING ] && break; sleep 10; done
+          [ "$S" = RUNNING ] || { echo "$D"; exit 1; }
+          echo "cs=$(echo "$D" | jq -r .endpoint)" >> $GITHUB_OUTPUT
+      - name: Функция сервера
+        id: fn
         uses: yc-actions/yc-sls-function@v3.1.0
         with:
-          yc-sa-id: ${{ env.SA_ID }}
+          yc-iam-token: ${{ steps.tok.outputs.iam }}
           folder-id: ${{ env.FOLDER_ID }}
-          function-name: iigry-ping
+          function-name: ${{ env.FN_NAME }}
           runtime: nodejs22
           entrypoint: index.handler
-          memory: 128mb
-          source-root: ./server/ping
+          memory: 256mb
+          execution-timeout: 15
+          service-account: ${{ env.SA_ID }}
+          source-root: ./server/api
           include: |
             **/*.js
             **/*.json
+          environment: |
+            YDB_CS=${{ steps.db.outputs.cs }}
+            ALLOW_ORIGIN=https://dsaskarov.github.io
+      - name: Открыть функцию для сайта и проверить
+        env: { IAM: "${{ steps.tok.outputs.iam }}", FID: "${{ steps.fn.outputs.function-id }}" }
+        run: |
+          curl -sS -X POST -H "Authorization: Bearer $IAM" -H "Content-Type: application/json" \
+            "https://serverless-functions.api.cloud.yandex.net/functions/v1/functions/$FID:updateAccessBindings" \
+            -d '{"accessBindingDeltas":[{"action":"ADD","accessBinding":{"roleId":"functions.functionInvoker","subject":{"id":"allUsers","type":"system"}}}]}' | jq -c '{done,error}' || true
+          sleep 5
+          echo "Адрес сервера: https://functions.yandexcloud.net/$FID"
+          curl -sS "https://functions.yandexcloud.net/$FID?a=ping"; echo
+          curl -sS -H "Origin: https://dsaskarov.github.io" "https://functions.yandexcloud.net/$FID?a=list&room=live"; echo
