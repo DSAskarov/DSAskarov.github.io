@@ -64,7 +64,6 @@ jobs:
           environment: |
             YDB_CS=${{ steps.db.outputs.cs }}
             ALLOW_ORIGIN=https://dsaskarov.github.io
-            DEBUG=1
       - name: Открыть функцию для сайта и проверить
         env: { IAM: "${{ steps.tok.outputs.iam }}", FID: "${{ steps.fn.outputs.function-id }}" }
         run: |
