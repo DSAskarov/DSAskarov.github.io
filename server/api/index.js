@@ -5,7 +5,7 @@ const { Driver, TokenAuthService, TypedValues, TypedData, TableDescription, Colu
 const crypto = require("crypto");
 
 const ORIGINS = (process.env.ALLOW_ORIGIN || "https://dsaskarov.github.io").split(",");
-const ROOMS = { live: 500, "talk-site": 1000, "talk-industry": 1000, "talk-wishes": 1000 };
+const ROOMS = { test: 200, live: 500, "talk-site": 1000, "talk-industry": 1000, "talk-wishes": 1000 };
 const BAD = /(ху[йяеёи]|пизд|бля|[её]б[аоуи]н|муда[кч]|пидо|гандон|шлюх|сука|казино|ставк|букмекер|водк|пиво|алкогол|viagra|casino)/i;
 const LINK = /(https?:\/\/|www\.|t\.me\/|\.(ru|com|net|org|рф|io|me)\b)/i;
 const RESV = /dsaskarov|адм[иi]н|admin|модер|moder|иигр|iigr|поддержк|support|claude|anthropic|официал|official/i;
