@@ -973,6 +973,7 @@ html.tilt .card:hover{transform:perspective(900px) rotateX(var(--rx,0deg)) rotat
       <label class="field">Ссылка на демо<input id="fDemoUrl" maxlength="300" type="url" placeholder="https://"></label>
       <label class="field">Ссылка для скачивания<input id="fDlUrl" maxlength="300" type="url" placeholder="https://"></label>
       <label class="field">Ссылка автора для чаевых (Boosty и т. п.)<input id="fTipUrl" maxlength="300" type="url" placeholder="https://"></label>
+      <label class="field">Ссылка на оплату (платёжный сервис с чеком)<input id="fBuyUrl" maxlength="300" type="url" placeholder="https://"></label>
       <div class="actions"><button class="btn" type="submit" id="aSave">Сохранить проект</button><button class="btn ghost" type="button" id="aReset">Очистить</button></div>
     </form>
   </div>
@@ -1129,8 +1130,8 @@ function openGame(id){
   ${g.soon?`<div class="links"><span class="hint">Автор: @${esc(g.a)}</span>${msgBtn(g.a)}</div>`:`<div><strong>Авторы</strong><ol class="chain">${ch.map((x,i)=>`<li><button class="whoa" data-go="${esc(x.id)}" ${x.id===g.id?'aria-current="true"':''}>@${esc(x.a)}</button><small>${i===0?'оригинал':'доработка '+i}${x.id===g.id?' · вы здесь':''}</small>${tipBtn(x)}${msgBtn(x.a)}<button class="x" data-rep="user|${esc(x.a)}" title="Пожаловаться на автора" aria-label="Пожаловаться на автора">⚑</button></li>`).join("")}</ol>${ch.length>1?'<p class="hint">Нажмите на автора, чтобы открыть его версию.</p>':''}</div>`}
   ${co.length?`<div class="links"><span class="hint">Соавторы:</span>${co.map(n=>`<span>@${esc(n)}</span>${msgBtn(n)}`).join("")}</div>`:''}
   ${g.demo&&!g.soon?qualityHtml():''}
-  <div class="actions">${g.demo?demoBtn(g):''}<button class="btn ghost" data-fav="${esc(g.id)}">${(ME.fav||[]).includes(g.id)?'★ В избранном':'☆ В избранное'}</button>${g.p&&!g.soon?`<button class="btn gold" data-a="buy">Купить за ${rub(g.p)}</button>`:''}${!g.p&&g.dl?dlBtn(g):''}${g.soon?'':'<button class="btn ghost" data-a="remix">Доработать</button>'}<button class="btn ghost" data-a="close">Закрыть</button><button class="btn ghost sm" data-rep="project|${esc(g.id)}">⚑ Пожаловаться</button></div>
-  ${g.p&&!g.soon?'<p class="hint">Сначала попробуйте демо — оно для этого и сделано.</p>':''}`;
+  <div class="actions">${g.demo?demoBtn(g):''}<button class="btn ghost" data-fav="${esc(g.id)}">${(ME.fav||[]).includes(g.id)?'★ В избранном':'☆ В избранное'}</button>${g.p&&!g.soon?(safe(g.buyUrl)?`<a class="btn gold" data-a="buy" href="${esc(safe(g.buyUrl))}" target="_blank" rel="noopener noreferrer">Купить за ${rub(g.p)}</a>`:`<button class="btn gold" data-a="buy">Купить за ${rub(g.p)}</button>`):''}${!g.p&&g.dl?dlBtn(g):''}${g.soon?'':'<button class="btn ghost" data-a="remix">Доработать</button>'}<button class="btn ghost" data-a="close">Закрыть</button><button class="btn ghost sm" data-rep="project|${esc(g.id)}">⚑ Пожаловаться</button></div>
+  ${g.p&&!g.soon?(safe(g.buyUrl)?'<p class="hint">Оплата — на защищённой странице платёжного сервиса. Чек придёт на почту, ссылка на полную версию откроется сразу после оплаты. Сначала попробуйте демо.</p>':'<p class="hint">Сначала попробуйте демо — оно для этого и сделано.</p>'):''}`;
   if(!dlg.open)dlg.showModal();
   track("ev","open");
 }
@@ -1143,7 +1144,7 @@ body.onclick=e=>{
   const go=e.target.closest("[data-go]");if(go){if(!go.getAttribute("aria-current"))openGame(go.dataset.go);return}
   const tip=e.target.closest("[data-tip]");if(tip){toast(`Здесь будет ссылка @${tip.dataset.tip} для чаевых. Щедрость пока в разработке.`);return}
   const m=e.target.closest("[data-msg]");if(m){openChat(m.dataset.msg);return}
-  const a=e.target.dataset.a;if(!a)return;if(a==="close"){dlg.close();return}toast(MSG[a]);
+  const a=e.target.dataset.a;if(!a)return;if(a==="close"){dlg.close();return}if(a==="buy"&&e.target.closest("a[href]"))return;toast(MSG[a]);
 };
 dlg.onclick=e=>{if(e.target===dlg)dlg.close()};
 
@@ -1213,7 +1214,7 @@ function renderNewsAdmin(){
 function fillForm(g){editId=g?g.id:null;$("aFormTitle").textContent=g?"Изменить проект":"Новый проект";
   $("fT").value=g?.t||"";$("fC").value=g?.c||"game";$("fG").value=g?.g||"";$("fA").value=g?.a||"dsaskarov";$("fP").value=g?.p??0;$("fCo").value=g?coOf(g).join(", "):"";
   $("fCv").value=String(g?.cv??0);$("fDemo").checked=!!g?.demo;$("fDl").checked=!!g?.dl;$("fSoon").checked=!!g?.soon;$("fTop").checked=!!g?.top;$("fD").value=g?.d||"";
-  $("fDemoUrl").value=g?.demoUrl||"";$("fDlUrl").value=g?.dlUrl||"";$("fTipUrl").value=g?.tipUrl||"";
+  $("fDemoUrl").value=g?.demoUrl||"";$("fDlUrl").value=g?.dlUrl||"";$("fTipUrl").value=g?.tipUrl||"";$("fBuyUrl").value=g?.buyUrl||"";
   renderAdmin();$("fPar").value=g?.par&&byId[g.par]?g.par:""}
 $("adminBtn").onclick=()=>{fillForm(null);$("admin").showModal()};
 $("adminClose").onclick=()=>$("admin").close();
@@ -1239,14 +1240,14 @@ $("nAdd").onclick=async()=>{if(!db)return;const t=$("nT").value.trim(),x=$("nX")
 $("aForm").onsubmit=async e=>{e.preventDefault();if(!db)return;
   const t=$("fT").value.trim(),p=Math.max(0,Math.round(Number($("fP").value)||0)),par=$("fPar").value;
   if(!t){toast("Укажите название проекта.");return}
-  if(["fDemoUrl","fDlUrl","fTipUrl"].some(k=>$(k).value.trim()&&!safe($(k).value.trim()))){toast("Ссылки должны начинаться с https://");return}
+  if(["fDemoUrl","fDlUrl","fTipUrl","fBuyUrl"].some(k=>$(k).value.trim()&&!safe($(k).value.trim()))){toast("Ссылки должны начинаться с https://");return}
   if(editId&&par&&(par===editId||desc(editId).has(par))){toast("Нельзя сделать проект доработкой его собственной доработки.");return}
   if(editId){const kids=G.filter(g=>g.par===editId&&!g.soon);if(kids.length){const mn=Math.min(...kids.map(k=>k.p||0));if(p>mn){toast(`Цена не может быть выше цены его доработок: максимум ${rub(mn)}.`);return}}}
   if(par&&byId[par]&&p<(byId[par].p||0)){toast(`Цена доработки не может быть ниже цены основы: ${rub(byId[par].p)}.`);return}
   const data={t,c:$("fC").value,g:$("fG").value.trim(),a:$("fA").value.trim().replace(/^@/,"")||"автор",p,par:par||"",cv:Number($("fCv").value),
     co:$("fCo").value.split(",").map(s=>s.trim().replace(/^@/,"")).filter(Boolean).slice(0,10),
     demo:$("fDemo").checked,dl:$("fDl").checked,soon:$("fSoon").checked,top:$("fTop").checked,d:$("fD").value.trim(),
-    demoUrl:safe($("fDemoUrl").value.trim()),dlUrl:safe($("fDlUrl").value.trim()),tipUrl:safe($("fTipUrl").value.trim()),
+    demoUrl:safe($("fDemoUrl").value.trim()),dlUrl:safe($("fDlUrl").value.trim()),tipUrl:safe($("fTipUrl").value.trim()),buyUrl:safe($("fBuyUrl").value.trim()),
     order:editId?(byId[editId].order??0):Math.max(0,...G.map(g=>g.order??0))+1};
   if(p>0&&!data.demo&&!data.soon){toast("У платного проекта должно быть демо. Отметьте «Демо в браузере».");return}
   $("aSave").disabled=true;
