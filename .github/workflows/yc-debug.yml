@@ -1,0 +1,26 @@
+# Временная диагностика входа в Yandex Cloud через федерацию. Токены не выводятся.
+name: Проверка входа в Yandex Cloud
+on:
+  push:
+    branches: [main]
+    paths: [".github/workflows/yc-debug.yml"]
+  workflow_dispatch:
+permissions:
+  id-token: write
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Получить пропуск GitHub и обменять в Яндексе
+        run: |
+          JWT=$(curl -sS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=https://github.com/DSAskarov" | jq -r .value)
+          echo "Поля пропуска GitHub:"
+          echo "$JWT" | cut -d. -f2 | tr '_-' '/+' | base64 -d 2>/dev/null | jq '{iss,aud,sub,repository,ref}' || true
+          echo "Ответ Яндекса:"
+          curl -sS -X POST https://auth.yandex.cloud/oauth/token \
+            -d grant_type=urn:ietf:params:oauth:grant-type:token-exchange \
+            -d requested_token_type=urn:ietf:params:oauth:token-type:access_token \
+            -d audience=ajef13mhfm448b63m3ic \
+            -d subject_token_type=urn:ietf:params:oauth:token-type:id_token \
+            -d subject_token="$JWT" | jq 'if .access_token then {ok:true,expires_in} else . end'
