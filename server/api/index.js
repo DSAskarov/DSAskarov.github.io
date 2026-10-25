@@ -60,7 +60,7 @@ exports.handler = async (event, ctx) => {
   if (method === "OPTIONS") return reply(204, null, origin);
   if (a === "ping") return reply(200, { ok: true, ts: Date.now() }, origin);
   if (!ORIGINS.includes(origin)) return reply(403, { error: "Запрос с чужого сайта" }, origin);
-  try { await db(ctx) } catch (e) { console.error("db", e.message); return reply(503, { error: "Сервер просыпается, попробуйте через минуту" }, origin) }
+  try { await db(ctx) } catch (e) { console.error("db", e && e.message); return reply(503, { error: "Сервер просыпается, попробуйте через минуту", detail: process.env.DEBUG === "1" ? String(e && e.message).slice(0, 300) : undefined, tok: process.env.DEBUG === "1" ? !!(ctx && ctx.token) : undefined }, origin) }
 
   if (a === "list" && method === "GET") {
     const room = String(qs.room || ""); if (!ROOMS[room]) return reply(400, { error: "Нет такой комнаты" }, origin);

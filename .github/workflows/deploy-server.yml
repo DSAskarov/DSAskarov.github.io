@@ -64,6 +64,7 @@ jobs:
           environment: |
             YDB_CS=${{ steps.db.outputs.cs }}
             ALLOW_ORIGIN=https://dsaskarov.github.io
+            DEBUG=1
       - name: Открыть функцию для сайта и проверить
         env: { IAM: "${{ steps.tok.outputs.iam }}", FID: "${{ steps.fn.outputs.function-id }}" }
         run: |
@@ -73,4 +74,4 @@ jobs:
           sleep 5
           echo "Адрес сервера: https://functions.yandexcloud.net/$FID"
           curl -sS "https://functions.yandexcloud.net/$FID?a=ping"; echo
-          curl -sS -H "Origin: https://dsaskarov.github.io" "https://functions.yandexcloud.net/$FID?a=list&room=live"; echo
+          for i in 1 2 3; do curl -sS -H "Origin: https://dsaskarov.github.io" "https://functions.yandexcloud.net/$FID?a=list&room=live"; echo; sleep 5; done
