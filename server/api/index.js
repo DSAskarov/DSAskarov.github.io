@@ -16,7 +16,8 @@ const auth = { getAuthMetadata: async () => new TokenAuthService(token).getAuthM
 async function db(ctx) {
   token = (ctx && ctx.token && ctx.token.access_token) || token;
   if (!driver) {
-    driver = new Driver({ connectionString: process.env.YDB_CS, authService: auth });
+    const cs = String(process.env.YDB_CS || ""), m = cs.match(/^(grpcs?:\/\/[^/?]+)\/?\?database=(.+)$/);
+    driver = m ? new Driver({ endpoint: m[1], database: decodeURIComponent(m[2]), authService: auth }) : new Driver({ connectionString: cs, authService: auth });
     ready = (async () => {
       if (!(await driver.ready(8000))) throw new Error("db timeout");
       await driver.tableClient.withSession(async s => {

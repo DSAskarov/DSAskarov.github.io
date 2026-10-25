@@ -44,7 +44,7 @@ jobs:
           fi
           for i in $(seq 1 40); do D=$(find_db); S=$(echo "$D" | jq -r .status); echo "Статус базы: $S"; [ "$S" = RUNNING ] && break; sleep 10; done
           [ "$S" = RUNNING ] || { echo "$D"; exit 1; }
-          echo "cs=$(echo "$D" | jq -r .endpoint)" >> $GITHUB_OUTPUT
+          CS=$(echo "$D" | jq -r .endpoint); echo "Адрес базы: $CS"; echo "cs=$CS" >> $GITHUB_OUTPUT
       - name: Функция сервера
         id: fn
         uses: yc-actions/yc-sls-function@v3.1.0
