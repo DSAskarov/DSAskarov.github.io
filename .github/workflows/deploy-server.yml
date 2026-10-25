@@ -1,0 +1,32 @@
+# Выкладка серверных функций «ИИгр онлайн» в Yandex Cloud.
+# Вход — через федерацию github-iigry (без ключей и секретов).
+name: Выкладка сервера
+on:
+  push:
+    branches: [main]
+    paths: ["server/**", ".github/workflows/deploy-server.yml"]
+  workflow_dispatch:
+permissions:
+  id-token: write   # нужно, чтобы получить разовый пропуск у GitHub
+  contents: read
+env:
+  FOLDER_ID: b1g52stf4nhegsql0vgk
+  SA_ID: ajef13mhfm448b63m3ic
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Проверочная функция iigry-ping
+        uses: yc-actions/yc-sls-function@v3.1.0
+        with:
+          yc-sa-id: ${{ env.SA_ID }}
+          folder-id: ${{ env.FOLDER_ID }}
+          function-name: iigry-ping
+          runtime: nodejs22
+          entrypoint: index.handler
+          memory: 128mb
+          source-root: ./server/ping
+          include: |
+            **/*.js
+            **/*.json
