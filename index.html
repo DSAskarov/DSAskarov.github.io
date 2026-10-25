@@ -1,0 +1,1637 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"><meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="description" content="Маркетплейс игр, приложений, модов и серверов, сделанных с ИИ. Без рекламы, с демо до покупки."><meta property="og:title" content="ИИгры онлайн"><meta property="og:description" content="Маркетплейс игр, приложений, модов и серверов, сделанных с ИИ. Без рекламы, с демо до покупки."><meta name="theme-color" content="#0B0A0E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23B3141F'/%3E%3Ctext x='32' y='44' font-size='30' font-family='Arial' font-weight='700' text-anchor='middle' fill='%23F6DE8D'%3EИИ%3C/text%3E%3C/svg%3E">
+<style>*{box-sizing:border-box}html,body{margin:0}[hidden]{display:none!important}</style></head><body>
+<title>ИИгры онлайн</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=Golos+Text:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: служебная полоса (тема, эффекты) → стеклянная шапка с меню → вкладки-страницы:
+   Главная (обещание, для кого, топ, идея, возможности, связь) · Каталог · Новости · Авторам. Подвал общий. */
+:root{
+  --bg:#F6F6F8; --surface:rgba(20,18,23,.04); --solid:#FFFFFF; --line:rgba(20,18,23,.12);
+  --fg:#141217; --muted:#5C5966; --red:#C8161F; --red2:#8E0E1A; --gold:#8F650F; --gold-bg:rgba(201,154,53,.15);
+  --glow-r:rgba(232,51,63,.15); --glow-g:rgba(231,189,82,.24); --glow-d:rgba(142,14,26,.10); --grid:rgba(20,18,23,.045);
+  --spot:rgba(201,154,53,.18); --cardtop:rgba(255,255,255,.95); --cardbot:rgba(255,255,255,.7);
+  --title-a:#5E3F08; --title-b:#B8861F; --title-c:#7A5410;
+  --tag-demo-bg:rgba(200,22,31,.09); --tag-demo:#B0141C; --tag-dl-bg:rgba(20,18,23,.07); --tag-dl:#2E2B33; --tag-soon-bg:rgba(201,154,53,.18); --tag-soon:#6E4B0A; --green:#13804A; --green-bg:rgba(19,128,74,.11);
+  --f-display:"Unbounded","Golos Text",system-ui,sans-serif;
+  --f-body:"Golos Text",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --r:14px; color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]):not([data-look="light"]){
+  --bg:#07070A; --surface:rgba(255,255,255,.045); --solid:#141218; --line:rgba(255,255,255,.11);
+  --fg:#F4F4F6; --muted:#C4C1CC; --red:#E8333F; --red2:#8E0E1A; --gold:#E7BD52; --gold-bg:rgba(231,189,82,.13);
+  --glow-r:rgba(232,51,63,.32); --glow-g:rgba(231,189,82,.20); --glow-d:rgba(142,14,26,.42); --grid:rgba(255,255,255,.035);
+  --spot:rgba(231,189,82,.11); --cardtop:rgba(255,255,255,.07); --cardbot:rgba(255,255,255,.02);
+  --title-a:#FFF0BF; --title-b:#E7BD52; --title-c:#B98A2C;
+  --tag-demo-bg:rgba(232,51,63,.18); --tag-demo:#FF8A91; --tag-dl-bg:rgba(255,255,255,.09); --tag-dl:#E6E4EA; --tag-soon-bg:rgba(231,189,82,.17); --tag-soon:#F2CF73; --green:#4ADE95; --green-bg:rgba(74,222,149,.14); color-scheme:dark}}
+:root[data-theme="dark"]:not([data-look="light"]),:root[data-look="dark"]{
+  --bg:#07070A; --surface:rgba(255,255,255,.045); --solid:#141218; --line:rgba(255,255,255,.11);
+  --fg:#F4F4F6; --muted:#C4C1CC; --red:#E8333F; --red2:#8E0E1A; --gold:#E7BD52; --gold-bg:rgba(231,189,82,.13);
+  --glow-r:rgba(232,51,63,.32); --glow-g:rgba(231,189,82,.20); --glow-d:rgba(142,14,26,.42); --grid:rgba(255,255,255,.035);
+  --spot:rgba(231,189,82,.11); --cardtop:rgba(255,255,255,.07); --cardbot:rgba(255,255,255,.02);
+  --title-a:#FFF0BF; --title-b:#E7BD52; --title-c:#B98A2C;
+  --tag-demo-bg:rgba(232,51,63,.18); --tag-demo:#FF8A91; --tag-dl-bg:rgba(255,255,255,.09); --tag-dl:#E6E4EA; --tag-soon-bg:rgba(231,189,82,.17); --tag-soon:#F2CF73; --green:#4ADE95; --green-bg:rgba(74,222,149,.14); color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:1rem;line-height:1.55;position:relative;overflow-x:hidden}
+body::after{content:"";position:fixed;inset:-20%;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(42vmax 42vmax at 12% 8%,var(--glow-r),transparent 60%),
+    radial-gradient(36vmax 36vmax at 92% 22%,var(--glow-g),transparent 62%),
+    radial-gradient(50vmax 40vmax at 55% 105%,var(--glow-d),transparent 62%),
+    linear-gradient(var(--grid) 1px,transparent 1px) 0 0/56px 56px,
+    linear-gradient(90deg,var(--grid) 1px,transparent 1px) 0 0/56px 56px;
+  animation:drift 28s ease-in-out infinite alternate}
+@keyframes drift{to{transform:translate3d(3%,-2%,0) scale(1.04)}}
+.wrap{max-width:1160px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+a{color:var(--gold)}
+button,input,select,textarea{font:inherit}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.nocopy{-webkit-user-select:none;user-select:none}
+
+.util{background:linear-gradient(90deg,#1a0508,#3a0a10 50%,#1a0508);color:#F3E9EA;font-size:.8rem;border-bottom:1px solid rgba(231,189,82,.25)}
+.note{display:flex;gap:8px;align-items:center;min-width:0;flex:1 1 auto}
+.note .txt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;opacity:.85}
+.util .wrap{flex-wrap:nowrap}
+.util .ctrls{flex:0 0 auto;flex-wrap:nowrap}
+.sm-only{display:none}
+@media (max-width:860px){.note .txt{display:none}}
+@media (max-width:560px){.lbl.vid{display:none}.lg-only{display:none}.sm-only{display:inline}.util .ctrls{gap:10px}.ubtn{padding:3px 8px}.useg button{padding:3px 9px}}
+@media (max-width:380px){.note{display:none}.util .wrap{justify-content:center}}
+.pill{background:linear-gradient(135deg,#FFF0BF,#E7BD52);color:#1A1306;font-weight:800;border-radius:999px;padding:1px 9px;text-transform:uppercase;letter-spacing:.07em;font-size:.66rem;white-space:nowrap}
+.ctl{display:flex;align-items:center;gap:8px}
+.lbl{text-transform:uppercase;letter-spacing:.09em;font-size:.66rem;color:rgba(255,255,255,.62);font-weight:700}
+.useg{display:inline-flex;border:1px solid rgba(255,255,255,.24);border-radius:8px;overflow:hidden}
+.useg button{background:transparent;border:0;color:#F3E9EA;padding:3px 10px;font-size:.78rem;cursor:pointer}
+.useg button+button{border-left:1px solid rgba(255,255,255,.18)}
+.useg button[aria-pressed="true"]{background:rgba(231,189,82,.24);color:#FFE7A3;font-weight:700}
+.ctl input[type=range]{accent-color:#E7BD52;width:104px}
+.ctl b{min-width:5.6em;font-weight:700;color:#F6DE8D;font-size:.78rem}
+.util .wrap{display:flex;flex-wrap:nowrap;gap:6px 14px;align-items:center;justify-content:space-between;padding-block:6px}
+.util .ctrls{display:flex;flex-wrap:nowrap;gap:6px 14px;align-items:center;margin-left:auto}
+.ubtn{background:transparent;border:1px solid rgba(255,255,255,.28);color:#fff;border-radius:7px;padding:3px 10px;cursor:pointer;font-size:.8rem}
+.fx{display:flex;align-items:center;gap:8px}
+.fx input{accent-color:#E7BD52;width:110px}
+.fx b{min-width:5.5em;font-weight:600;color:#F6DE8D}
+
+.top{background:rgba(10,9,12,.93);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid transparent;border-image:linear-gradient(90deg,transparent,#E7BD52,transparent) 1;position:relative;z-index:5}
+.top .wrap{display:flex;flex-wrap:wrap;align-items:center;gap:10px 24px;padding-block:14px}
+.logo{font:800 1.25rem/1 var(--f-display);color:#F5F5F5;text-decoration:none;display:flex;align-items:center;letter-spacing:-.01em}
+.logo b{background:linear-gradient(135deg,#FF5A64,#A3101C);color:#fff;border-radius:7px;padding:5px 6px;margin-right:1px;box-shadow:0 0 18px rgba(232,51,63,.55)}
+nav{display:flex;gap:2px;flex-wrap:wrap;flex:1}
+nav a{color:#E9E9EC;text-decoration:none;padding:7px 11px;border-radius:7px;font-weight:600}
+nav a:hover{background:rgba(255,255,255,.09)}
+nav a[aria-current="page"]{color:#F6DE8D;background:rgba(231,189,82,.12)}
+.hbtns{display:flex;gap:8px;flex-wrap:wrap}
+.hbtn{background:transparent;color:#F5F5F5;border:1px solid rgba(255,255,255,.22);border-radius:9px;padding:7px 13px;cursor:pointer;font-weight:600;font-size:.9rem}
+.hbtn.gold{border-color:#E7BD52;color:#F6DE8D}
+.hbtn.fill{background:linear-gradient(135deg,#FF4A55,#A3101C);border-color:transparent}
+nav a{white-space:nowrap}
+@media (max-width:980px){
+  .top .wrap{display:grid;grid-template-columns:auto 1fr;gap:10px 16px}
+  .hbtns{justify-self:end;justify-content:flex-end;order:2}
+  .logo{order:1}
+  nav{order:3;grid-column:1/-1;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-inline:-6px;-webkit-mask-image:linear-gradient(90deg,#000 88%,transparent);mask-image:linear-gradient(90deg,#000 88%,transparent)}
+  nav::-webkit-scrollbar{display:none}}
+@media (max-width:440px){.top .wrap{column-gap:8px}.hbtn{padding:6px 9px;font-size:.8rem}.logo{font-size:.95rem;white-space:nowrap}.hbtns{gap:6px;flex-wrap:nowrap}.adm .hbtns{flex-wrap:wrap}}
+.tabs{scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 90%,transparent);mask-image:linear-gradient(90deg,#000 90%,transparent)}
+.tabs::-webkit-scrollbar{display:none}
+.filters .seg{flex:0 0 auto}
+@media (max-width:640px){.filters{display:grid;grid-template-columns:1fr;gap:10px}.search{max-width:none;margin-left:0}.fgroup{justify-content:space-between}}
+
+.hero{padding-block:72px 44px;display:grid;gap:18px;max-width:920px}
+.eyebrow{display:inline-flex;width:max-content;max-width:100%;font-size:.82rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--gold);border:1px solid var(--gold);border-radius:999px;padding:5px 12px;background:var(--gold-bg)}
+.hero h1{font:800 clamp(2rem,6.4vw,3.9rem)/1.03 var(--f-display);margin:0;letter-spacing:-.028em;text-wrap:balance}
+.goldtext{background:linear-gradient(100deg,var(--title-a) 0%,var(--title-b) 40%,var(--title-c) 70%,var(--title-a) 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.ii{font-style:normal;color:var(--red);-webkit-text-fill-color:var(--red)}
+.punch{font:700 clamp(1.15rem,2.6vw,1.5rem)/1.3 var(--f-display);margin:0;color:var(--fg);max-width:34ch;text-wrap:balance}
+.lead{color:var(--muted);margin:0;font-size:1.1rem;max-width:62ch}
+.cta{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
+.trust{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:.88rem;color:var(--muted)}
+.trust span::before{content:"✓ ";color:var(--red);font-weight:700}
+section.block{padding-block:76px 0;scroll-margin-top:12px}
+section.block h2{font:800 clamp(1.45rem,3.8vw,2.2rem)/1.12 var(--f-display);margin:0 0 10px;letter-spacing:-.015em}
+.headrow{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 20px;margin-bottom:20px}
+.headrow h2{margin:0}
+.cards3{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px}
+.why{border-radius:var(--r);padding:24px;border:1px solid var(--line);background:linear-gradient(160deg,rgba(232,51,63,.15),var(--surface) 55%)}
+.why .who-for{font-size:.8rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--red)}
+.why h3{margin:6px 0 8px;font:700 1.15rem/1.25 var(--f-display)}
+.why p{margin:0;color:var(--muted)}
+.manifesto{max-width:780px}
+.manifesto p{max-width:62ch;font-size:1.1rem;color:var(--muted);margin:0 0 14px}
+.manifesto .big{font:700 clamp(1.2rem,3vw,1.7rem)/1.3 var(--f-display);color:var(--fg);margin:26px 0 12px;max-width:32ch;text-wrap:balance}
+.feats{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.feat{background:var(--solid);padding:22px}
+.feat h3{margin:0 0 6px;font-size:1.04rem}
+.feat p{margin:0;color:var(--muted);font-size:.95rem}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:20px}
+.step{border-radius:var(--r);padding:20px;background:linear-gradient(160deg,rgba(232,51,63,.14),var(--surface) 60%);border:1px solid var(--line)}
+.step h3{margin:0 0 6px;font-size:1.04rem}
+.step p{margin:0;color:var(--muted)}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:22px;display:grid;gap:10px;align-content:start;min-width:0}
+.box h3{margin:0;font-size:1.06rem}
+.box ul{margin:0;padding-left:1.1em;display:grid;gap:5px}
+.copyrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.copyrow code{font:600 1rem var(--f-body);word-break:break-all;-webkit-user-select:all;user-select:all}
+.links{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.hint{font-size:.88rem;color:var(--muted);margin:0}
+.btn{border:0;border-radius:10px;padding:11px 20px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#FF4A55,#A3101C);color:#fff;text-decoration:none;display:inline-block;box-shadow:0 8px 24px -10px rgba(232,51,63,.8)}
+.btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--line);box-shadow:none}
+.btn.gold{background:linear-gradient(135deg,#FFF0BF,#E7BD52 50%,#B98A2C);color:#1A1306;box-shadow:0 8px 24px -12px rgba(231,189,82,.8)}
+.btn.green{background:linear-gradient(135deg,#6BEBA8,#13804A);color:#04170C;box-shadow:0 8px 24px -12px rgba(19,128,74,.85)}
+.more{display:inline-block;margin-top:12px;font-weight:700;text-decoration:none}
+.btn.sm{padding:6px 11px;font-size:.86rem;border-radius:8px}
+.btn:disabled{opacity:.55;cursor:default}
+footer{padding-block:76px 44px;color:var(--muted);font-size:.86rem;display:grid;gap:6px}
+
+.legal{max-width:780px;display:grid;gap:10px}
+.legal h3{margin:18px 0 2px;font-size:1.08rem}
+.legal p,.legal li{color:var(--fg);margin:0}
+.legal ol{margin:0;padding-left:1.3em;display:grid;gap:6px}
+.draftnote{border-left:3px solid var(--red);padding:8px 12px;background:var(--surface);border-radius:0 10px 10px 0;color:var(--muted);font-size:.92rem}
+.news{display:grid;gap:16px;max-width:780px}
+.post{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px 22px;display:grid;gap:6px}
+.post h3{margin:0;font:700 1.15rem/1.3 var(--f-display)}
+.post .meta{font-size:.82rem;color:var(--muted)}
+.post p{margin:0;white-space:pre-line}
+
+.panel{display:grid;gap:14px;padding-block:6px 22px}
+.tabs{display:flex;border-bottom:1px solid var(--line);overflow-x:auto}
+.tab{background:none;border:0;border-bottom:3px solid transparent;margin-bottom:-1px;padding:11px 16px;cursor:pointer;color:var(--muted);font-weight:700;white-space:nowrap}
+.tab[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--red)}
+.tab small{font-weight:500;color:var(--muted);margin-left:5px}
+.filters{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center}
+.fgroup{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.fgroup > span{font-size:.85rem;color:var(--muted)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface);max-width:100%;overflow-x:auto}
+.seg button{background:transparent;color:var(--fg);border:0;padding:7px 12px;cursor:pointer;font-size:.9rem;white-space:nowrap}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:linear-gradient(135deg,var(--red),var(--red2));color:#fff}
+.toggle{display:flex;align-items:center;gap:7px;font-size:.92rem;cursor:pointer}
+.toggle input{accent-color:var(--red)}
+.search{flex:1 1 220px;max-width:340px;margin-left:auto}
+.search input,.field input:not([type=checkbox]):not([type=radio]),.field select,.field textarea,.chatin{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--fg)}
+.field select option{background:var(--solid);color:var(--fg)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:20px}
+.card{position:relative;background:linear-gradient(180deg,var(--cardtop),var(--cardbot));border:1px solid var(--line);border-radius:var(--r);overflow:hidden;display:flex;flex-direction:column;cursor:pointer;text-align:left;padding:0;color:inherit;transition:transform .2s,box-shadow .2s,border-color .2s}
+.card:hover{transform:translateY(-4px);border-color:var(--gold);box-shadow:0 14px 40px -12px rgba(232,51,63,.5)}
+.card::after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;background:radial-gradient(260px circle at var(--cx,50%) var(--cy,-60%),var(--spot),transparent 60%);opacity:0;transition:opacity .25s}
+.card:hover::after{opacity:1}
+.cover{aspect-ratio:16/10;max-width:100%;display:grid;place-items:center;position:relative;overflow:hidden}
+.cover::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(135deg,rgba(255,255,255,.07) 0 2px,transparent 2px 15px)}
+.cover::after{content:"";position:absolute;inset:0;background:radial-gradient(120% 80% at 20% 0%,rgba(255,255,255,.28),transparent 55%)}
+.cv0{background:linear-gradient(135deg,#FF5A64 0%,#B3141F 45%,#3D050B 100%);color:#fff}
+.cv1{background:linear-gradient(135deg,#55525E 0%,#24222A 50%,#0A090C 100%);color:#F6DE8D}
+.cv2{background:linear-gradient(135deg,#FFF0BF 0%,#E7BD52 45%,#7A5714 100%);color:#1A1306}
+.cover span{position:relative;z-index:1;font:800 3.4rem/1 var(--f-display);text-shadow:0 6px 24px rgba(0,0,0,.35);transition:transform .3s}
+.card:hover .cover span{transform:scale(1.08) rotate(-4deg)}
+.info{padding:14px 15px 16px;display:grid;gap:6px;flex:1}
+.info h3{margin:0;font-size:1.04rem;line-height:1.3}
+.author{color:var(--muted);font-size:.87rem}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tag{display:inline-flex;align-items:center;gap:6px;font:600 11.5px/1.7 var(--f-body);white-space:nowrap;border-radius:999px;padding:0 10px}
+.tag::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.tag.demo{background:var(--tag-demo-bg);color:var(--tag-demo)}
+.tag.dl{background:var(--green-bg);color:var(--green)}
+.tag.soon{background:var(--tag-soon-bg);color:var(--tag-soon)}
+.lineage{font-size:.8rem;color:var(--gold)}
+.row{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-top:auto;padding-top:6px}
+.price{font-weight:800;font-variant-numeric:tabular-nums}
+.price.free{color:var(--muted);font-weight:600}
+.price.soon{color:var(--gold)}
+.genre{font-size:.8rem;color:var(--muted);text-align:right}
+.empty{color:var(--muted);padding:30px 0}
+
+dialog{border:1px solid var(--line);border-radius:18px;padding:0;max-width:min(580px,calc(100vw - 32px));width:100%;background:var(--solid);color:var(--fg)}
+dialog.wide{max-width:min(980px,calc(100vw - 32px))}
+dialog::backdrop{background:rgba(0,0,0,.65);backdrop-filter:blur(3px)}
+.dlg{padding:22px;display:grid;gap:14px}
+.dlg h2{margin:0;font:800 1.35rem/1.2 var(--f-display)}
+.chain{list-style:none;margin:6px 0 0;padding:0}
+.chain li{position:relative;padding:0 0 12px 22px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.chain li::before{content:"";position:absolute;left:5px;top:9px;width:9px;height:9px;border-radius:50%;background:linear-gradient(135deg,var(--red),var(--gold))}
+.chain li:not(:last-child)::after{content:"";position:absolute;left:9px;top:19px;bottom:0;width:1px;background:var(--line)}
+.whoa{background:none;border:0;color:var(--gold);font-weight:700;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:3px}
+.whoa[aria-current="true"]{color:var(--fg);text-decoration:none;cursor:default}
+.chain small{color:var(--muted)}
+.actions{display:flex;flex-wrap:wrap;gap:10px}
+.field{display:grid;gap:5px;font-size:.9rem;min-width:0}
+.check{display:flex;gap:8px;align-items:flex-start;font-size:.9rem}
+.check input{margin-top:4px;accent-color:var(--red);width:auto;flex:0 0 auto}
+#repReasons{display:grid;gap:8px}
+#repReasons .check{cursor:pointer}
+.msgs{display:grid;gap:8px;max-height:45vh;overflow:auto;align-content:start}
+.msg{padding:10px 12px;border-radius:12px;background:var(--surface);border:1px solid var(--line);max-width:85%;justify-self:start}
+.msg.me{justify-self:end;background:var(--gold-bg)}
+.msg .tr{color:var(--muted);font-size:.9rem;margin-top:6px;border-top:1px dashed var(--line);padding-top:6px}
+.msg .trb{background:none;border:0;color:var(--gold);cursor:pointer;padding:0;font-size:.82rem;margin-top:4px;text-decoration:underline}
+.admin{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:22px}
+@media (max-width:760px){.admin{grid-template-columns:1fr}}
+.alist{display:grid;gap:8px;max-height:44vh;overflow:auto;align-content:start}
+.aitem{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.aitem div{min-width:0}
+.aitem strong{display:block;font-size:.95rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.aitem span{font-size:.8rem;color:var(--muted)}
+.aitem .actions{gap:6px;flex-wrap:nowrap}
+.form{display:grid;gap:10px;align-content:start}
+.form .two{gap:10px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.checks{display:flex;flex-wrap:wrap;gap:8px 16px}
+.ahead{position:sticky;top:-22px;margin-top:-22px;padding-top:22px;padding-bottom:8px;background:var(--solid);z-index:2}
+@media (max-width:600px){dialog.wide{max-width:100vw;width:100vw;max-height:100dvh;height:100dvh;margin:0;border-radius:0;border:0}
+  dialog.wide .dlg{padding:16px max(16px,env(safe-area-inset-left,0px)) calc(16px + env(safe-area-inset-bottom,0px))}
+  .ahead{top:-16px;margin-top:-16px;padding-top:calc(16px + env(safe-area-inset-top,0px))}
+  .alist{max-height:38vh}}
+.sw{appearance:none;-webkit-appearance:none;width:36px;height:20px;border-radius:999px;background:rgba(255,255,255,.25);position:relative;cursor:pointer;margin:0;transition:background .2s}
+.sw::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .2s}
+.sw:checked{background:#C99A35}.sw:checked::after{transform:translateX(16px)}
+.road{display:grid;gap:12px;max-width:860px}
+.stage{display:grid;grid-template-columns:7.5em 1fr;gap:6px 16px;padding:16px 18px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+@media (max-width:520px){.stage{grid-template-columns:1fr}}
+.stage h3{margin:0 0 4px;font-size:1.04rem}.stage p{margin:0;color:var(--muted);font-size:.95rem}
+.st{font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;padding:3px 9px;border-radius:999px;white-space:nowrap;align-self:start;justify-self:start}
+.st.done{background:var(--green-bg);color:var(--green)}.st.now{background:var(--gold-bg);color:var(--gold)}.st.next{color:var(--muted);border:1px solid var(--line)}
+.qa{display:grid;gap:4px;margin:0;padding:0;list-style:none}
+.qa h4{margin:14px 0 4px;font-size:.95rem}
+.qa label{display:flex;gap:8px;align-items:flex-start;cursor:pointer;padding:3px 0}
+.qa input{margin-top:4px;accent-color:var(--green)}
+.qa input:checked+span{color:var(--muted);text-decoration:line-through}
+.posts{display:grid;gap:10px;max-width:820px}
+.lcbtn{position:fixed;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:20;border-radius:999px;padding:12px 18px}
+.lc{position:fixed;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(74px + env(safe-area-inset-bottom,0px));width:min(370px,calc(100vw - 32px));height:min(520px,72vh);display:grid;grid-template-rows:auto 1fr auto;background:var(--solid);border:1px solid var(--line);border-radius:16px;box-shadow:0 24px 60px -20px rgba(0,0,0,.6);z-index:21;overflow:hidden}
+.lc header{padding:12px 14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:8px}
+.lc .msgs{max-height:none;padding:12px 14px}
+.lc form{padding:10px 14px;border-top:1px solid var(--line);display:grid;gap:8px}
+.lc .who{font-size:.75rem;color:var(--muted);display:flex;gap:6px;align-items:center}
+.lc .x{background:none;border:0;color:var(--muted);cursor:pointer;padding:0 2px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:22px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;min-width:0}
+.kpi span{font-size:.8rem;color:var(--muted)}
+.kpi b{display:block;font:800 1.25rem/1.3 var(--f-display);font-variant-numeric:tabular-nums;margin-top:2px}
+.kpi.main{border-color:var(--gold);background:var(--gold-bg)}
+.ftable{overflow-x:auto;max-width:100%}
+.ftable table{width:100%;border-collapse:collapse;font-size:.9rem;min-width:420px}
+.ftable th,.ftable td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.ftable th{font-size:.78rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.ftable .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.x{background:none;border:0;color:var(--muted);cursor:pointer;font-size:.9rem}
+.vchart{display:flex;align-items:flex-end;gap:3px;height:190px;border-bottom:1px solid var(--line);padding-top:10px}
+.vchart .c{flex:1 1 0;min-width:0;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;cursor:default}
+.vchart .b{width:100%;max-width:30px;background:var(--red);border-radius:4px 4px 0 0;min-height:2px;transition:opacity .15s}
+.vchart .c:hover .b{opacity:.75}
+.vchart .v{font-size:.68rem;color:var(--muted);font-variant-numeric:tabular-nums;margin-bottom:2px}
+.vaxis{display:flex;gap:3px;font-size:.68rem;color:var(--muted);margin-top:4px}
+.vaxis span{flex:1 1 0;min-width:0;text-align:center;overflow:visible;white-space:nowrap}
+.mecard{position:relative;border-radius:18px;padding:26px 22px;display:flex;gap:20px;align-items:center;flex-wrap:wrap;color:#fff;overflow:hidden;min-height:160px}
+.mecard::after{content:"";position:absolute;inset:0;background:radial-gradient(120% 90% at 15% 0%,rgba(255,255,255,.22),transparent 55%);pointer-events:none}
+.bg0{background:linear-gradient(135deg,#FF5A64,#7A0A14)}.bg1{background:linear-gradient(135deg,#FFF0BF,#B98A2C);color:#1A1306}.bg2{background:linear-gradient(135deg,#55525E,#0A090C)}
+.bg3{background:radial-gradient(120% 120% at 20% 10%,#4B3592,#0A0814 70%)}.bg4{background:linear-gradient(135deg,#6BEBA8,#0E5A35)}.bg5{background:linear-gradient(135deg,#FF9A5A,#B3141F 60%,#3D050B)}
+.meava{width:96px;height:96px;border-radius:50%;flex:0 0 auto;background:rgba(0,0,0,.25) center/cover no-repeat;display:grid;place-items:center;font:800 2.4rem var(--f-display);border:3px solid rgba(255,255,255,.75);position:relative;z-index:1}
+.meinfo{display:grid;gap:4px;min-width:0;flex:1 1 220px;position:relative;z-index:1}
+.meinfo b{font:800 1.5rem/1.2 var(--f-display);overflow-wrap:anywhere}
+.memeta{font-size:.9rem;opacity:.9}
+.metags,.mecont,.badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.metags span,.mecont span,.mbadge{font-size:.78rem;padding:2px 9px;border-radius:999px;background:rgba(0,0,0,.24)}
+.bg1 .metags span,.bg1 .mecont span,.bg1 .mbadge{background:rgba(255,255,255,.5)}
+.mecont span.off{opacity:.7}
+.mbadge{opacity:.55}.mbadge.on{opacity:1;font-weight:700}
+.swatches{display:flex;flex-wrap:wrap;gap:8px}
+.sw-bg{width:38px;height:38px;border-radius:10px;border:2px solid transparent;cursor:pointer}
+.sw-bg[aria-pressed="true"]{border-color:var(--fg);box-shadow:inset 0 0 0 2px var(--bg)}
+.more summary{cursor:pointer;font-weight:700;color:var(--gold);padding:4px 0}
+.more[open]{display:grid;gap:10px}
+.chipsel{display:flex;flex-wrap:wrap;gap:6px}
+.chipsel button{border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:999px;padding:4px 11px;cursor:pointer;font-size:.85rem}
+.chipsel button[aria-pressed="true"]{background:var(--gold-bg);border-color:var(--gold);color:var(--gold);font-weight:700}
+.crow{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end}
+.maint{position:fixed;inset:0;z-index:40;display:grid;place-items:center;padding:24px max(16px,env(safe-area-inset-left,0px));background:radial-gradient(60vmax 60vmax at 20% 10%,rgba(232,51,63,.35),transparent 60%),radial-gradient(50vmax 50vmax at 90% 90%,rgba(231,189,82,.25),transparent 60%),#07070A;color:#F4F4F6;text-align:center}
+.maint div{max-width:560px;display:grid;gap:14px;justify-items:center}
+.maint h2{font:800 clamp(1.5rem,5vw,2.4rem)/1.15 var(--f-display);margin:0}
+.maint p{margin:0;color:#C4C1CC;font-size:1.05rem}
+.maint{overflow:auto}
+.maint canvas{width:min(420px,100%);aspect-ratio:420/220;border-radius:12px;border:1px solid rgba(255,255,255,.15);background:#0B0A0E;touch-action:manipulation;cursor:crosshair}
+.maint-on .lc,.maint-on .lcbtn{z-index:50}
+.mbar{background:#E7BD52;color:#1A1306;text-align:center;font-weight:700;font-size:.85rem;padding-block:6px}
+.bento{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:14px}
+.tile{grid-column:span 2;position:relative;border-radius:var(--r);padding:22px;border:1px solid var(--line);background:linear-gradient(160deg,var(--cardtop),var(--cardbot));display:grid;gap:8px;align-content:start;transition:transform .2s,border-color .2s;min-width:0}
+.tile:hover{transform:translateY(-3px);border-color:var(--gold)}
+.tile.big{grid-column:span 4;grid-row:span 2;background:radial-gradient(120% 120% at 0% 0%,rgba(232,51,63,.22),transparent 55%),linear-gradient(160deg,var(--cardtop),var(--cardbot))}
+.tile h3{margin:0;font:700 1.12rem/1.25 var(--f-display)}
+.tile.big h3{font-size:1.5rem}
+.tile p{margin:0;color:var(--muted)}
+.tnum{font:800 .8rem var(--f-display);color:var(--gold);letter-spacing:.06em}
+.ticon{position:absolute;top:18px;right:18px;width:42px;height:42px;border-radius:12px;display:grid;place-items:center}
+.ticon.red{background:var(--tag-demo-bg);color:var(--red)}.ticon.gold{background:var(--gold-bg);color:var(--gold)}.ticon.green{background:var(--green-bg);color:var(--green)}
+.chainviz{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:14px 0 6px;position:relative}
+.node{display:grid;justify-items:center;gap:2px}
+.node b{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;font:800 1.3rem var(--f-display);color:#fff;box-shadow:0 8px 24px -10px rgba(232,51,63,.8)}
+.n0 b{background:linear-gradient(135deg,#FF5A64,#8E0E1A)}.n1 b{background:linear-gradient(135deg,#55525E,#0A090C);color:#F6DE8D}.n2 b{background:linear-gradient(135deg,#FFF0BF,#B98A2C);color:#1A1306}
+.node span{font-size:.75rem;color:var(--muted)}
+.link{flex:1 1 30px;min-width:24px;height:2px;margin-bottom:18px;background:linear-gradient(90deg,var(--red),var(--gold));background-size:200% 100%;animation:flow 2.4s linear infinite}
+@keyframes flow{to{background-position:-200% 0}}
+.royalty{flex-basis:100%;font-size:.88rem;font-weight:700;color:var(--gold)}
+.tmeter{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+.tbar{flex:1 1 220px;max-width:420px;height:10px;border-radius:999px;background:var(--line);overflow:hidden}
+.tbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--red),var(--gold));border-radius:999px;transition:width .4s}
+#tTxt{font-weight:700;font-variant-numeric:tabular-nums}
+.tgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:900px){.tgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.tgrid{grid-template-columns:1fr}}
+.tcard{border-radius:var(--r);padding:20px;border:1px solid var(--line);background:var(--surface);display:grid;gap:8px;align-content:start;transition:border-color .2s,background .2s}
+.tcard.done{border-color:var(--green);background:linear-gradient(160deg,var(--green-bg),var(--surface) 60%)}
+.thead{display:flex;justify-content:space-between;align-items:center}
+.tcard h3{margin:0;font:700 1.08rem/1.25 var(--f-display)}
+.tcard p{margin:0;color:var(--muted)}
+.tcheck{width:34px;height:34px;border-radius:50%;border:2px solid var(--line);background:transparent;color:transparent;font-weight:800;cursor:pointer;transition:all .2s}
+.tcheck[aria-pressed="true"]{background:var(--green);border-color:var(--green);color:#04170C}
+html.simple .tile,html.simple .tile.big{background:var(--surface)}
+html.simple .link{animation:none}
+@media (max-width:900px){.bento{grid-template-columns:repeat(2,minmax(0,1fr))}.tile{grid-column:span 1}.tile.big{grid-column:span 2;grid-row:auto}}
+@media (max-width:560px){.bento{grid-template-columns:1fr}.tile,.tile.big{grid-column:auto}}
+@media (prefers-reduced-motion:reduce){.link{animation:none}.tile{transition:none}}
+.legend{display:flex;gap:16px;font-size:.8rem;color:var(--muted);margin:4px 0 2px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.vchart .b.adm{background:var(--gold);margin-bottom:2px}
+.kpi .sub{display:block;font-size:.75rem;color:var(--muted);margin-top:2px}
+.t2{display:grid;gap:3px}.t2 .t{height:7px}.t2 .t.adm i{background:var(--gold)}.t2 .t.vis i{background:var(--red)}
+.hbar{display:grid;grid-template-columns:minmax(90px,32%) 1fr 5.5em;gap:10px;align-items:center;font-size:.88rem;margin:7px 0}
+.hbar .t{height:12px;background:var(--line);border-radius:999px;overflow:hidden}
+.hbar .t i{display:block;height:100%;border-radius:999px;background:var(--gold)}
+.hbar.red .t i{background:var(--red)}
+.hbar .n{text-align:right;font-variant-numeric:tabular-nums;color:var(--fg)}
+.tips{display:grid;gap:8px;margin:0;padding-left:1.2em}
+.tips li.warn::marker{color:var(--red)}
+.bar{height:6px;border-radius:999px;background:var(--line);overflow:hidden;margin-top:4px}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--red),var(--gold))}
+.toast{border:0;margin:0;inset:auto;position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:.92rem;max-width:calc(100vw - 32px);z-index:30}
+
+html.simple body::after{display:none}
+html.simple .goldtext{background:none;color:var(--fg)}
+html.simple .btn{background:var(--red);box-shadow:none}
+html.simple .btn.gold{background:var(--gold-bg);color:var(--gold);border:1px solid var(--gold)}
+html.simple .btn.green{background:var(--green-bg);color:var(--green);border:1px solid var(--green)}
+html.simple .btn.ghost{background:transparent;color:var(--fg)}
+html.simple .card,html.simple .why,html.simple .step{background:var(--surface)}
+html.simple .card:hover{transform:none;box-shadow:none}
+html.simple .card::after,html.simple .cover::before,html.simple .cover::after{display:none}
+html.simple .top{backdrop-filter:none;background:#121214}
+html.simple .util{background:#2a070c}
+html[data-fx="1"] body::after{animation:none}
+html.torch .goldtext{background:radial-gradient(260px circle at var(--mx,-999px) var(--my,-999px),#FFFDF2 0%,#FFE9A8 30%,rgba(255,233,168,0) 62%) fixed,linear-gradient(100deg,#E9C766,#D4AA45 50%,#E9C766) fixed;-webkit-background-clip:text;background-clip:text;color:transparent}
+html.torch .lit{color:transparent;background:radial-gradient(300px circle at var(--mx,-999px) var(--my,-999px),#FFFFFF 0%,#F1EFF5 35%,#C4C1CC 72%) fixed;-webkit-background-clip:text;background-clip:text}
+html.tilt .card{transform:perspective(900px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));transition:transform .12s,box-shadow .2s,border-color .2s}
+html.tilt .card:hover{transform:perspective(900px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg)) translateY(-4px)}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}body::after{animation:none}.card,.cover span{transition:none}}
+</style>
+
+<div class="util"><div class="wrap">
+  <div class="note"><span class="pill">Бета-тест</span><span class="txt">Сайт в бета-тесте, часть проектов — примеры. Нашли ошибку? <a href="#claims" style="color:#F6DE8D">Сообщите нам</a></span></div>
+  <div class="ctrls">
+    <div class="ctl"><span class="lbl vid">Вид</span><div class="useg" id="lookSeg" role="group" aria-label="Тема"><button data-l="auto">Авто</button><button data-l="light" aria-label="Светлый"><span class="lg-only">Светлый</span><span class="sm-only" aria-hidden="true">☀</span></button><button data-l="dark" aria-label="Тёмный"><span class="lg-only">Тёмный</span><span class="sm-only" aria-hidden="true">☾</span></button></div></div>
+    <label class="ctl"><span class="lbl">Эффекты</span><input type="checkbox" class="sw" id="fxSw" role="switch" aria-label="Визуальные эффекты"></label>
+    <button class="ubtn" id="simpleBtn">Простая версия</button>
+  </div>
+</div></div>
+
+<div class="mbar" id="mBar" hidden>Сайт выключен для посетителей — идут технические работы. Вы видите его как администратор.</div>
+<div class="maint" id="mOver" hidden><div>
+  <span class="eyebrow" style="color:#E7BD52;border-color:#E7BD52">Технические работы</span>
+  <h2>Мы ненадолго закрылись, чтобы стать лучше</h2>
+  <p id="mMsg">Нейросети и люди спорят, кто сломал кнопку. Как только договорятся — сразу вернёмся. Обычно это быстрее, чем кажется.</p>
+  <canvas id="mgame" width="420" height="220" aria-label="Мини-игра: ловите красные баги, не трогайте зелёные фичи"></canvas>
+  <div class="links" style="justify-content:center"><span>Поймано: <b id="mScore">0</b></span><button class="btn sm" id="mPlay" type="button">Играть 20 секунд</button><button class="btn ghost sm" id="mChat" type="button" style="color:#F4F4F6;border-color:rgba(255,255,255,.3)">Живой чат</button></div>
+  <p>Связаться с нами: Telegram <a href="https://t.me/dsaskarov" target="_blank" rel="noopener" style="color:#E7BD52">@dsaskarov</a> · dsaskarov.dmitry@gmail.com</p>
+</div></div>
+<header class="top"><div class="wrap">
+  <a class="logo nocopy" href="#home" aria-label="ИИгры онлайн"><b>ИИ</b>гры онлайн</a>
+  <nav aria-label="Меню">
+    <a href="#home">Главная</a>
+    <a href="#catalog">Каталог</a>
+    <a href="#news">Новости</a>
+    <a href="#talk">Обсуждения</a>
+    <a href="#authors">Авторам</a>
+    <a href="#charity">Добро</a>
+    <a href="#contacts">Связь</a>
+    <a href="#me">Кабинет</a>
+  </nav>
+  <div class="hbtns">
+    <a class="hbtn gold" id="finBtn" href="#finance" hidden style="text-decoration:none">Финансы</a>
+    <button class="hbtn gold" id="adminBtn" hidden>Редактор</button>
+    <button class="hbtn" id="loginBtn">Войти</button>
+    <button class="hbtn fill" id="signupBtn">Регистрация</button>
+  </div>
+</div></header>
+
+<main class="wrap">
+
+<div data-view="home" id="home">
+  <div class="hero">
+    <span class="eyebrow nocopy">Магазин нового времени · без рекламы</span>
+    <h1 class="goldtext nocopy" id="heroTitle"><i class="ii">ИИ</i>гры, которые можно не только купить, но и продолжить</h1>
+    <p class="punch lit">Нейросети сделали игры дешёвыми. Мы делаем дорогим авторство.</p>
+    <p class="lead lit" id="heroSub">Пробуйте демо прямо в браузере, покупайте полные версии и дорабатывайте чужие проекты. Автор оригинала всегда в доле — даже через десять доработок.</p>
+    <div class="cta"><a class="btn" href="#catalog">Открыть каталог</a><a class="btn ghost" href="#authors">Стать автором</a></div>
+    <div class="trust"><span>Демо до покупки</span><span>Возврат, если не запускается</span><span>Авторство навсегда</span></div>
+  </div>
+
+  <div class="cards3">
+    <div class="why"><span class="who-for">Игрокам</span><h3>Сначала играете, потом платите</h3><p class="lit">Демо в браузере, без установки и рекламы. Тормозит — убавьте качество, и игра пойдёт даже на старом ноутбуке.</p><a class="more" href="#catalog">В каталог →</a></div>
+    <div class="why"><span class="who-for">Авторам</span><h3>Ваша игра работает, даже когда вы спите</h3><p class="lit">Публикуете за пару минут и получаете деньги официально. А когда игру дорабатывают другие, вы получаете 10% с каждой их продажи.</p><a class="more" href="#authors">Как опубликовать →</a></div>
+    <div class="why"><span class="who-for">Доработчикам</span><h3>Чужая идея — ваш лучший старт</h3><p class="lit">Берёте проект, делаете лучше и становитесь новым звеном цепочки. Или пишете автору и делаете следующую версию вместе.</p><a class="more" href="#remix">Как работают доработки →</a></div>
+  </div>
+
+  <section class="block">
+    <div class="headrow"><div><h2 class="goldtext">Топ <i class="ii">ИИ</i>гр</h2><p class="hint">Выбор площадки. Когда появятся оценки игроков, топ составят они.</p></div><a class="btn gold" href="#catalog">Открыть весь каталог →</a></div>
+    <div class="grid nocopy" id="topGrid"></div>
+    <p class="empty" id="topEmpty">Загружаем…</p>
+  </section>
+
+  <section class="block manifesto" id="idea">
+    <h2 class="goldtext">Почему мы это делаем</h2>
+    <p class="big">Раньше игру делали годами. Теперь нейросеть помогает собрать её за вечер.</p>
+    <p class="lit">Большие магазины игр выросли в мире, где создать игру было трудно и дорого. Этот мир заканчивается. Скоро игр станет больше, чем времени, чтобы в них играть, а пересобрать можно будет почти любую.</p>
+    <p class="lit">Когда код перестаёт быть редкостью, ценным остаётся то, что нельзя сгенерировать: кто придумал, кто довёл до ума, кто честно назвал, чью идею продолжил.</p>
+    <p class="big">ИИгры онлайн держатся на доверии и чести.</p>
+    <p class="lit">Автор всегда остаётся автором. Доработка всегда называет оригинал. Запретить копирование мы не можем — этого уже не может никто. Зато можем сделать так, чтобы быть честным было выгоднее.</p>
+    <div class="links" style="margin-top:20px"><a class="btn" href="#authors">Стать частью этого →</a><a class="btn ghost" href="#charity">Наш благотворительный проект</a></div>
+  </section>
+
+  <section class="block">
+    <span class="eyebrow">Возможности</span>
+    <h2 class="goldtext" style="margin-top:12px">Шесть вещей, которых нет в обычных магазинах игр</h2>
+    <p class="lead lit" style="margin-bottom:24px">Обычный магазин продаёт файлы. Здесь можно продолжить чужую историю — и заработать на своей.</p>
+    <div class="bento">
+      <div class="tile big">
+        <span class="tnum">01</span><h3>Цепочки доработок</h3>
+        <p>Каждая версия помнит, на чём выросла. Автор оригинала получает свою долю с каждой продажи — даже через десять доработок.</p>
+        <div class="chainviz" aria-hidden="true">
+          <div class="node n0"><b>А</b><span>оригинал</span></div><i class="link"></i>
+          <div class="node n1"><b>Б</b><span>доработка</span></div><i class="link"></i>
+          <div class="node n2"><b>В</b><span>ещё лучше</span></div>
+          <div class="royalty">10% → автору «А» с каждой продажи «В»</div>
+        </div>
+        <a class="more" href="#remix">Как это устроено →</a>
+      </div>
+      <div class="tile"><span class="ticon red"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M10 8.5l5 3.5-5 3.5z" fill="currentColor"/></svg></span><span class="tnum">02</span><h3>Демо до покупки</h3><p>Кот в мешке остался только в названиях игр. Всё платное сначала пробуется.</p></div>
+      <div class="tile"><span class="ticon gold"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 10h8M8 13h5"/></svg></span><span class="tnum">03</span><h3>Чат с переводом</h3><p>Автор из Бразилии? Перевод в одно нажатие, бесплатно для всех.</p></div>
+      <div class="tile"><span class="ticon green"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="9" r="3"/><circle cx="16" cy="9" r="3"/><path d="M3 19c1-3 3-4 5-4s4 1 5 4M11 19c1-3 3-4 5-4s4 1 5 4"/></svg></span><span class="tnum">04</span><h3>Игры вдвоём, втроём…</h3><p>Нашли единомышленника — делайте проект вместе. Все авторы в карточке, все в доле.</p></div>
+      <div class="tile"><span class="ticon red"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/></svg></span><span class="tnum">05</span><h3>Чаевые любому автору</h3><p>Благодарность — единственная валюта без инфляции.</p></div>
+      <div class="tile"><span class="ticon gold"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 18a8 8 0 1 1 16 0"/><path d="M12 18l4-6"/></svg></span><span class="tnum">06</span><h3>Демо не тормозит</h3><p>Качество на выбор. Красота или скорость — решаете вы, а не ваш ноутбук.</p></div>
+    </div>
+    <div class="links" style="margin-top:22px"><a class="btn" href="#catalog">Попробовать демо</a><a class="btn ghost" href="#news">Что нового</a></div>
+  </section>
+
+  <section class="block" id="trust">
+    <span class="eyebrow">Доверие</span>
+    <h2 class="goldtext" style="margin-top:12px">Не верьте нам на слово</h2>
+    <p class="lead lit" style="margin-bottom:18px">Каждый пункт ниже проверяется за минуту. Проверили — отметьте галочкой.</p>
+    <div class="tmeter"><div class="tbar"><i id="tFill"></i></div><span id="tTxt">Вы проверили 0 из 6</span></div>
+    <div class="tgrid"><div class="tcard" data-ti="0"><div class="thead"><span class="tnum">01</span><button class="tcheck" type="button" data-tcheck="0" aria-pressed="false" aria-label="Отметить: проверил">✓</button></div><h3>Живой человек, а не аноним</h3><p>Площадку ведёт Тер-Матевосов Дмитрий Сергеевич, самозанятый, ИНН 695207648961.</p><div class="links"><a class="btn gold sm" id="innBtn" href="https://npd.nalog.ru/check-status/" target="_blank" rel="noopener">Проверить в ФНС</a></div><p class="hint">ИНН скопируется сам — вставьте его на сайте ФНС.</p></div><div class="tcard" data-ti="1"><div class="thead"><span class="tnum">02</span><button class="tcheck" type="button" data-tcheck="1" aria-pressed="false" aria-label="Отметить: проверил">✓</button></div><h3>Мы никогда не спросим</h3><p>Пароль, код из СМС, данные карты — ни в чате, ни в почте, ни в Telegram. Просят от нашего имени — это не мы.</p><div class="links"><a class="btn ghost sm" href="#claims">Сообщить о мошеннике</a></div></div><div class="tcard" data-ti="2"><div class="thead"><span class="tnum">03</span><button class="tcheck" type="button" data-tcheck="2" aria-pressed="false" aria-label="Отметить: проверил">✓</button></div><h3>Деньги — только официально</h3><p>Покупки — через платёжный сервис с чеком. Переводов «на карту» за игры мы не просим никогда.</p><div class="links"><a class="btn ghost sm" href="#terms">Прочитать правила</a></div></div><div class="tcard" data-ti="3"><div class="thead"><span class="tnum">04</span><button class="tcheck" type="button" data-tcheck="3" aria-pressed="false" aria-label="Отметить: проверил">✓</button></div><h3>Сначала попробуйте</h3><p>У каждой платной игры есть демо. Не запускается — вернём деньги после проверки.</p><div class="links"><a class="btn ghost sm" href="#catalog">Открыть демо</a></div></div><div class="tcard" data-ti="4"><div class="thead"><span class="tnum">05</span><button class="tcheck" type="button" data-tcheck="4" aria-pressed="false" aria-label="Отметить: проверил">✓</button></div><h3>Всё на виду</h3><p>Соглашение, дорожная карта и честная плашка «бета-тест». Пожаловаться можно в один клик.</p><div class="links"><a class="btn ghost sm" href="#roadmap">Дорожная карта</a></div></div><div class="tcard" data-ti="5"><div class="thead"><span class="tnum">06</span><button class="tcheck" type="button" data-tcheck="5" aria-pressed="false" aria-label="Отметить: проверил">✓</button></div><h3>Мы живые и на связи</h3><p>Telegram, VK и Boosty с историей публикаций: посмотрите, кто мы, прежде чем что-то покупать.</p><div class="links"><a class="btn ghost sm" href="https://t.me/dsaskarov" target="_blank" rel="noopener">Наш Telegram</a></div></div></div>
+  </section>
+
+  <section class="block" id="contacts">
+    <h2 class="goldtext">Связь и поддержка</h2>
+    <div class="two">
+      <div class="box">
+        <h3>Написать нам</h3>
+        <div class="links">
+          <a class="btn ghost sm" href="https://t.me/dsaskarov" target="_blank" rel="noopener">Telegram</a>
+          <a class="btn ghost sm" href="https://vk.com/dsaskarov" target="_blank" rel="noopener">VK</a>
+          <a class="btn ghost sm" href="mailto:dsaskarov.dmitry@gmail.com">Почта</a>
+        </div>
+        <p class="hint">WhatsApp и MAX: @dsaskarov · почта: dsaskarov.dmitry@gmail.com</p>
+      </div>
+      <div class="box">
+        <h3>Поддержать площадку</h3>
+        <p class="hint">Площадка живёт без рекламы, поэтому живёт скромно. Если хочется это исправить:</p>
+        <div class="links"><a class="btn gold sm" href="https://boosty.to/dsaskarov" target="_blank" rel="noopener">Поддержать на Boosty</a></div>
+        <p class="hint">Реквизиты для перевода на карту появятся здесь.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div data-view="catalog" id="catalog" hidden>
+  <section class="block" style="padding-top:44px">
+    <h2 class="goldtext">Каталог</h2>
+    <p class="lead lit" style="margin-bottom:18px">Всё, что сделали люди вместе с нейросетями. Или наоборот.</p>
+    <div class="panel">
+      <div class="tabs" role="tablist" id="tabs"></div>
+      <div class="filters">
+        <div class="fgroup"><span>Цена</span><div class="seg" data-k="price">
+          <button data-v="any" aria-pressed="true">Любая</button><button data-v="free" aria-pressed="false">Бесплатно</button><button data-v="paid" aria-pressed="false">Платно</button></div></div>
+        <div class="fgroup"><span>Как запустить</span><div class="seg" data-k="fmt">
+          <button data-v="any" aria-pressed="true">Любой способ</button><button data-v="demo" aria-pressed="false">В браузере</button><button data-v="dl" aria-pressed="false">Скачать</button></div></div>
+        <label class="toggle"><input type="checkbox" id="remixOnly"> Только доработки</label>
+        <label class="search"><input id="q" maxlength="80" type="search" placeholder="Название или автор" aria-label="Поиск"></label>
+      </div>
+    </div>
+    <div class="grid nocopy" id="grid"></div>
+    <p class="empty" id="empty">Загружаем каталог…</p>
+  </section>
+</div>
+
+<div data-view="news" id="news" hidden>
+  <section class="block" style="padding-top:44px">
+    <div class="headrow"><div><h2 class="goldtext">Новости</h2><p class="hint">Новости площадки и авторов. Свои новости публикуются после проверки модератором и фильтрами.</p></div><button class="btn gold" id="newsBtn" type="button">Предложить новость</button></div>
+    <div class="news" id="newsList"></div>
+    <p class="empty" id="newsEmpty">Загружаем новости…</p>
+    <p style="margin-top:22px"><a class="more" href="#authors">Хотите, чтобы написали о вашем проекте? Сначала опубликуйте его →</a></p>
+  </section>
+</div>
+
+<div data-view="authors" id="authors" hidden>
+  <section class="block" style="padding-top:44px">
+    <h2 class="goldtext">Авторам</h2>
+    <p class="lead lit" style="margin-bottom:22px">Если ваша игра запустилась с первого раза, вы либо гений, либо ещё не пробовали её запускать. В обоих случаях ждём.</p>
+    <div class="two">
+      <div class="box">
+        <h3>Как опубликовать</h3>
+        <p style="margin:0">Опубликуйте сами: после проверки, что вы не робот, проект сразу появится в каталоге.</p>
+        <div><button class="btn" id="pubBtn" type="button">Опубликовать проект</button></div>
+        <p style="margin:0">Или пришлите ссылку либо файл на почту:</p>
+        <div class="copyrow"><code id="mail">dsaskarov.dmitry@gmail.com</code><button class="btn sm ghost" data-copy="mail">Скопировать</button></div>
+        <p class="hint">Или в Telegram: <a href="https://t.me/dsaskarov" target="_blank" rel="noopener">@dsaskarov</a>. Первые 20 авторов попадут в стартовую подборку.</p>
+      </div>
+      <div class="box">
+        <h3>Условия публикации</h3>
+        <ul>
+          <li>Размещение бесплатное, рекламы на странице проекта нет.</li>
+          <li>У платного проекта обязательно есть демо.</li>
+          <li>С каждой продажи: 1% — площадке, 10% — автору оригинала, 10% — автору версии, остальное — авторам промежуточных версий.</li>
+          <li>Цена доработки не ниже цены версии, на которой она основана.</li>
+          <li>Деньги получают только официально оформленные авторы: самозанятые, ИП и компании.</li>
+          <li>Копировать проекты на другие площадки запрещено соглашением.</li>
+          <li>Никакой рекламы и ничего постороннего: алкоголь, ставки, корм для котиков и прочие товары не пройдут фильтр — такие публикации не запускаются вовсе.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+  <section class="block" id="remix">
+    <h2 class="goldtext">Как работают доработки</h2>
+    <p class="lead lit" style="margin-bottom:22px">Доработка — это продолжение чужой мысли. В отличие от большинства мыслей, здесь всегда указан автор.</p>
+    <div class="steps">
+      <div class="step"><h3>Берёте проект</h3><p>Любой проект с открытым кодом можно доработать: уровни, графика, механики.</p></div>
+      <div class="step"><h3>Или пишете автору</h3><p>Чат прямо на сайте, с переводом на любой язык. Вместе — быстрее и честнее.</p></div>
+      <div class="step"><h3>Ставите цену</h3><p>Бесплатные версии остаются бесплатными. За свою можно назначить цену — не ниже основы.</p></div>
+      <div class="step"><h3>Все в доле</h3><p>Каждая продажа делится по цепочке. Чем дальше расходится идея, тем больше получает её автор.</p></div>
+    </div>
+    <div class="links" style="margin-top:22px"><a class="btn gold" href="#catalog">Посмотреть, что уже опубликовали →</a></div>
+  </section>
+  <section class="block" id="team">
+    <h2 class="goldtext">Команда</h2>
+    <p class="lead lit" style="margin-bottom:20px">Ищем модераторов, разработчиков, дизайнеров и переводчиков. Работа удалённая, по договору; оплата — доля от прибыли площадки: команда вместе получает 25% прибыли, и эта доля делится поровну между всеми участниками. Растёт площадка — растёт и ваша доля.</p>
+    <form class="box" id="teamForm" novalidate style="max-width:680px">
+      <div class="two"><label class="field">Имя<input id="rN" maxlength="60" autocomplete="name"></label>
+      <label class="field">Роль<select id="rRole"><option>Модератор</option><option>Разработчик</option><option>Дизайнер</option><option>Переводчик</option><option>Другое</option></select></label></div>
+      <label class="field">Как с вами связаться (Telegram или почта)<input id="rC" maxlength="100"></label>
+      <label class="field">О себе и опыте<textarea id="rX" rows="4" maxlength="2000"></textarea></label>
+      <label class="check"><input type="checkbox" id="rRobot"> Я не робот</label>
+      <div><button class="btn" type="submit">Отправить резюме</button></div>
+      <p class="hint">Резюме видит только администрация.</p>
+    </form>
+  </section>
+</div>
+
+<div data-view="charity" id="charity" hidden>
+  <section class="block" style="padding-top:44px">
+    <span class="eyebrow">Благотворительный проект · идея</span>
+    <h2 class="goldtext" style="margin-top:14px"><i class="ii">ИИ</i> — каждому</h2>
+    <p class="punch lit" style="margin-bottom:14px">Нейросети уже умеют помогать. Осталось научить людей ими пользоваться.</p>
+    <p class="lead lit" style="margin-bottom:24px">Мы хотим бесплатно помогать тем, кому ИИ нужнее всего, а освоить его сложнее всего: пожилым людям, волонтёрам и небольшим благотворительным организациям, учителям в малых городах, людям с инвалидностью.</p>
+    <div class="cards3">
+      <div class="why"><span class="who-for">Учим</span><h3>Бесплатные занятия</h3><p class="lit">Простые уроки без терминов: как попросить нейросеть написать письмо, разобраться в документе или найти лекарство в справочнике.</p></div>
+      <div class="why"><span class="who-for">Помогаем</span><h3>ИИ-наставники</h3><p class="lit">Авторы площадки дарят час-другой: настраивают помощника для волонтёрского штаба, школы или фонда.</p></div>
+      <div class="why"><span class="who-for">Создаём</span><h3>Полезные проекты</h3><p class="lit">Бесплатные приложения для добрых дел, сделанные авторами ИИгр. С тем же правилом: автор всегда назван.</p></div>
+    </div>
+    <div class="links" style="margin-top:24px"><button class="btn" type="button" data-help="Хочу помочь">Хочу помочь</button><button class="btn ghost" type="button" data-help="Нужна помощь">Нужна помощь</button></div>
+    <p class="hint" style="margin-top:12px">Проект готовится, у него будет отдельный сайт. Заявки уже принимаем.</p>
+  </section>
+</div>
+
+<div data-view="terms" id="terms" hidden>
+  <section class="block legal" style="padding-top:44px">
+    <h2 class="goldtext">Пользовательское соглашение</h2>
+    <p class="draftnote">Черновик. Перед запуском текст проверит юрист.</p>
+    <h3>1. Общие положения</h3>
+    <ol><li>Соглашение регулирует использование сайта «ИИгры онлайн» (далее — Площадка). Администратор Площадки — Тер-Матевосов Дмитрий Сергеевич (самозанятый), ИНН 695207648961. Почта для обращений и претензий: dsaskarov.dmitry@gmail.com, askarov.dmitry@yandex.ru.</li>
+    <li>Регистрируясь или публикуя проект, пользователь принимает это соглашение полностью.</li></ol>
+    <h3>2. Аккаунт</h3>
+    <ol><li>Пользователь указывает достоверные данные и сам отвечает за сохранность пароля.</li>
+    <li>Пользоваться Площадкой можно в любом возрасте. Детям до 14 лет (в США — до 13 лет, в ЕС — до возраста, установленного страной, от 13 до 16 лет) регистрироваться можно только с согласия родителей.</li>
+    <li>Покупать, продавать, получать выплаты и распоряжаться деньгами на Площадке можно с 18 лет.</li></ol>
+    <h3>3. Публикация проектов</h3>
+    <ol><li>Автор подтверждает, что у него есть права на проект и на всё, что в нём использовано.</li>
+    <li>Проект публикуется после проверки «не робот», антивируса и автоматических фильтров.</li>
+    <li>Проект размещается на сервере или в облаке автора, а на Площадке — ссылка на него. По предложению администратора проект можно разместить на серверах Площадки.</li>
+    <li>Каждый проект и каждое его обновление автоматически проверяются на вирусы и доступность: ссылка должна вести на существующий, открывающийся проект. Недоступный проект скрывается до исправления.</li>
+    <li>Запрещены: реклама любых товаров и услуг, не относящихся к проекту (алкоголь, ставки, корм для котиков и т. п.); вредоносный код; незаконный контент; чужие персонажи и бренды без прав. Такие проекты не запускаются, а уже опубликованные снимаются.</li>
+    <li>У платного проекта обязательно есть демо.</li></ol>
+    <h3>4. Доработки и авторство</h3>
+    <ol><li>Проект с открытым кодом можно доработать на Площадке. В новой версии всегда указаны все предыдущие авторы.</li>
+    <li>Цена доработки не может быть ниже цены версии, на которой она основана.</li>
+    <li>Копировать проекты Площадки на другие сайты без согласия авторов запрещено.</li></ol>
+    <h3>5. Деньги</h3>
+    <ol><li>С каждой продажи: 1% — Площадке, 10% — автору оригинала, 10% — автору проданной версии, остальное — авторам промежуточных версий в пропорциях, рассчитанных Площадкой.</li>
+    <li>Выплаты получают только официально оформленные авторы: самозанятые, индивидуальные предприниматели и юридические лица.</li>
+    <li>Деньги покупателя удерживаются 3 дня. Если жалоб нет, по истечении срока они автоматически распределяются авторам. Если жалоба подана и не рассмотрена за 3 дня, деньги автоматически возвращаются покупателю.</li>
+    <li>Если проект не запускается или работает с существенными ошибками, деньги возвращаются после проверки. Возврат по другим основаниям — в случаях, предусмотренных законом.</li>
+    <li>По одной покупке возможен один возврат. После возврата доступ к проекту отзывается. Злоупотребление возвратами ведёт к их ограничению для аккаунта.</li></ol>
+    <h3>6. Общение</h3>
+    <ol><li>На Площадке можно писать авторам, создавать совместные проекты, участвовать в обсуждениях и общем чате.</li>
+    <li>В общем чате можно писать без регистрации. Каждое сообщение проходит проверку «не робот».</li>
+    <li>Все сообщения, включая личные, проверяют автоматические фильтры и ИИ-модерация: спам, реклама, ссылки на сторонние ресурсы, нецензурная лексика, оскорбления, угрозы, мошенничество, раскрытие чужих личных данных.</li>
+    <li>Запрещены: оскорбления и травля; спам и флуд; любая реклама, включая алкоголь, ставки и сторонние товары; мошенничество и выманивание денег или данных; угрозы; незаконный контент; выдача себя за другого человека.</li>
+    <li>За нарушение сообщение удаляется, а автор блокируется временно или навсегда. Решение можно обжаловать через форму «Жалобы и претензии».</li></ol>
+    <h3>7. Право, претензии и изменения</h3>
+    <ol><li>Соглашение — договор между пользователем и администратором. Принимая его, пользователь соглашается с правилами Площадки.</li>
+    <li>Администратор соблюдает законодательство Российской Федерации, а для пользователей из других стран — также обязательные нормы их страны, в том числе о защите прав потребителей и персональных данных (например, в странах ЕС).</li>
+    <li>К соглашению применяется право Российской Федерации, если обязательные нормы страны пользователя не требуют иного.</li>
+    <li>Споры сначала решаются в претензионном порядке: через форму «Жалобы и претензии» или почту администратора. Срок ответа — не более 30 дней.</li>
+    <li>Новая редакция соглашения публикуется на этой странице. О существенных изменениях зарегистрированные пользователи узнают заранее.</li></ol>
+  </section>
+</div>
+
+<div data-view="privacy" id="privacy" hidden>
+  <section class="block legal" style="padding-top:44px">
+    <h2 class="goldtext">Согласие на обработку персональных данных</h2>
+    <p class="draftnote">Черновик. Перед запуском текст проверит юрист.</p>
+    <p>Регистрируясь на сайте «ИИгры онлайн», я свободно, своей волей и в своём интересе даю согласие Тер-Матевосову Дмитрию Сергеевичу (самозанятый), ИНН 695207648961, почта dsaskarov.dmitry@gmail.com, askarov.dmitry@yandex.ru (далее — Оператор) на обработку моих персональных данных на следующих условиях.</p>
+    <h3>Какие данные</h3>
+    <ol><li>Адрес электронной почты, имя или ник.</li>
+    <li>Для авторов, получающих выплаты: ФИО, ИНН, статус (самозанятый или ИП), реквизиты для выплат.</li>
+    <li>Технические данные: IP-адрес, сведения о браузере и устройстве.</li></ol>
+    <h3>Для чего</h3>
+    <ol><li>Регистрация и работа учётной записи.</li><li>Публикация проектов и указание авторства.</li><li>Выплаты авторам и исполнение налоговых обязанностей.</li><li>Связь с пользователем и ответы на обращения.</li><li>Рассылка новостей — только тем, кто на неё подписался.</li><li>Защита сайта от мошенничества и атак.</li></ol>
+    <h3>Что с ними делают</h3>
+    <p>Сбор, запись, систематизация, накопление, хранение, уточнение, извлечение, использование, передача (предоставление, доступ), обезличивание, блокирование, удаление и уничтожение — с использованием средств автоматизации и без них. Публично на сайте видны только ник и опубликованные проекты.</p>
+    <h3>Кому передаются</h3>
+    <p>Только в объёме, нужном для целей выше: платёжному сервису и банку — для выплат; налоговой службе — при уплате налога через партнёрскую программу; хостинг-провайдеру — для хранения.</p>
+    <h3>Срок и отзыв</h3>
+    <p>За пользователя младше 14 лет (в США — 13 лет, в ЕС — возраста, установленного страной) согласие даёт родитель или законный представитель.</p>
+    <p>Согласие действует до удаления учётной записи или до его отзыва. Отозвать согласие можно письмом на dsaskarov.dmitry@gmail.com; Оператор прекратит обработку в сроки, установленные законом.</p>
+  </section>
+</div>
+
+<div data-view="talk" id="talk" hidden>
+  <section class="block" style="padding-top:44px">
+    <h2 class="goldtext">Обсуждения</h2>
+    <p class="lead lit" style="margin-bottom:18px">Каким должен стать сайт, куда идёт индустрия, что добавить в любимый проект. Здесь решения рождаются раньше, чем код.</p>
+    <div class="seg" id="topicSeg" style="margin-bottom:16px"><button data-t="site" aria-pressed="true">Развитие сайта</button><button data-t="industry" aria-pressed="false">Индустрия ИИ-игр</button><button data-t="wishes" aria-pressed="false">Пожелания к проектам</button></div>
+    <form class="box" id="talkForm" novalidate style="max-width:820px;margin-bottom:18px">
+      <label class="field">Ваше сообщение<textarea id="talkX" rows="3" maxlength="1000"></textarea></label>
+      <div class="links"><label class="field" style="flex:1 1 180px">Имя или ник<input id="talkN" maxlength="30" placeholder="Пусто — анонимно, с вашим номером"></label>
+      <label class="check"><input type="checkbox" id="talkRobot"> Я не робот</label><button class="btn" type="submit">Отправить</button></div>
+    </form>
+    <div class="posts" id="talkList"></div>
+    <p class="empty" id="talkEmpty">Загружаем…</p>
+  </section>
+</div>
+
+<div data-view="claims" id="claims" hidden>
+  <section class="block" style="padding-top:44px">
+    <h2 class="goldtext">Жалобы и претензии</h2>
+    <p class="lead lit" style="margin-bottom:18px">Что-то пошло не так? Расскажите. Мы рассматриваем каждое обращение и отвечаем не позже чем через 30 дней — обычно гораздо быстрее.</p>
+    <form class="box" id="claimForm" novalidate style="max-width:680px">
+      <div class="two"><label class="field">Тип обращения<select id="cType"><option>Жалоба на проект</option><option>Жалоба на пользователя или сообщение</option><option>Претензия по оплате или возврату</option><option>Обжалование блокировки</option><option>Другое</option></select></label>
+      <label class="field">Почта для ответа<input id="cMail" maxlength="120" type="email" autocomplete="email"></label></div>
+      <label class="field">Ссылка или название проекта (если есть)<input id="cRef" maxlength="200"></label>
+      <label class="field">Суть обращения<textarea id="cX" rows="5" maxlength="3000"></textarea></label>
+      <label class="check"><input type="checkbox" id="cRobot"> Я не робот</label>
+      <div><button class="btn" type="submit">Отправить обращение</button></div>
+      <p class="hint">Обращение видит только администрация.</p>
+    </form>
+  </section>
+</div>
+
+<div data-view="roadmap" id="roadmap" hidden>
+  <section class="block" style="padding-top:44px">
+    <h2 class="goldtext">Дорожная карта</h2>
+    <p class="lead lit" style="margin-bottom:20px">Что уже сделано и что впереди. Обновляется по мере работы.</p>
+    <div class="road">
+      <div class="stage"><span class="st done">Готово</span><div><h3>1. Черновик сайта</h3><p>Каталог с цепочками доработок, топ, новости, редактор, вход и регистрация (образец), чаты, документы-черновики, светлая и тёмная темы.</p></div></div>
+      <div class="stage"><span class="st now">Сейчас</span><div><h3>2. Проверка и правки</h3><p>Проверка черновика по чек-листу, доработка текстов и правовых документов, проверка идей на оригинальность.</p></div></div>
+      <div class="stage"><span class="st next">Впереди</span><div><h3>3. Первые авторы</h3><p>Приглашение в сообществах, цель — 20 заявок. Публикация первых проектов.</p></div></div>
+      <div class="stage"><span class="st next">Впереди</span><div><h3>4. Правовая база</h3><p>Соглашение и согласие на обработку данных — проверка юристом. Форма деятельности, запрос в ФНС.</p></div></div>
+      <div class="stage"><span class="st next">Впереди</span><div><h3>5. Настоящий сайт</h3><p>Сервер в России и резервный за рубежом, домен, защита от DDoS, ежедневные копии.</p></div></div>
+      <div class="stage"><span class="st next">Впереди</span><div><h3>6. Аккаунты и модерация</h3><p>Регистрация, невидимая проверка «не робот», фильтры и ИИ-модерация, жалобы, блокировки.</p></div></div>
+      <div class="stage"><span class="st next">Впереди</span><div><h3>7. Публикация и демо</h3><p>Загрузка проектов, антивирус, запуск демо в браузере с выбором качества.</p></div></div>
+      <div class="stage"><span class="st next">Впереди</span><div><h3>8. Деньги</h3><p>Платёжный сервис, удержание на срок жалоб, выплаты по цепочке, 1% площадке, налоги авторов.</p></div></div>
+      <div class="stage"><span class="st next">Впереди</span><div><h3>9. Сообщество</h3><p>Живой чат, обсуждения, личные сообщения с переводом, совместные проекты, рейтинг и отзывы.</p></div></div>
+      <div class="stage"><span class="st next">Впереди</span><div><h3>10. Языки и приложение</h3><p>Английский, затем хинди, арабский, китайский и другие. Установка сайта как приложения.</p></div></div>
+      <div class="stage"><span class="st next">Впереди</span><div><h3>11. «ИИ — каждому»</h3><p>Благотворительный проект и его отдельный сайт.</p></div></div>
+    </div>
+  </section>
+  <section class="block" id="qaBox" hidden>
+    <h2 class="goldtext">Чек-лист проверки</h2>
+    <p class="lead lit">Виден только вам. Галочки запоминаются в этом браузере.</p>
+    <div class="qa" id="qaList"></div>
+    <div class="links" style="margin-top:14px"><button class="btn ghost sm" id="qaReset" type="button">Снять все галочки</button></div>
+  </section>
+</div>
+
+<div data-view="me" id="me" hidden>
+  <section class="block" style="padding-top:44px">
+    <h2 class="goldtext">Личный кабинет</h2>
+    <p class="lead lit" style="margin-bottom:20px" id="meLead">Здесь хранится всё ваше: профиль, избранное, покупки и подписка на новости.</p>
+    <p class="empty" id="meLock" hidden>Кабинет доступен после входа.</p>
+    <div id="meBody">
+      <div class="mecard bg0" id="meCard"><div class="meava" id="meAva"></div><div class="meinfo"><b id="meName">Безымянный герой</b><span class="memeta" id="meMeta"></span><span id="meBioV"></span><div class="metags" id="meTags"></div><div class="mecont" id="meCont"></div><div class="badges" id="meBadges"></div></div></div>
+      <div class="two" style="margin-top:20px">
+        <form class="box" id="meForm" novalidate><h3>Профиль и оформление</h3>
+          <div class="two"><label class="field">Ник<input id="meNick" maxlength="30" autocomplete="nickname"></label>
+          <label class="field">Почта<input id="meMail" maxlength="120" type="email" autocomplete="email"></label></div>
+          <label class="field">О себе<textarea id="meBio" rows="2" maxlength="160" placeholder="Например: делаю головоломки по ночам"></textarea></label>
+          <details class="more" id="meMore"><summary>Дополнительно — по желанию</summary>
+            <div class="two"><label class="field">Возраст<input id="meAge" type="number" min="1" max="120" inputmode="numeric"></label><label class="field">Город<input id="meCity" maxlength="40"></label></div>
+            <label class="field">Увлечения через запятую<input id="meHobby" maxlength="200" placeholder="музыка, футбол, пиксель-арт"></label>
+            <div class="field">Любимые жанры<div class="chipsel" id="meGenres"></div></div>
+            <div class="field">Я на площадке<div class="chipsel" id="meRoles"></div></div>
+            <label class="field">Ссылка на ваш канал или страницу<input id="meLink" maxlength="300" type="url" placeholder="https://"></label>
+          </details>
+          <details class="more"><summary>Контакты — вы решаете, что показывать</summary>
+            <div class="crow"><label class="field">Телефон<input id="mePhone" type="tel" maxlength="20" autocomplete="tel"></label><label class="check"><input type="checkbox" id="vPhone"> Показывать</label></div>
+            <label class="check"><input type="checkbox" id="vMail"> Показывать почту другим</label>
+            <div class="crow"><label class="field">Telegram<input id="meTg" maxlength="40" placeholder="@ник"></label><label class="check"><input type="checkbox" id="vTg"> Показывать</label></div>
+            <div class="crow"><label class="field">VK<input id="meVk" maxlength="40" placeholder="ник или id"></label><label class="check"><input type="checkbox" id="vVk"> Показывать</label></div>
+            <div class="crow"><label class="field">Другая соцсеть<input id="meOther" maxlength="60" placeholder="Например, Discord: ник"></label><label class="check"><input type="checkbox" id="vOther"> Показывать</label></div>
+            <p class="hint">Скрытые контакты видите только вы. Публичные профили появятся вместе с регистрацией на настоящем сайте.</p>
+          </details>
+          <div class="field">Аватарка<div class="links"><label class="btn ghost sm" style="cursor:pointer">Загрузить фото<input type="file" id="meFile" accept="image/*" hidden></label><button class="btn ghost sm" type="button" id="meAvaDel">Убрать</button></div></div>
+          <div class="field">Фон профиля<div class="swatches" id="meBgs" role="group" aria-label="Фон профиля"></div></div>
+          <div><button class="btn sm" type="submit">Сохранить</button></div>
+          <p class="hint">Карточка сверху меняется сразу, сохраняется по кнопке. Профиль видите только вы.</p></form>
+        <div class="box"><h3>Рассылка</h3>
+          <p class="hint">Новые проекты, подборки недели и важные новости площадки. Не чаще раза в неделю и без спама — обещаем как авторы, которые сами не любят спам.</p>
+          <label class="check"><input type="checkbox" id="meSub"> <span>Согласен получать рассылку ИИгр на указанную почту. Отписаться можно в любой момент здесь или по ссылке в письме.</span></label>
+          <p class="hint" id="meSubState"></p></div>
+      </div>
+      <div class="box" style="margin-top:20px"><h3>Избранное</h3><div class="grid nocopy" id="favGrid"></div><p class="empty" id="favEmpty">Пока пусто. Добавляйте проекты кнопкой «В избранное» в карточке.</p></div>
+      <div class="two" style="margin-top:20px">
+        <div class="box"><h3>Покупки</h3><p class="hint">Покупок пока нет. Здесь будут купленные проекты, чеки и возвраты.</p></div>
+        <div class="box"><h3>Мои проекты</h3><p class="hint">Здесь будут ваши опубликованные проекты, продажи и выплаты.</p><div><a class="btn sm" href="#authors">Опубликовать проект</a></div></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div data-view="finance" id="finance" hidden>
+  <section class="block" style="padding-top:44px">
+    <p class="empty" id="finLock">Раздел доступен только администратору.</p>
+    <div id="finBody" hidden>
+      <div class="ftable" style="margin-top:4px"><div class="seg" id="finTab" role="group" aria-label="Раздел финансов"><button data-ft="money" aria-pressed="true">Деньги</button><button data-ft="traffic" aria-pressed="false">Посещаемость</button></div></div>
+      <div id="ftMoney">
+      <div class="headrow"><div><h2 class="goldtext">Финансы</h2><p class="hint">Видны только вам. Черновик: продажи и расходы вносятся вручную, на настоящем сайте продажи будут попадать сюда сами.</p></div>
+        <label class="field" style="min-width:190px">Период<select id="finPer"></select></label></div>
+      <div class="kpis" id="finKpi"></div>
+      <h3 style="margin:0 0 8px">Как делится прибыль за период</h3>
+      <div class="ftable"><table id="finSplit"></table></div>
+      <div class="two" style="margin-top:24px">
+        <div class="box"><h3>Продажи</h3>
+          <form class="form" id="fsForm" novalidate><div class="two"><label class="field">Дата<input id="fsD" type="date"></label><label class="field">Сумма, ₽<input id="fsA" type="number" min="0" step="1" inputmode="numeric"></label></div>
+          <label class="field">Проект<select id="fsP"></select></label><label class="check"><input type="checkbox" id="fsR"> Это возврат</label><div><button class="btn sm" type="submit">Добавить</button></div></form>
+          <div class="ftable"><table id="fsT"></table></div></div>
+        <div class="box"><h3>Расходы</h3>
+          <form class="form" id="feForm" novalidate><div class="two"><label class="field">Дата<input id="feD" type="date"></label><label class="field">Сумма, ₽<input id="feA" type="number" min="0" step="1" inputmode="numeric"></label></div>
+          <label class="field">На что<input id="feW" maxlength="80" placeholder="Хостинг, домен, реклама…"></label><div><button class="btn sm" type="submit">Добавить</button></div></form>
+          <div class="ftable"><table id="feT"></table></div></div>
+      </div>
+      <div class="box" style="margin-top:20px"><h3>Инвесторы</h3>
+        <p class="hint">Доля — до 10% прибыли каждому, всем вместе не больше 50%. Выплаты идут, пока инвестор не получит втрое больше вложенного.</p>
+        <form class="form" id="fiForm" novalidate><div class="two"><label class="field">Имя или компания<input id="fiN" maxlength="80"></label><label class="field">Вложено, ₽<input id="fiV" type="number" min="0" step="1" inputmode="numeric"></label></div>
+        <div class="two"><label class="field">Доля прибыли, % (до 10)<input id="fiS" type="number" min="0" max="10" step="0.5"></label><label class="field">Реквизиты для выплат (кратко)<input id="fiR" maxlength="120"></label></div>
+        <div><button class="btn sm" type="submit">Добавить инвестора</button></div></form>
+        <div class="ftable"><table id="fiT"></table></div></div>
+      <div class="box" style="margin-top:20px"><h3>Настройки расчёта</h3>
+        <div class="two"><label class="field">Комиссия площадки, %<input id="fcC" type="number" min="0" max="100" step="0.1"></label><label class="field">Налог, % (НПД: 4 с физлиц, 6 с компаний)<input id="fcT" type="number" min="0" max="50" step="0.5"></label><label class="field">Доля команды, % (делится поровну)<input id="fcM" type="number" min="0" max="50" step="1"></label><label class="field">Людей в команде<input id="fcP" type="number" min="0" step="1" inputmode="numeric"></label></div>
+        <div><button class="btn sm" id="fcSave" type="button">Сохранить настройки</button></div></div>
+      </div>
+      <div id="ftTraffic" hidden>
+        <div class="headrow" style="margin-top:18px"><div><h2 class="goldtext">Посещаемость</h2><p class="hint">Черновик видите только вы, поэтому здесь пока ваши собственные заходы. На настоящем сайте — все посетители, плюс Яндекс Метрика для источников и рекламы.</p></div>
+          <div class="seg" id="trRange"><button data-r="7" aria-pressed="false">7 дней</button><button data-r="30" aria-pressed="true">30 дней</button><button data-r="90" aria-pressed="false">90 дней</button></div></div>
+        <div class="kpis" id="trKpi"></div>
+        <div class="box" style="margin-bottom:20px"><h3>Визиты по дням</h3><div class="legend"><span><i style="background:var(--red)"></i>Посетители</span><span><i style="background:var(--gold)"></i>Администраторы</span></div><div class="vchart" id="trDays" role="img" aria-label="Визиты по дням"></div><div class="vaxis" id="trAxis"></div></div>
+        <div class="two">
+          <div class="box"><h3>Просмотры по разделам</h3><div class="legend"><span><i style="background:var(--red)"></i>Посетители</span><span><i style="background:var(--gold)"></i>Администраторы</span></div><div id="trPages"></div></div>
+          <div class="box"><h3>Путь к покупке</h3><p class="hint">Сколько визитов посетителей дошло до каждого шага (без администраторов).</p><div id="trFunnel"></div></div>
+        </div>
+        <div class="box" style="margin-top:20px"><h3>Как поднять оборот</h3><ul class="tips" id="trTips"></ul></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<footer class="nocopy">
+  <span>Ни одна нейросеть не пострадала при создании этого сайта. Пара человек — немного.</span>
+  <span><a href="#trust">Почему нам можно доверять</a> · <a href="#roadmap">Дорожная карта</a> · <a href="#claims">Жалобы и претензии</a> · <a href="#terms">Пользовательское соглашение</a> · <a href="#privacy">Согласие на обработку данных</a></span>
+  <span>© DSAskarov, ИИгры онлайн, 2026. Копирование дизайна, текстов и кода без разрешения автора запрещено.</span>
+</footer>
+</main>
+
+<dialog id="dlg"><div class="dlg" id="dlgBody"></div></dialog>
+
+<dialog id="chat"><div class="dlg">
+  <div class="links" style="justify-content:space-between"><h2 id="chatTitle">Сообщения</h2><button class="btn ghost sm" id="chatClose">Закрыть</button></div>
+  <label class="toggle"><input type="checkbox" id="autoTr"> Переводить автоматически на русский</label>
+  <div class="msgs" id="msgs"></div>
+  <form class="copyrow" id="chatForm"><input class="chatin" id="chatIn" style="flex:1 1 200px" placeholder="Сообщение" aria-label="Сообщение" maxlength="1000"><button class="btn sm" type="submit">Отправить</button></form>
+  <div class="links"><button class="btn gold sm" id="jointBtn" type="button">Предложить общий проект</button></div>
+  <p class="hint">Черновик: сообщения не сохраняются и никуда не уходят. Пример перевода показан заранее.</p>
+</div></dialog>
+
+<dialog id="auth"><form class="dlg" id="authForm" novalidate>
+  <h2 id="authTitle">Вход</h2>
+  <div class="actions"><button type="button" class="btn sm" data-m="in">Вход</button><button type="button" class="btn sm ghost" data-m="up">Регистрация</button></div>
+  <label class="field" id="nameField" hidden>Имя автора или ник<input id="nick" maxlength="30" autocomplete="nickname"></label>
+  <label class="field">Почта<input id="email" maxlength="120" type="email" autocomplete="email"></label>
+  <label class="field">Пароль<input id="pass" maxlength="128" type="password" autocomplete="current-password"></label>
+  <div id="consents" hidden>
+    <label class="check"><input type="checkbox" id="c1"> <span>Принимаю <a href="#terms">пользовательское соглашение</a>: правила площадки, доработки и проценты.</span></label>
+    <label class="check" style="margin-top:8px"><input type="checkbox" id="c2"> <span>Даю <a href="#privacy">согласие на обработку персональных данных</a>.</span></label>
+  </div>
+  <div id="authorBox" hidden style="display:grid;gap:8px">
+    <label class="check"><input type="checkbox" id="isAuthor"> Я буду публиковать проекты и получать деньги</label>
+    <div id="authorFields" hidden style="display:grid;gap:8px">
+      <label class="field">Статус<select id="aStatus"><option value="npd">Самозанятый (НПД)</option><option value="ip">ИП</option></select></label>
+      <label class="field">ИНН<input id="aInn" inputmode="numeric" maxlength="12" placeholder="12 цифр"></label>
+      <p class="hint">Выплаты — только официально оформленным авторам. Реквизиты для выплат укажете, когда подключим платёжный сервис.</p>
+    </div>
+  </div>
+  <label class="check"><input type="checkbox" id="aRobot"> Я не робот</label>
+  <p class="hint" id="authHint">Забыли пароль? Бывает с лучшими из нас.</p>
+  <div class="actions"><button class="btn" type="submit" id="authSubmit">Войти</button><button class="btn ghost" type="button" id="authClose">Отмена</button></div>
+</form></dialog>
+
+<dialog id="pub"><form class="dlg" id="pubForm" novalidate>
+  <h2>Опубликовать проект</h2>
+  <p class="hint">Проект появится в каталоге сразу после проверки, что вы не робот, и автоматического фильтра. Реклама и посторонний контент не пропускаются.</p>
+  <label class="field">Название<input id="pT" maxlength="80"></label>
+  <label class="field">Ссылка на проект или файл<input id="pL" maxlength="300" type="url" placeholder="https://"></label>
+  <label class="field">Пара слов о проекте<textarea id="pD" rows="3" maxlength="400"></textarea></label>
+  <label class="check"><input type="checkbox" id="pRobot"> Я не робот <span class="hint">— здесь будет проверка Google</span></label>
+  <label class="check"><input type="checkbox" id="pRules"> <span>Принимаю <a href="#terms">условия публикации</a></span></label>
+  <div class="actions"><button class="btn" type="submit">Опубликовать</button><button class="btn ghost" type="button" id="pClose">Отмена</button></div>
+</form></dialog>
+
+<dialog id="helpDlg"><form class="dlg" id="helpForm" novalidate>
+  <h2 id="helpTitle">Хочу помочь</h2>
+  <p class="hint" id="helpHint"></p>
+  <div class="two"><label class="field">Имя<input id="hN" maxlength="60" autocomplete="name"></label><label class="field">Как связаться (Telegram, телефон или почта)<input id="hC" maxlength="100"></label></div>
+  <label class="field">Город (если важно)<input id="hG" maxlength="60"></label>
+  <label class="field" id="hXl">Расскажите подробнее<textarea id="hX" rows="5" maxlength="3000"></textarea></label>
+  <label class="check"><input type="checkbox" id="hRobot"> Я не робот</label>
+  <label class="check"><input type="checkbox" id="hOk"> <span>Даю <a href="#privacy">согласие на обработку персональных данных</a></span></label>
+  <div class="actions"><button class="btn" type="submit">Отправить заявку</button><button class="btn ghost" type="button" id="hClose">Отмена</button></div>
+</form></dialog>
+<dialog id="repDlg"><form class="dlg" id="repForm" novalidate>
+  <h2>Пожаловаться</h2>
+  <p class="hint" id="repWhat"></p>
+  <div class="field" id="repReasons" role="radiogroup" aria-label="Причина"></div>
+  <label class="field">Подробнее своими словами (по желанию)<textarea id="repX" rows="3" maxlength="2000" spellcheck="true"></textarea></label>
+  <label class="field">Почта для ответа (по желанию)<input id="repMail" type="email" maxlength="120" autocomplete="email"></label>
+  <label class="check"><input type="checkbox" id="repRobot"> Я не робот</label>
+  <div class="actions"><button class="btn" type="submit">Отправить жалобу</button><button class="btn ghost" type="button" id="repClose">Отмена</button></div>
+  <p class="hint">Жалобу видит только модерация. Спасибо, что помогаете держать площадку в чистоте.</p>
+</form></dialog>
+<dialog id="newsDlg"><form class="dlg" id="newsForm" novalidate>
+  <h2>Предложить новость</h2>
+  <p class="hint">Новость проверят спам-фильтр, фильтр нецензурной лексики и модератор. Обычно это быстрее, чем кажется, но медленнее, чем хочется.</p>
+  <label class="field">Заголовок<input id="sT" maxlength="100"></label>
+  <label class="field">Текст<textarea id="sX" rows="5" maxlength="2000"></textarea></label>
+  <label class="check"><input type="checkbox" id="sRobot"> Я не робот <span class="hint">— здесь будет проверка Google</span></label>
+  <div class="actions"><button class="btn" type="submit">Отправить на проверку</button><button class="btn ghost" type="button" id="sClose">Отмена</button></div>
+</form></dialog>
+
+<dialog id="admin" class="wide"><div class="dlg">
+  <div class="links ahead" style="justify-content:space-between"><h2>Редактор сайта</h2><button class="btn ghost sm" id="adminClose">Закрыть</button></div>
+  <p class="hint">Изменения сразу видны всем, у кого открыт сайт. Редактор видите только вы.</p>
+  <div class="admin">
+    <div class="form">
+      <div class="links" style="justify-content:space-between"><strong>Проекты</strong><button class="btn sm" id="aNew">+ Добавить</button></div>
+      <label class="field"><input id="aQ" maxlength="80" type="search" placeholder="Найти проект" aria-label="Найти проект"></label>
+      <div class="alist" id="aList"></div>
+      <strong>Технические работы</strong>
+      <label class="check"><input type="checkbox" id="mOn"> Выключить сайт для посетителей</label>
+      <label class="field">Текст для посетителей (пусто — шутливый текст по умолчанию)<textarea id="mTxt" rows="2" maxlength="300"></textarea></label>
+      <div><button class="btn sm" id="mApply" type="button">Применить</button></div>
+      <strong style="margin-top:10px">Рассылка</strong>
+      <p class="hint" id="mSubs">Подписчиков: —</p>
+      <label class="field">Тема письма<input id="mT" maxlength="120"></label>
+      <label class="field">Текст письма<textarea id="mX" rows="4" maxlength="5000"></textarea></label>
+      <div><button class="btn sm" id="mSave" type="button">Сохранить письмо</button></div>
+      <p class="hint">Отправка подписчикам заработает на настоящем сервере через почтовый сервис.</p>
+      <div class="alist" id="mList"></div>
+      <strong style="margin-top:10px">Новости</strong>
+      <label class="field">Заголовок<input id="nT" maxlength="100"></label>
+      <label class="field">Текст<textarea id="nX" rows="3" maxlength="2000"></textarea></label>
+      <div><button class="btn sm" id="nAdd">Опубликовать новость</button></div>
+      <div class="alist" id="nList"></div>
+      <strong style="margin-top:10px">Обращения (жалобы и претензии)</strong>
+      <div class="alist" id="cList"><p class="hint">Пока нет.</p></div>
+      <strong style="margin-top:10px">Заявки «ИИ — каждому»</strong>
+      <div class="alist" id="hList"><p class="hint">Пока нет.</p></div>
+      <strong style="margin-top:10px">Резюме в команду</strong>
+      <div class="alist" id="rList"><p class="hint">Пока нет.</p></div>
+      <strong style="margin-top:10px">Тексты главной</strong>
+      <label class="field">Заголовок<input id="tTitle" maxlength="140" placeholder="Пусто — текст по умолчанию"></label>
+      <label class="field">Подзаголовок<textarea id="tSub" rows="3" maxlength="400" placeholder="Пусто — текст по умолчанию"></textarea></label>
+      <div><button class="btn sm" id="tSave">Сохранить тексты</button></div>
+    </div>
+    <form class="form" id="aForm" novalidate>
+      <strong id="aFormTitle">Новый проект</strong>
+      <label class="field">Название<input id="fT" maxlength="80"></label>
+      <div class="two">
+        <label class="field">Категория<select id="fC"><option value="game">ИИгра</option><option value="app">ПрИИложение</option><option value="mod">МодИИфикация</option><option value="server">Сервер</option></select></label>
+        <label class="field">Жанр или тема<input id="fG" maxlength="40"></label>
+      </div>
+      <div class="two">
+        <label class="field">Автор (ник без @)<input id="fA" maxlength="40"></label>
+        <label class="field">Цена, ₽ (0 — бесплатно)<input id="fP" type="number" min="0" step="1" inputmode="numeric"></label>
+      </div>
+      <label class="field">Соавторы (ники через запятую)<input id="fCo" maxlength="200"></label>
+      <div class="two">
+        <label class="field">Это доработка проекта<select id="fPar"></select></label>
+        <label class="field">Обложка<select id="fCv"><option value="0">Красная</option><option value="1">Графитовая</option><option value="2">Золотая</option></select></label>
+      </div>
+      <div class="checks">
+        <label class="check"><input type="checkbox" id="fDemo"> Демо в браузере</label>
+        <label class="check"><input type="checkbox" id="fDl"> Можно скачать</label>
+        <label class="check"><input type="checkbox" id="fSoon"> Скоро</label>
+        <label class="check"><input type="checkbox" id="fTop"> В топе на главной</label>
+      </div>
+      <label class="field">Описание<textarea id="fD" rows="3" maxlength="400"></textarea></label>
+      <label class="field">Ссылка на демо<input id="fDemoUrl" maxlength="300" type="url" placeholder="https://"></label>
+      <label class="field">Ссылка для скачивания<input id="fDlUrl" maxlength="300" type="url" placeholder="https://"></label>
+      <label class="field">Ссылка автора для чаевых (Boosty и т. п.)<input id="fTipUrl" maxlength="300" type="url" placeholder="https://"></label>
+      <div class="actions"><button class="btn" type="submit" id="aSave">Сохранить проект</button><button class="btn ghost" type="button" id="aReset">Очистить</button></div>
+    </form>
+  </div>
+</div></dialog>
+<button class="btn lcbtn" id="lcBtn" type="button">Чат онлайн</button>
+<div class="lc" id="lc" hidden>
+  <header><strong>Общий чат</strong><button class="btn ghost sm" id="lcClose" type="button">Свернуть</button></header>
+  <div class="msgs" id="lcMsgs"></div>
+  <form id="lcForm" novalidate>
+    <div class="links"><input class="chatin" id="lcName" maxlength="30" placeholder="Ник (пусто — «Аноним #номер»)" style="flex:1 1 140px"><label class="check"><input type="checkbox" id="lcRobot"> Я не робот</label></div>
+    <div class="copyrow"><input class="chatin" id="lcIn" maxlength="500" placeholder="Сообщение" style="flex:1 1 180px" aria-label="Сообщение"><button class="btn sm" type="submit">Отправить</button></div>
+    <p class="hint" style="font-size:.75rem">Сообщения проверяют фильтры: реклама, ссылки, мат и спам не пройдут.</p>
+  </form>
+</div>
+<div class="toast" id="toast" popover="manual"></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const R=document.documentElement;
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const S=(v,n)=>String(v??"").slice(0,n);
+const TS=v=>{v=Math.floor(Number(v));return v>0&&v<=Date.now()+6e4?v:0};
+const ARR=v=>Array.isArray(v)?v:[];
+const NUM=v=>{v=Number(v);return Number.isFinite(v)&&v>=0?Math.min(v,1e9):0};
+const KEY=k=>/^[a-z0-9_-]{1,24}$/i.test(k);
+const OBJN=o=>{const r={};if(o&&typeof o==="object"&&!Array.isArray(o))for(const k of Object.keys(o).slice(0,60))if(KEY(k))r[k]=NUM(o[k]);return r};
+const RESV=/dsaskarov|асkarov|адм[иi]н|admin|модер|moder|иигр|iigr|поддержк|support|claude|anthropic|официал|official/i;
+let ADMINS=[];
+const who=(n,id)=>{n=S(n,30).trim()||"Аноним";if(ADMINS.includes(id))return n+" ✓";return RESV.test(n)?"Аноним":n};
+const AVA=u=>/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+\/=]+$/.test(u||"")?u:"";
+const hl=s=>s.replace(/ИИ/g,'<i class="ii">ИИ</i>');
+const store={get(k,d){try{return localStorage.getItem(k)??d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+const CATS=[["all","Всё"],["game","ИИгры"],["app","ПрИИложения"],["mod","МодИИфикации"],["server","Серверы"]];
+const ONE={game:"ИИгра",app:"ПрИИложение",mod:"МодИИфикация",server:"Сервер"};
+const rub=n=>Number(n).toLocaleString("ru-RU")+" ₽";
+const safe=u=>(/^https:\/\/[^\s"'<>`]+$/i.test(u||"")||/^games\/[a-z0-9-]+\.html$/.test(u||""))&&(u||"").length<=300?u:"";
+const toast=m=>{const t=$("toast");t.textContent=m;clearTimeout(t._);
+  if(t.showPopover){try{if(t.matches(":popover-open"))t.hidePopover();t.showPopover()}catch(_){}}else{const d=[...document.querySelectorAll("dialog[open]")].pop();(d||document.body).appendChild(t);t.style.display="block"}
+  t._=setTimeout(()=>{if(t.hidePopover){try{t.hidePopover()}catch(_){}}else t.style.display="none"},3400)};
+let G=[],byId={},N=[],loaded=false,newsLoaded=false,dbFail=false,db=null;
+const st={cat:"all",price:"any",fmt:"any",remix:false,q:""};
+const DEF_TITLE=$("heroTitle").innerHTML,DEF_SUB=$("heroSub").textContent;
+
+/* Вкладки-страницы */
+const VIEWS=["home","catalog","news","talk","authors","charity","terms","privacy","claims","roadmap","finance","me"];
+function route(){
+  const h=location.hash.slice(1)||"home";let v=VIEWS.includes(h)?h:null,el=null;
+  if(!v){el=document.getElementById(h);const host=el&&el.closest("[data-view]");v=host?host.dataset.view:"home"}
+  document.querySelectorAll("[data-view]").forEach(s=>s.hidden=s.dataset.view!==v);
+  document.querySelectorAll("nav a").forEach(a=>{if(a.getAttribute("href")==="#"+v)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")});
+  if(el)setTimeout(()=>el.scrollIntoView(),0);else scrollTo(0,0);
+  if(typeof track==="function")track("pg",v);
+}
+addEventListener("hashchange",route);
+document.querySelectorAll("dialog").forEach(d=>d.addEventListener("click",e=>{const a=e.target.closest('a[href^="#"]');if(a)d.close()}));
+
+/* Тема и эффекты */
+const LOOK={auto:"Тема: авто",light:"Тема: светлая",dark:"Тема: тёмная"},ORDER=["auto","light","dark"];
+const FXN=["Выкл","Мягко","Обычно","Максимум"];
+const fine=matchMedia("(hover:hover) and (pointer:fine)").matches;
+function isDark(){const l=R.getAttribute("data-look");if(l)return l==="dark";const t=R.getAttribute("data-theme");if(t)return t==="dark";return matchMedia("(prefers-color-scheme: dark)").matches}
+function applyFx(){const on=R.dataset.fx==="2"&&!R.classList.contains("simple");R.classList.toggle("torch",fine&&on&&isDark());R.classList.toggle("tilt",fine&&on&&!isDark())}
+function setLook(l){if(l==="auto")R.removeAttribute("data-look");else R.setAttribute("data-look",l);$("lookSeg").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.l===l));store.set("look",l);applyFx()}
+function setFx(on){R.dataset.fx=on?"2":"1";$("fxSw").checked=on;store.set("fx2",on?"1":"0");applyFx()}
+function setSimple(on){R.classList.toggle("simple",on);$("simpleBtn").innerHTML=on?'<span class="lg-only">Полная версия</span><span class="sm-only">Полная</span>':'<span class="lg-only">Простая версия</span><span class="sm-only">Простая</span>';store.set("simple",on?"1":"0");applyFx()}
+const look0=store.get("look","auto");setLook(LOOK[look0]?look0:"auto");
+setFx(store.get("fx2",matchMedia("(prefers-reduced-motion: reduce)").matches?"0":"1")==="1");
+setSimple(store.get("simple","0")==="1");
+$("lookSeg").onclick=e=>{const b=e.target.closest("[data-l]");if(b)setLook(b.dataset.l)};
+$("fxSw").onchange=e=>setFx(e.target.checked);
+$("simpleBtn").onclick=()=>setSimple(!R.classList.contains("simple"));
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change",applyFx);
+new MutationObserver(applyFx).observe(R,{attributes:true,attributeFilter:["data-theme"]});
+if(fine){
+  let raf=0,mx=0,my=0;
+  addEventListener("pointermove",e=>{mx=e.clientX;my=e.clientY;if(!raf)raf=requestAnimationFrame(()=>{raf=0;R.style.setProperty("--mx",mx+"px");R.style.setProperty("--my",my+"px")})},{passive:true});
+  ["grid","topGrid"].forEach(id=>{const g=$(id);
+    g.addEventListener("pointermove",e=>{const c=e.target.closest(".card");if(!c)return;const r=c.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
+      c.style.setProperty("--cx",x+"px");c.style.setProperty("--cy",y+"px");c.style.setProperty("--rx",((.5-y/r.height)*8).toFixed(2)+"deg");c.style.setProperty("--ry",((x/r.width-.5)*8).toFixed(2)+"deg")},{passive:true});
+    g.addEventListener("pointerout",e=>{const c=e.target.closest(".card");if(c&&!c.contains(e.relatedTarget)){c.style.setProperty("--rx","0deg");c.style.setProperty("--ry","0deg")}});
+  });
+}
+
+/* Каталог */
+const chainOf=g=>{const a=[];let x=g,n=0;while(x&&n++<25){a.unshift(x);x=byId[x.par]}return a};
+const coOf=g=>Array.isArray(g.co)?g.co.filter(Boolean):[];
+function priceLabel(g){return g.soon?"Скоро":g.p?rub(g.p):"Бесплатно"}
+function cardHtml(g){const par=byId[g.par],co=coOf(g);return `<button class="card" data-id="${esc(g.id)}">
+  <div class="cover cv${Number(g.cv)||0}"><span>${esc(String(g.t||"?")[0])}</span></div>
+  <div class="info"><h3>${esc(g.t)}</h3><div class="author">@${esc(g.a)}${co.length?" и ещё "+co.length:""}</div>
+  ${g.soon||g.dl||g.ex?`<div class="tags">${g.ex?'<span class="tag soon">пример</span>':''}${g.soon?'<span class="tag soon">скоро</span>':''}${g.dl?'<span class="tag dl">можно скачать</span>':''}</div>`:''}
+  ${par?`<div class="lineage">↳ доработка «${esc(par.t)}»</div>`:''}
+  <div class="row"><span class="price ${g.soon?'soon':g.p?'':'free'}">${priceLabel(g)}</span><span class="genre">${hl(ONE[g.c]||"")} · ${esc(g.g)}</span></div></div></button>`}
+function setData(list){G=list.filter(g=>g&&g.id).map(g=>Object.assign({},g,{p:NUM(g.p),cv:Math.floor(NUM(g.cv))%24,order:Number(g.order)||0})).sort((a,b)=>(a.order??0)-(b.order??0));byId=Object.fromEntries(G.map(g=>[g.id,g]));render();if(typeof renderMe==="function")renderMe();if($("admin").open)renderAdmin()}
+$("tabs").onclick=e=>{const b=e.target.closest(".tab");if(!b)return;st.cat=b.dataset.c;render()};
+document.querySelectorAll(".seg[data-k]").forEach(s=>s.onclick=e=>{const b=e.target.closest("button");if(!b)return;st[s.dataset.k]=b.dataset.v;s.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b));render()});
+$("remixOnly").onchange=e=>{st.remix=e.target.checked;render()};
+$("q").oninput=e=>{st.q=e.target.value.trim().toLowerCase();render()};
+function render(){
+  $("tabs").innerHTML=CATS.map(([k,n])=>`<button class="tab" role="tab" data-c="${k}" aria-selected="${st.cat===k}">${hl(n)}<small>${k==="all"?G.length:G.filter(g=>g.c===k).length}</small></button>`).join("");
+  const list=G.filter(g=>{
+    if(st.cat!=="all"&&g.c!==st.cat)return false;
+    if(st.price==="free"&&(g.p||g.soon))return false;
+    if(st.price==="paid"&&!g.p)return false;
+    if(st.fmt==="demo"&&!g.demo)return false;
+    if(st.fmt==="dl"&&!g.dl)return false;
+    if(st.remix&&!byId[g.par])return false;
+    return !st.q||String(g.t).toLowerCase().includes(st.q)||chainOf(g).concat(coOf(g).map(a=>({a}))).some(x=>String(x.a).toLowerCase().includes(st.q));
+  });
+  $("grid").innerHTML=list.map(cardHtml).join("");
+  const top=G.filter(g=>g.top).slice(0,6);
+  $("topGrid").innerHTML=top.map(cardHtml).join("");
+  const em=$("empty"),te=$("topEmpty");
+  if(!loaded){em.hidden=te.hidden=false;em.textContent=te.textContent="Загружаем каталог…"}
+  else if(dbFail){em.hidden=te.hidden=false;em.textContent=te.textContent="Каталог не загрузился. Обновите страницу — обычно помогает. Если нет, значит, мы чиним, а не спим."}
+  else{
+    te.hidden=top.length>0;te.textContent="Топ пока пуст: лучшие проекты ещё в пути.";
+    if(!G.length){em.hidden=false;em.textContent="Каталог пока пуст. Первые проекты уже в пути — как и все великие идеи, немного опаздывают."}
+    else{em.hidden=list.length>0;em.textContent="Ничего не нашлось. Возможно, такой игры ещё не существует — и это ваш шанс."}
+  }
+}
+
+/* Новости */
+const fdate=ts=>ts?new Date(ts).toLocaleDateString("ru-RU",{day:"numeric",month:"long",year:"numeric"}):"";
+function renderNews(){
+  $("newsList").innerHTML=N.map(n=>`<article class="post"><span class="meta">${fdate(n.ts)} · @${esc(n.a||"dsaskarov")}</span><h3>${esc(n.t)}</h3><p>${esc(n.x)}</p></article>`).join("");
+  const e=$("newsEmpty");
+  if(!newsLoaded){e.hidden=false;e.textContent=dbFail?"Новости не загрузились.":"Загружаем новости…"}
+  else{e.hidden=N.length>0;e.textContent="Новостей пока нет. Тишина перед бурей."}
+  if($("admin").open)renderNewsAdmin();
+}
+$("newsBtn").onclick=()=>$("newsDlg").showModal();
+$("sClose").onclick=()=>$("newsDlg").close();
+$("newsForm").onsubmit=e=>{e.preventDefault();
+  if(!$("sT").value.trim()||!$("sX").value.trim()){toast("Нужны заголовок и текст.");return}
+  if(!$("sRobot").checked){toast("Подтвердите, что вы не робот.");return}
+  $("newsDlg").close();toast("Черновик: на настоящем сайте новость уйдёт на проверку фильтрам и модератору.")};
+
+/* Карточка проекта */
+let Q=store.get("q","auto");if(!/^[a-z]{2,8}$/.test(Q))Q="auto";
+const QL={auto:"Авто",low:"Низкое",mid:"Среднее",high:"Высокое"};
+const qUrl=u=>u+(u.includes("?")?"&":"?")+"quality="+Q;
+function qualityHtml(){return `<div class="fgroup"><span>Качество демо</span><div class="seg">${Object.entries(QL).map(([k,v])=>`<button type="button" data-q="${k}" aria-pressed="${Q===k}">${v}</button>`).join("")}</div></div><p class="hint" style="margin-top:-6px">Тормозит — выберите «Низкое»: картинка проще, игра быстрее.</p>`}
+function demoBtn(g){const u=safe(g.demoUrl);return u?`<a class="btn" data-demo data-base="${esc(u)}" href="${esc(qUrl(u))}" target="_blank" rel="noopener">Играть демо</a>`:'<button class="btn" data-a="demo">Играть демо</button>'}
+function dlBtn(g){const u=safe(g.dlUrl);return u?`<a class="btn green" href="${esc(u)}" target="_blank" rel="noopener">Скачать</a>`:'<button class="btn green" data-a="dl">Скачать</button>'}
+function tipBtn(x){const u=safe(x.tipUrl);return u?`<a class="btn gold sm" href="${esc(u)}" target="_blank" rel="noopener">Чаевые</a>`:`<button class="btn gold sm" data-tip="${esc(x.a)}">Чаевые</button>`}
+const msgBtn=n=>`<button class="btn ghost sm" data-msg="${esc(n)}">Написать</button>`;
+const dlg=$("dlg"),body=$("dlgBody");
+function openGame(id){
+  const g=byId[id];if(!g)return;const ch=chainOf(g),co=coOf(g);
+  body.innerHTML=`<h2>${esc(g.t)}</h2><div class="author">${hl(ONE[g.c]||"")} · ${esc(g.g)} · ${priceLabel(g)}</div><p style="margin:0">${esc(g.d)}</p>
+  ${g.soon?`<div class="links"><span class="hint">Автор: @${esc(g.a)}</span>${msgBtn(g.a)}</div>`:`<div><strong>Авторы</strong><ol class="chain">${ch.map((x,i)=>`<li><button class="whoa" data-go="${esc(x.id)}" ${x.id===g.id?'aria-current="true"':''}>@${esc(x.a)}</button><small>${i===0?'оригинал':'доработка '+i}${x.id===g.id?' · вы здесь':''}</small>${tipBtn(x)}${msgBtn(x.a)}<button class="x" data-rep="user|${esc(x.a)}" title="Пожаловаться на автора" aria-label="Пожаловаться на автора">⚑</button></li>`).join("")}</ol>${ch.length>1?'<p class="hint">Нажмите на автора, чтобы открыть его версию.</p>':''}</div>`}
+  ${co.length?`<div class="links"><span class="hint">Соавторы:</span>${co.map(n=>`<span>@${esc(n)}</span>${msgBtn(n)}`).join("")}</div>`:''}
+  ${g.demo&&!g.soon?qualityHtml():''}
+  <div class="actions">${g.demo?demoBtn(g):''}<button class="btn ghost" data-fav="${esc(g.id)}">${(ME.fav||[]).includes(g.id)?'★ В избранном':'☆ В избранное'}</button>${g.p&&!g.soon?`<button class="btn gold" data-a="buy">Купить за ${rub(g.p)}</button>`:''}${!g.p&&g.dl?dlBtn(g):''}${g.soon?'':'<button class="btn ghost" data-a="remix">Доработать</button>'}<button class="btn ghost" data-a="close">Закрыть</button><button class="btn ghost sm" data-rep="project|${esc(g.id)}">⚑ Пожаловаться</button></div>
+  ${g.p&&!g.soon?'<p class="hint">Сначала попробуйте демо — оно для этого и сделано.</p>':''}`;
+  if(!dlg.open)dlg.showModal();
+  track("ev","open");
+}
+["grid","topGrid"].forEach(id=>$(id).onclick=e=>{const c=e.target.closest(".card");if(c)openGame(c.dataset.id)});
+const MSG={demo:"Здесь запустится демо. Пока запускается только воображение.",buy:"Оплата появится вместе с платной частью сайта.",dl:"Здесь будет скачивание.",remix:"Здесь откроется копия проекта для доработки."};
+body.onclick=e=>{
+  {const t=e.target.closest("[data-a],[data-demo],[data-tip],[data-msg]");if(t){const k=t.dataset.a||(t.hasAttribute("data-demo")?"demo":t.hasAttribute("data-tip")?"tip":"msg");if(k!=="close")track("ev",k)}}
+  const qb=e.target.closest("[data-q]");if(qb){Q=qb.dataset.q;store.set("q",Q);body.querySelectorAll("[data-q]").forEach(b=>b.setAttribute("aria-pressed",b===qb));const d=body.querySelector("[data-demo]");if(d)d.href=qUrl(d.dataset.base);return}
+  const fv=e.target.closest("[data-fav]");if(fv){toggleFav(fv.dataset.fav).then(()=>{if(dlg.open)openGame(fv.dataset.fav)});return}
+  const go=e.target.closest("[data-go]");if(go){if(!go.getAttribute("aria-current"))openGame(go.dataset.go);return}
+  const tip=e.target.closest("[data-tip]");if(tip){toast(`Здесь будет ссылка @${tip.dataset.tip} для чаевых. Щедрость пока в разработке.`);return}
+  const m=e.target.closest("[data-msg]");if(m){openChat(m.dataset.msg);return}
+  const a=e.target.dataset.a;if(!a)return;if(a==="close"){dlg.close();return}toast(MSG[a]);
+};
+dlg.onclick=e=>{if(e.target===dlg)dlg.close()};
+
+/* Чат с автором — образец */
+let chat=[];
+function renderChat(){const auto=$("autoTr").checked;
+  $("msgs").innerHTML=chat.map((m,i)=>`<div class="msg${m.me?" me":""}">${esc(m.t)}${m.tr?(auto||m.shown?`<div class="tr">${esc(m.tr)}</div>`:`<div><button class="trb" data-tr="${i}">Перевести</button></div>`):""}</div>`).join("");
+  $("msgs").scrollTop=$("msgs").scrollHeight}
+function openChat(nick){
+  $("chatTitle").textContent="Чат с @"+nick;
+  chat=[{t:"Hi! Thanks for checking out my project. Want to make the next version together?",tr:"Привет! Спасибо, что заглянули в мой проект. Хотите сделать следующую версию вместе?"}];
+  $("autoTr").checked=store.get("autotr","0")==="1";renderChat();$("chat").showModal();
+}
+$("msgs").onclick=e=>{const b=e.target.closest("[data-tr]");if(b){chat[+b.dataset.tr].shown=true;renderChat()}};
+$("autoTr").onchange=e=>{store.set("autotr",e.target.checked?"1":"0");renderChat()};
+$("chatForm").onsubmit=e=>{e.preventDefault();const v=$("chatIn").value.trim();if(!v)return;chat.push({me:true,t:v});$("chatIn").value="";renderChat()};
+$("chatClose").onclick=()=>$("chat").close();
+$("jointBtn").onclick=()=>toast("Здесь будет приглашение в общий проект: оба автора в карточке, доли — по договорённости.");
+
+/* Вход и регистрация — образец без сервера */
+const auth=$("auth");let mode="in";
+function setMode(m){mode=m;const up=m==="up";$("authTitle").textContent=up?"Регистрация":"Вход";$("authSubmit").textContent=up?"Зарегистрироваться":"Войти";
+  $("nameField").hidden=!up;$("consents").hidden=!up;$("authorBox").hidden=!up;$("authHint").textContent=up?"Оба согласия обязательны: так требует закон и здравый смысл.":"Забыли пароль? Бывает с лучшими из нас.";
+  auth.querySelectorAll("[data-m]").forEach(b=>b.classList.toggle("ghost",b.dataset.m!==m))}
+$("loginBtn").onclick=()=>{setMode("in");auth.showModal()};
+$("signupBtn").onclick=()=>{setMode("up");auth.showModal()};
+$("isAuthor").onchange=e=>{$("authorFields").hidden=!e.target.checked};
+auth.querySelectorAll("[data-m]").forEach(b=>b.onclick=()=>setMode(b.dataset.m));
+$("authClose").onclick=()=>auth.close();
+$("authForm").onsubmit=e=>{e.preventDefault();
+  if(!$("email").value.includes("@")||!$("pass").value){toast("Укажите почту и пароль.");return}
+  if(!$("aRobot").checked){toast("Подтвердите, что вы не робот.");return}
+  if(mode==="up"&&!($("c1").checked&&$("c2").checked)){toast("Отметьте оба согласия, чтобы зарегистрироваться.");return}
+  if(mode==="up"&&$("isAuthor").checked&&!/^\d{12}$/.test($("aInn").value.trim())){toast("ИНН физлица и ИП — 12 цифр. Проверьте, пожалуйста.");return}
+  auth.close();toast("Бета-тест: вход и регистрация откроются вместе с оплатой. Пока пишите @dsaskarov в Telegram.")};
+setMode("in");
+
+/* Публикация — образец */
+$("pubBtn").onclick=()=>$("pub").showModal();
+$("pClose").onclick=()=>$("pub").close();
+$("pubForm").onsubmit=e=>{e.preventDefault();
+  if(!$("pT").value.trim()){toast("Укажите название проекта.");return}
+  if(!$("pRobot").checked){toast("Подтвердите, что вы не робот. Мы верим, но проверяем.");return}
+  if(!$("pRules").checked){toast("Примите условия публикации.");return}
+  $("pub").close();MAILTO("новый проект",["Название: "+$("pT").value.trim(),"Ссылка: "+$("pL").value.trim()])};
+
+document.querySelectorAll("[data-copy]").forEach(b=>b.onclick=async()=>{const el=$(b.dataset.copy);
+  try{await navigator.clipboard.writeText(el.textContent);toast("Скопировано")}
+  catch(e){const r=document.createRange();r.selectNodeContents(el);const s=getSelection();s.removeAllRanges();s.addRange(r);toast("Выделено — скопируйте вручную")}});
+["grid","topGrid"].forEach(id=>$(id).addEventListener("contextmenu",e=>e.preventDefault()));
+document.addEventListener("dragstart",e=>{if(e.target.closest&&e.target.closest(".nocopy"))e.preventDefault()});
+
+/* Редактор (только для владельца) */
+let editId=null,delArm=null;
+const desc=id=>{const out=new Set,st=[id];while(st.length){const x=st.pop();G.forEach(g=>{if(g.par===x&&!out.has(g.id)){out.add(g.id);st.push(g.id)}})}return out};
+function renderAdmin(){
+  const aq=($("aQ").value||"").trim().toLowerCase(),AL=G.filter(g=>!aq||String(g.t).toLowerCase().includes(aq));
+  $("aList").innerHTML=AL.length?AL.map(g=>`<div class="aitem"><div><strong>${g.top?"★ ":""}${esc(g.t)}</strong><span>${hl(ONE[g.c]||"")} · ${priceLabel(g)} · @${esc(g.a)}</span></div><div class="actions"><button class="btn ghost sm" data-ed="${esc(g.id)}">Изменить</button><button class="btn ghost sm" data-del="${esc(g.id)}">${delArm===g.id?"Точно удалить?":"Удалить"}</button></div></div>`).join(""):'<p class="hint">Ничего не найдено. Добавьте проект — в форме рядом.</p>';
+  const cur=$("fPar").value;
+  $("fPar").innerHTML='<option value="">Нет, это оригинал</option>'+G.filter(g=>g.id!==editId).map(g=>`<option value="${esc(g.id)}">${esc(g.t)}${g.p?" · "+rub(g.p):""}</option>`).join("");
+  $("fPar").value=byId[cur]?cur:"";
+  renderNewsAdmin();
+}
+function renderNewsAdmin(){
+  $("nList").innerHTML=N.map(n=>`<div class="aitem"><div><strong>${esc(n.t)}</strong><span>${fdate(n.ts)}</span></div><div class="actions"><button class="btn ghost sm" data-ndel="${esc(n.id)}">${delArm==="n:"+n.id?"Точно удалить?":"Удалить"}</button></div></div>`).join("");
+}
+function fillForm(g){editId=g?g.id:null;$("aFormTitle").textContent=g?"Изменить проект":"Новый проект";
+  $("fT").value=g?.t||"";$("fC").value=g?.c||"game";$("fG").value=g?.g||"";$("fA").value=g?.a||"dsaskarov";$("fP").value=g?.p??0;$("fCo").value=g?coOf(g).join(", "):"";
+  $("fCv").value=String(g?.cv??0);$("fDemo").checked=!!g?.demo;$("fDl").checked=!!g?.dl;$("fSoon").checked=!!g?.soon;$("fTop").checked=!!g?.top;$("fD").value=g?.d||"";
+  $("fDemoUrl").value=g?.demoUrl||"";$("fDlUrl").value=g?.dlUrl||"";$("fTipUrl").value=g?.tipUrl||"";
+  renderAdmin();$("fPar").value=g?.par&&byId[g.par]?g.par:""}
+$("adminBtn").onclick=()=>{fillForm(null);$("admin").showModal()};
+$("adminClose").onclick=()=>$("admin").close();
+$("aNew").onclick=()=>fillForm(null);
+$("aReset").onclick=()=>fillForm(null);
+$("aQ").oninput=renderAdmin;
+$("aList").onclick=async e=>{
+  const ed=e.target.closest("[data-ed]");if(ed){delArm=null;fillForm(byId[ed.dataset.ed]);return}
+  const del=e.target.closest("[data-del]");if(!del)return;const id=del.dataset.del;
+  if(G.some(g=>g.par===id)){toast("У проекта есть доработки. Сначала удалите или переназначьте их, иначе цепочка порвётся.");return}
+  if(delArm!==id){delArm=id;renderAdmin();return}
+  delArm=null;try{await db.collection("projects").doc(id).delete();toast("Проект удалён.");if(editId===id)fillForm(null)}catch(err){toast("Не удалось удалить. Проверьте связь и попробуйте ещё раз.");renderAdmin()}};
+$("nList").onclick=async e=>{
+  const del=e.target.closest("[data-ndel]");if(!del)return;const id=del.dataset.ndel;
+  if(delArm!=="n:"+id){delArm="n:"+id;renderNewsAdmin();return}
+  delArm=null;try{await db.collection("news").doc(id).delete();toast("Новость удалена.")}catch(err){toast("Не удалось удалить новость.");renderNewsAdmin()}};
+$("nAdd").onclick=async()=>{if(!db)return;const t=$("nT").value.trim(),x=$("nX").value.trim();
+  if(!t||!x){toast("Нужны заголовок и текст новости.");return}
+  $("nAdd").disabled=true;
+  try{await db.collection("news").doc().set({t,x,a:"dsaskarov",ts:Date.now()});$("nT").value="";$("nX").value="";toast("Новость опубликована.")}
+  catch(err){toast("Не удалось опубликовать новость.")}
+  $("nAdd").disabled=false};
+$("aForm").onsubmit=async e=>{e.preventDefault();if(!db)return;
+  const t=$("fT").value.trim(),p=Math.max(0,Math.round(Number($("fP").value)||0)),par=$("fPar").value;
+  if(!t){toast("Укажите название проекта.");return}
+  if(["fDemoUrl","fDlUrl","fTipUrl"].some(k=>$(k).value.trim()&&!safe($(k).value.trim()))){toast("Ссылки должны начинаться с https://");return}
+  if(editId&&par&&(par===editId||desc(editId).has(par))){toast("Нельзя сделать проект доработкой его собственной доработки.");return}
+  if(editId){const kids=G.filter(g=>g.par===editId&&!g.soon);if(kids.length){const mn=Math.min(...kids.map(k=>k.p||0));if(p>mn){toast(`Цена не может быть выше цены его доработок: максимум ${rub(mn)}.`);return}}}
+  if(par&&byId[par]&&p<(byId[par].p||0)){toast(`Цена доработки не может быть ниже цены основы: ${rub(byId[par].p)}.`);return}
+  const data={t,c:$("fC").value,g:$("fG").value.trim(),a:$("fA").value.trim().replace(/^@/,"")||"автор",p,par:par||"",cv:Number($("fCv").value),
+    co:$("fCo").value.split(",").map(s=>s.trim().replace(/^@/,"")).filter(Boolean).slice(0,10),
+    demo:$("fDemo").checked,dl:$("fDl").checked,soon:$("fSoon").checked,top:$("fTop").checked,d:$("fD").value.trim(),
+    demoUrl:safe($("fDemoUrl").value.trim()),dlUrl:safe($("fDlUrl").value.trim()),tipUrl:safe($("fTipUrl").value.trim()),
+    order:editId?(byId[editId].order??0):Math.max(0,...G.map(g=>g.order??0))+1};
+  if(p>0&&!data.demo&&!data.soon){toast("У платного проекта должно быть демо. Отметьте «Демо в браузере».");return}
+  $("aSave").disabled=true;
+  try{const ref=editId?db.collection("projects").doc(editId):db.collection("projects").doc();await ref.set(data);toast(editId?"Изменения сохранены.":"Проект добавлен.");fillForm(null)}
+  catch(err){toast("Не удалось сохранить. Проверьте связь и попробуйте ещё раз.")}
+  $("aSave").disabled=false};
+$("tSave").onclick=async()=>{if(!db)return;$("tSave").disabled=true;
+  try{await db.doc("site/texts").set({title:$("tTitle").value.trim(),sub:$("tSub").value.trim()});toast("Тексты сохранены.")}
+  catch(err){toast("Не удалось сохранить тексты.")}
+  $("tSave").disabled=false};
+
+/* Фильтр сообщений */
+const BAD=/(ху[йяеёи]|пизд|бля|[её]б[аоуи]н|муда[кч]|пидо|гандон|шлюх|сука|казино|ставк|букмекер|водк|пиво|алкогол|viagra|casino)/i;
+const LINK=/(https?:\/\/|www\.|t\.me\/|\.(ru|com|net|org)\b)/i;
+let lastSend=0;
+function check(text,robot){
+  if(!text)return "Напишите что-нибудь.";
+  if(!robot)return "Подтвердите, что вы не робот.";
+  if(BAD.test(text))return "Сообщение не прошло фильтр: мат, реклама или запрещённая тема.";
+  if(LINK.test(text))return "Ссылки в сообщениях запрещены — так меньше спама.";
+  if(/(.)\1{7,}/.test(text)||/[A-ZА-ЯЁ]{20,}/.test(text))return "Похоже на флуд. Попробуйте спокойнее.";
+  if(Date.now()-lastSend<5000)return "Не так быстро: одно сообщение в 5 секунд.";
+  return "";
+}
+let isAdmin=false;
+let AID=store.get("aid","");
+if(!/^[0-9A-Z]{6}$/.test(AID)){const b=new Uint8Array(4);(crypto.getRandomValues?crypto.getRandomValues(b):b.forEach((_,i)=>b[i]=Math.random()*256));AID=[...b].map(x=>x.toString(36).toUpperCase().padStart(2,"0")).join("").slice(0,6).padEnd(6,"0");store.set("aid",AID)}
+const nick=v=>{const n=(v||"").trim().replace(/^@/,"").slice(0,30);return !n||/^аноним/i.test(n)||(!isAdmin&&RESV.test(n))?"Аноним #"+AID:n};
+const ago=ts=>ts?new Date(ts).toLocaleString("ru-RU",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}):"";
+
+/* Обсуждения */
+let T=[],TD={},topic="site";
+function renderTalk(){
+  const L=T.filter(x=>x.topic===topic).sort((a,b)=>(b.ts||0)-(a.ts||0)).slice(0,100);
+  $("talkList").innerHTML=L.map(x=>`<article class="post"><span class="meta">${esc(x.n)} · ${ago(x.ts)} · <button class="x" data-rep="msg|${esc(x.n)}|${esc(S(x.t,80))}" title="Пожаловаться">⚑ пожаловаться</button>${isAdmin?` · <button class="x" data-tdel="${esc(x.id)}|${x.ts}" title="Удалить">удалить</button>`:""}</span><p>${esc(x.t)}</p></article>`).join("");
+  $("talkEmpty").hidden=L.length>0;$("talkEmpty").textContent="Пока тихо. Начните разговор — первым всегда интереснее.";
+}
+$("topicSeg").onclick=e=>{const b=e.target.closest("[data-t]");if(!b)return;topic=b.dataset.t;$("topicSeg").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b));renderTalk()};
+$("talkForm").onsubmit=async e=>{e.preventDefault();const t=$("talkX").value.trim(),err=check(t,$("talkRobot").checked);if(err){toast(err);return}
+  if(!db){toast("Обсуждения сейчас недоступны.");return}
+  if(!UID){toast("Писать в обсуждения можно после входа.");return}
+  const mine=ARR(TD[UID]&&TD[UID].posts);
+  try{await db.collection("talk").doc(UID).set({n:nick($("talkN").value),posts:mine.concat([{topic,t,ts:Date.now()}]).slice(-50)});lastSend=Date.now();$("talkX").value="";toast("Опубликовано.")}catch(_){toast("Не удалось отправить.")}};
+$("talkList").onclick=async e=>{const b=e.target.closest("[data-tdel]");if(!b||!isAdmin)return;const [u,ts]=b.dataset.tdel.split("|"),d=TD[u];if(!d)return;
+  try{await db.collection("talk").doc(u).set(Object.assign({},d,{posts:ARR(d.posts).filter(m=>m&&String(TS(m.ts))!==ts)}))}catch(_){toast("Не удалось удалить.")}};
+
+/* Шифрование личных данных: прочитать может только администратор своим ключом */
+const b64=a=>{let r="";new Uint8Array(a).forEach(c=>r+=String.fromCharCode(c));return btoa(r)},unb64=x=>Uint8Array.from(atob(x),c=>c.charCodeAt(0));
+const RSA={name:"RSA-OAEP",hash:"SHA-256"};let PUB={},PRIV=null;
+async function seal(obj){const ids=Object.keys(PUB);if(!ids.length||!crypto.subtle)throw new Error("nokey");
+  const k=await crypto.subtle.generateKey({name:"AES-GCM",length:256},true,["encrypt"]),iv=crypto.getRandomValues(new Uint8Array(12));
+  const ct=await crypto.subtle.encrypt({name:"AES-GCM",iv},k,new TextEncoder().encode(JSON.stringify(obj))),raw=await crypto.subtle.exportKey("raw",k),w={};
+  for(const id of ids){const pk=await crypto.subtle.importKey("jwk",PUB[id],RSA,false,["encrypt"]);w[id]=b64(await crypto.subtle.encrypt(RSA,pk,raw))}
+  return {e:1,iv:b64(iv),ct:b64(ct),k:w}}
+async function unseal(c){if(!c||c.e!==1)return c;const lock=t=>Object.assign({},c,{x:"🔒 "+t});
+  try{const w=c.k&&c.k[UID];if(!PRIV||!w)return lock("Зашифровано для другого администратора");
+    const raw=await crypto.subtle.decrypt(RSA,PRIV,unb64(w)),k=await crypto.subtle.importKey("raw",raw,"AES-GCM",false,["decrypt"]);
+    const o=JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:"AES-GCM",iv:unb64(c.iv)},k,unb64(c.ct))));
+    return Object.assign({},c,o&&typeof o==="object"?o:{})}catch(_){return lock("Не удалось расшифровать")}}
+async function keysInit(){
+  const a=await db.doc("site/admins").get(),ids=ARR(a.exists&&a.data().ids);
+  if(!ids.includes(UID))await db.doc("site/admins").set({ids:ids.concat([UID]).slice(-50)});
+  const ref=db.doc("data/users/"+UID+"/keys"),s=await ref.get(),ps=await db.doc("site/pubkey").get(),cur=(ps.exists&&ps.data().keys)||{};
+  let pub;
+  if(s.exists&&s.data().priv){PRIV=await crypto.subtle.importKey("jwk",s.data().priv,RSA,false,["decrypt"]);pub=s.data().pub}
+  else{const kp=await crypto.subtle.generateKey(Object.assign({modulusLength:2048,publicExponent:new Uint8Array([1,0,1])},RSA),true,["encrypt","decrypt"]);
+    const priv=await crypto.subtle.exportKey("jwk",kp.privateKey);pub=await crypto.subtle.exportKey("jwk",kp.publicKey);await ref.set({priv,pub});PRIV=kp.privateKey}
+  if(JSON.stringify(cur[UID])!==JSON.stringify(pub))await db.doc("site/pubkey").set({keys:Object.assign({},cur,{[UID]:pub})})}
+const SEALFAIL="Приём обращений сейчас недоступен. Напишите на dsaskarov.dmitry@gmail.com.";
+
+const MAILTO=(subj,lines)=>{location.href="mailto:dsaskarov.dmitry@gmail.com?subject="+encodeURIComponent("ИИгры: "+subj)+"&body="+encodeURIComponent(lines.filter(Boolean).join("\n").slice(0,1800));toast("Открываем почту — проверьте письмо и отправьте его.")};
+/* Жалобы и претензии */
+$("claimForm").onsubmit=async e=>{e.preventDefault();const x=$("cX").value.trim(),m=$("cMail").value.trim();
+  if(!x||!m.includes("@")){toast("Укажите почту и суть обращения.");return}
+  if(!$("cRobot").checked){toast("Подтвердите, что вы не робот.");return}
+  if(!db){MAILTO($("cType").value,["Суть: "+x,"Ссылка: "+$("cRef").value.trim(),"Почта для ответа: "+m]);return}
+  try{await db.collection("claims").doc().set(Object.assign({type:S($("cType").value,40),ts:Date.now()},await seal({mail:S(m,120),ref:S($("cRef").value.trim(),300),x:S(x,2000)})));$("cX").value="";$("cRef").value="";toast("Обращение принято. Ответим на указанную почту.")}catch(_){toast("Не удалось отправить. Напишите на dsaskarov.dmitry@gmail.com.")}};
+
+/* Финансы (только для владельца) */
+let FS=[],FE=[],FI=[],FC={com:1,tax:6,team:25,people:0},invArm=null;
+const r2=n=>Math.round(n*100)/100, rubk=n=>r2(n).toLocaleString("ru-RU",{minimumFractionDigits:0,maximumFractionDigits:2})+" ₽";
+const today=()=>new Date().toISOString().slice(0,10);
+const inPer=d=>{const p=$("finPer").value||"all";return p==="all"||String(d||"").startsWith(p)};
+function finCalc(){
+  const S=FS.filter(x=>inPer(x.d)),E=FE.filter(x=>inPer(x.d));
+  const sales=S.filter(x=>!x.ref).reduce((a,x)=>a+(+x.a||0),0),refunds=S.filter(x=>x.ref).reduce((a,x)=>a+(+x.a||0),0);
+  const turnover=Math.max(0,sales-refunds),income=turnover*FC.com/100,tax=income*FC.tax/100,exp=E.reduce((a,x)=>a+(+x.a||0),0);
+  const profit=Math.max(0,income-tax-exp);
+  const act=FI.filter(i=>(+i.paid||0)<3*(+i.v||0)),tot=act.reduce((a,i)=>a+Math.min(10,+i.s||0),0),k=tot>50?50/tot:1;
+  const pay={};act.forEach(i=>pay[i.id]=Math.min(profit*Math.min(10,+i.s||0)*k/100,3*(+i.v)-(+i.paid||0)));
+  const inv=Object.values(pay).reduce((a,x)=>a+x,0),team=profit*Math.min(50,FC.team)/100,owner=profit-inv-team;
+  return {sales,refunds,turnover,income,tax,exp,profit,pay,inv,team,owner,k};
+}
+function renderFin(){
+  if(!isAdmin)return;
+  const pers=[...new Set(FS.concat(FE).map(x=>String(x.d||"").slice(0,7)).filter(Boolean))].sort().reverse(),cur=$("finPer").value||"all";
+  $("finPer").innerHTML='<option value="all">Всё время</option>'+pers.map(p=>`<option value="${p}">${new Date(p+"-01").toLocaleDateString("ru-RU",{month:"long",year:"numeric"})}</option>`).join("");
+  $("finPer").value=pers.includes(cur)?cur:"all";
+  const c=finCalc();
+  const K=[["Оборот продаж",c.turnover],["Возвраты",c.refunds],[`Доход площадки (${FC.com}%)`,c.income],[`Налог (${FC.tax}%)`,c.tax],["Расходы",c.exp],["Прибыль",c.profit,1],["Инвесторам",c.inv],[`Команде (${FC.team}%)`,c.team],["Остаётся вам",c.owner,1]];
+  $("finKpi").innerHTML=K.map(([l,v,m])=>`<div class="kpi${m?" main":""}"><span>${l}</span><b>${rubk(v)}</b></div>`).join("");
+  $("finSplit").innerHTML='<tr><th>Кому</th><th class="num">Доля</th><th class="num">За период</th></tr>'+
+    FI.map(i=>{const done=(+i.paid||0)>=3*(+i.v||0);return `<tr><td>${esc(i.n)}${done?' <span class="hint">— окупил втрое, выплаты завершены</span>':''}</td><td class="num">${done?"—":r2(Math.min(10,+i.s||0)*c.k)+"%"}</td><td class="num">${rubk(c.pay[i.id]||0)}</td></tr>`}).join("")+
+    `<tr><td>Команда${FC.people?`: ${FC.people} чел., по ${r2(FC.team/FC.people)}% каждому`:""}</td><td class="num">${FC.team}%</td><td class="num">${rubk(c.team)}</td></tr><tr><td><strong>Вам и на развитие</strong></td><td class="num">—</td><td class="num"><strong>${rubk(c.owner)}</strong></td></tr>`;
+  $("fsP").innerHTML=G.map(g=>`<option value="${esc(g.id)}">${esc(g.t)}</option>`).join("")||'<option value="">—</option>';
+  const fs=FS.slice().sort((a,b)=>String(b.d).localeCompare(String(a.d)));
+  $("fsT").innerHTML=fs.length?'<tr><th>Дата</th><th>Проект</th><th class="num">Сумма</th><th></th></tr>'+fs.map(x=>`<tr><td>${esc(x.d)}</td><td>${esc(byId[x.p]?.t||"—")}${x.ref?' <span class="hint">возврат</span>':''}</td><td class="num">${x.ref?"−":""}${rubk(+x.a)}</td><td><button class="x" data-fdel="finsales/${esc(x.id)}" title="Удалить">✕</button></td></tr>`).join(""):'<tr><td class="hint">Продаж пока нет.</td></tr>';
+  const fe=FE.slice().sort((a,b)=>String(b.d).localeCompare(String(a.d)));
+  $("feT").innerHTML=fe.length?'<tr><th>Дата</th><th>На что</th><th class="num">Сумма</th><th></th></tr>'+fe.map(x=>`<tr><td>${esc(x.d)}</td><td>${esc(x.w)}</td><td class="num">${rubk(+x.a)}</td><td><button class="x" data-fdel="finexp/${esc(x.id)}" title="Удалить">✕</button></td></tr>`).join(""):'<tr><td class="hint">Расходов пока нет.</td></tr>';
+  $("fiT").innerHTML=FI.length?'<tr><th>Инвестор</th><th class="num">Вложено</th><th class="num">Выплачено</th><th>До цели «втрое»</th><th></th></tr>'+FI.map(i=>{const goal=3*(+i.v||0),pd=+i.paid||0,pc=goal?Math.min(100,pd/goal*100):0,due=c.pay[i.id]||0;
+    return `<tr><td>${esc(i.n)}<div class="hint">${esc(i.r||"")}</div></td><td class="num">${rubk(+i.v)}</td><td class="num">${rubk(pd)}</td><td style="min-width:150px">${rubk(Math.max(0,goal-pd))} осталось<div class="bar"><i style="width:${pc.toFixed(1)}%"></i></div></td>
+    <td><div class="actions" style="gap:6px">${due>0?`<button class="btn gold sm" data-ipay="${esc(i.id)}">Выплачено ${rubk(due)}</button>`:''}<button class="btn ghost sm" data-idel="${esc(i.id)}">${invArm===i.id?"Точно удалить?":"Удалить"}</button></div></td></tr>`}).join(""):'<tr><td class="hint">Инвесторов пока нет.</td></tr>';
+  $("fcC").value=FC.com;$("fcT").value=FC.tax;$("fcM").value=FC.team;$("fcP").value=FC.people||0;
+}
+$("finPer").onchange=renderFin;
+const numIn=id=>Math.max(0,Number($(id).value)||0);
+$("fsForm").onsubmit=async e=>{e.preventDefault();const a=r2(numIn("fsA"));if(!a){toast("Укажите сумму.");return}
+  try{await db.collection("finsales").doc().set({d:$("fsD").value||today(),a,p:$("fsP").value,ref:$("fsR").checked});$("fsA").value="";$("fsR").checked=false}catch(_){toast("Не удалось сохранить.")}};
+$("feForm").onsubmit=async e=>{e.preventDefault();const a=r2(numIn("feA")),w=$("feW").value.trim();if(!a||!w){toast("Укажите сумму и на что.");return}
+  try{await db.collection("finexp").doc().set({d:$("feD").value||today(),a,w});$("feA").value="";$("feW").value=""}catch(_){toast("Не удалось сохранить.")}};
+$("fiForm").onsubmit=async e=>{e.preventDefault();const n=$("fiN").value.trim(),v=r2(numIn("fiV")),sh=Number($("fiS").value)||0;
+  if(!n||!v){toast("Укажите инвестора и сумму вложений.");return}
+  if(sh<=0||sh>10){toast("Доля — от 0,5 до 10%.");return}
+  try{await db.collection("fininv").doc().set({n,v,s:sh,r:$("fiR").value.trim(),paid:0});$("fiN").value="";$("fiV").value="";$("fiS").value="";$("fiR").value=""}catch(_){toast("Не удалось сохранить.")}};
+$("fcSave").onclick=async()=>{const com=Math.min(100,numIn("fcC")),tax=Math.min(50,numIn("fcT")),team=Math.min(50,numIn("fcM")),people=Math.round(numIn("fcP"));
+  try{await db.doc("fincfg/main").set({com,tax,team,people});toast("Настройки сохранены.")}catch(_){toast("Не удалось сохранить.")}};
+$("finance").onclick=async e=>{
+  const d=e.target.closest("[data-fdel]");if(d){try{await db.doc(d.dataset.fdel).delete()}catch(_){toast("Не удалось удалить.")}return}
+  const pb=e.target.closest("[data-ipay]");if(pb){const i=FI.find(x=>x.id===pb.dataset.ipay),due=finCalc().pay[i.id]||0;
+    try{await db.collection("fininv").doc(i.id).update({paid:r2((+i.paid||0)+due)});toast("Выплата записана.")}catch(_){toast("Не удалось записать.")}return}
+  const dl=e.target.closest("[data-idel]");if(dl){const id=dl.dataset.idel;if(invArm!==id){invArm=id;renderFin();return}invArm=null;try{await db.collection("fininv").doc(id).delete()}catch(_){toast("Не удалось удалить.")}}
+};
+
+/* Статистика посещений: один документ на посетителя в день */
+const DAY=new Date().toISOString().slice(0,10);
+let STAT={d:DAY,v:"",views:0,pg:{},ev:{}},STD={adm:false,days:{}},statReady=false,statT=0;
+function statSave(){if(!db||!statReady||!UID)return;clearTimeout(statT);statT=setTimeout(()=>{const days=Object.assign({},STD.days,{[DAY]:{views:STAT.views,pg:STAT.pg,ev:STAT.ev}}),keys=Object.keys(days).sort().slice(-120);
+  STD={adm:!!STAT.adm,days:Object.fromEntries(keys.map(k=>[k,days[k]]))};db.collection("stats").doc(UID).set(STD).catch(()=>{})},900)}
+function track(kind,name){if(kind==="pg"){STAT.views++;STAT.pg[name]=(STAT.pg[name]||0)+1}else STAT.ev[name]=(STAT.ev[name]||0)+1;statSave()}
+async function statInit(){if(!UID)return;STAT.v=UID;try{const d=await db.collection("stats").doc(UID).get();if(d.exists){STD=Object.assign({adm:false,days:{}},d.data());const o=STD.days[DAY]||{};STAT.views+=NUM(o.views);for(const k in o.pg||{})STAT.pg[k]=(STAT.pg[k]||0)+NUM(o.pg[k]);for(const k in o.ev||{})STAT.ev[k]=(STAT.ev[k]||0)+NUM(o.ev[k])}}catch(_){}statReady=true;statSave()}
+let SS=[],trR=30;
+const VNAME={home:"Главная",me:"Кабинет",catalog:"Каталог",news:"Новости",talk:"Обсуждения",authors:"Авторам",charity:"Добро",terms:"Соглашение",privacy:"Согласие",claims:"Жалобы",roadmap:"Дорожная карта",finance:"Финансы"};
+function renderTraffic(){
+  if(!isAdmin)return;
+  const days=[...Array(trR)].map((_,i)=>{const t=new Date();t.setDate(t.getDate()-(trR-1-i));return t.toISOString().slice(0,10)});
+  const D=SS.filter(x=>days.includes(x.d)),V=D.filter(x=>!ADMINS.includes(x.v)),A=D.filter(x=>ADMINS.includes(x.v));
+  const M=X=>{const evs=k=>X.reduce((a,x)=>a+((x.ev||{})[k]||0),0),visits=X.length,views=X.reduce((a,x)=>a+(x.views||0),0);
+    return {uniq:new Set(X.map(x=>x.v)).size,visits,views,per:visits?(views/visits).toFixed(1):"0",open:evs("open"),demo:evs("demo"),buy:evs("buy"),conv:visits?(X.filter(x=>(x.ev||{}).buy).length/visits*100).toFixed(1)+"%":"0%"}};
+  const mv=M(V),ma=M(A),has=f=>V.filter(f).length;
+  const K=[["Уникальные посетители","uniq"],["Визиты","visits"],["Просмотры","views"],["Просмотров на визит","per"],["Открытия карточек","open"],["Запуски демо","demo"],["Нажатия «Купить»","buy"],["Конверсия в покупку","conv"]];
+  $("trKpi").innerHTML=K.map(([l,k])=>`<div class="kpi"><span>${l}</span><b>${mv[k]}</b><span class="sub">администраторы: ${ma[k]}</span></div>`).join("");
+  const pv=days.map(d=>V.filter(x=>x.d===d).length),pa=days.map(d=>A.filter(x=>x.d===d).length),mx=Math.max(1,...pv.map((n,i)=>n+pa[i])),step=trR>30?14:trR>7?5:1;
+  $("trDays").innerHTML=days.map((d,i)=>{const t=pv[i]+pa[i];return `<div class="c" title="${new Date(d).toLocaleDateString("ru-RU",{day:"numeric",month:"long"})}: посетители — ${pv[i]}, администраторы — ${pa[i]}"><span class="v">${trR<=30&&t?t:""}</span>${pa[i]?`<div class="b adm" style="height:${(pa[i]/mx*100).toFixed(1)}%"></div>`:""}<div class="b" style="height:${(pv[i]/mx*100).toFixed(1)}%;${pv[i]?"":"min-height:0"}"></div></div>`}).join("");
+  $("trAxis").innerHTML=days.map((d,i)=>`<span>${(trR-1-i)%step===0?new Date(d).toLocaleDateString("ru-RU",{day:"numeric",month:"short"}):""}</span>`).join("");
+  const pg=(X)=>{const o={};X.forEach(x=>{for(const k in x.pg||{})o[k]=(o[k]||0)+x.pg[k]});return o},gv=pg(V),ga=pg(A);
+  const keys=[...new Set(Object.keys(gv).concat(Object.keys(ga)))].sort((a,b)=>((gv[b]||0)+(ga[b]||0))-((gv[a]||0)+(ga[a]||0)));
+  const pm=Math.max(1,...keys.map(k=>Math.max(gv[k]||0,ga[k]||0)));
+  $("trPages").innerHTML=keys.length?keys.map(k=>`<div class="hbar" title="${esc(VNAME[k]||k)}: посетители — ${gv[k]||0}, администраторы — ${ga[k]||0}"><span>${esc(VNAME[k]||k)}</span><div class="t2"><div class="t vis"><i style="width:${((gv[k]||0)/pm*100).toFixed(1)}%"></i></div><div class="t adm"><i style="width:${((ga[k]||0)/pm*100).toFixed(1)}%"></i></div></div><span class="n">${gv[k]||0} · ${ga[k]||0}</span></div>`).join(""):'<p class="hint">Данных пока нет.</p>';
+  const visits=mv.visits,views=mv.views;
+  const F=[["Визиты",visits],["Зашли в каталог",has(x=>(x.pg||{}).catalog)],["Открыли карточку",has(x=>(x.ev||{}).open)],["Запустили демо",has(x=>(x.ev||{}).demo)],["Нажали «Купить»",has(x=>(x.ev||{}).buy)]];
+  $("trFunnel").innerHTML=F.map(([l,n],i)=>`<div class="hbar red" title="${l}: ${n}"><span>${l}</span><div class="t"><i style="width:${visits?(n/visits*100).toFixed(1):0}%"></i></div><span class="n">${n}${i&&visits?" · "+Math.round(n/visits*100)+"%":""}</span></div>`).join("");
+  const T=[],r=(a,b)=>b?a/b:0,cat=F[1][1],op=F[2][1],dm=F[3][1],by=F[4][1];
+  if(!visits)T.push(["warn","Посетителей пока нет, только администраторы. Поделитесь ссылкой на сайт в Telegram и VK — и здесь появятся первые цифры."]);
+  else{
+    if(r(cat,visits)<.4)T.push(["warn","До каталога доходит меньше 40% посетителей. Сделайте игры заметнее прямо на главной: больше карточек в топе, кнопка «Открыть каталог» выше."]);
+    if(cat&&r(op,cat)<.5)T.push(["warn","В каталог заходят, но карточки открывают редко. Помогут яркие обложки, понятные названия и цена на виду."]);
+    if(op&&r(dm,op)<.3)T.push(["warn","Карточки открывают, но демо не запускают. Кнопка «Играть демо» должна быть первой и самой заметной, а описание — короче."]);
+    if(dm&&r(by,dm)<.1)T.push(["warn","Демо играют, но почти не покупают. Проверьте цену, сделайте демо короче и добавьте строку «что будет в полной версии»."]);
+    if(r(views,visits)<2)T.push(["warn","В среднем меньше двух просмотров за визит. Добавьте в конец разделов ссылки «что дальше»."]);
+  }
+  ["Анонсируйте каждый новый проект в Telegram и VK со ссылкой прямо на его карточку.","Приглашайте авторов: каждый приводит свою аудиторию, и это бесплатный рост.","Публикуйте в «Новостях» подборку недели: людям проще выбрать из пяти игр, чем из ста.","После запуска оплаты: «игра недели» со скидкой и первая покупка дешевле — проверенные способы поднять оборот.","Для рекламы используйте метки UTM в ссылках: на настоящем сайте Метрика покажет, какая реклама окупается."].forEach(t=>T.push(["",t]));
+  $("trTips").innerHTML=T.map(([c,t])=>`<li class="${c}">${t}</li>`).join("");
+}
+$("finTab").onclick=e=>{const b=e.target.closest("[data-ft]");if(!b)return;$("finTab").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b));$("ftMoney").hidden=b.dataset.ft!=="money";$("ftTraffic").hidden=b.dataset.ft!=="traffic";renderTraffic()};
+$("trRange").onclick=e=>{const b=e.target.closest("[data-r]");if(!b)return;trR=+b.dataset.r;$("trRange").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b));renderTraffic()};
+
+/* Личный кабинет: профиль и избранное — в личной части базы, подписка — в общем списке */
+let UID=null,ME={nick:"",mail:"",fav:[],bio:"",ava:"",bg:0},SUBS=[],MAILS=[],DRAFT=null;
+const BGS=["Рубин","Золото","Графит","Космос","Изумруд","Закат"];
+const GEN=["Аркады","Головоломки","Экшен","Стратегии","Словесные","Приключения","Симуляторы","Хорроры"],ROLES=["Игрок","Автор","Доработчик","Тестировщик"];
+$("meGenres").innerHTML=GEN.map(x=>`<button type="button" data-gen="${x}">${x}</button>`).join("");
+$("meRoles").innerHTML=ROLES.map(x=>`<button type="button" data-role="${x}">${x}</button>`).join("");
+function togArr(key,val){const d=draft(),a=new Set(d[key]||[]);a.has(val)?a.delete(val):a.add(val);d[key]=[...a];paintCard()}
+$("meGenres").onclick=e=>{const b=e.target.closest("[data-gen]");if(b)togArr("genres",b.dataset.gen)};
+$("meRoles").onclick=e=>{const b=e.target.closest("[data-role]");if(b)togArr("roles",b.dataset.role)};
+const XF=[["meAge","age"],["meCity","city"],["meHobby","hobby"],["meLink","link"],["mePhone","phone"],["meTg","tg"],["meVk","vk"],["meOther","other"]];
+const VF=[["vPhone","phone"],["vMail","mail"],["vTg","tg"],["vVk","vk"],["vOther","other"]],VDEF={phone:false,mail:false,tg:true,vk:true,other:true};
+XF.forEach(([id,k])=>$(id).addEventListener("input",()=>{draft()[k]=$(id).value;paintCard()}));
+VF.forEach(([id,k])=>$(id).addEventListener("change",()=>{const d=draft();d.vis=Object.assign({},VDEF,d.vis||{},{[k]:$(id).checked});paintCard()}));
+const meRef=()=>db.doc("data/users/"+UID+"/profile");
+$("meBgs").innerHTML=BGS.map((n,i)=>`<button type="button" class="sw-bg bg${i}" data-bg="${i}" title="${n}" aria-label="${n}"></button>`).join("");
+function cur(){return DRAFT||ME}
+function paintCard(){const m=cur(),nick=(m.nick||"").trim();
+  $("meCard").className="mecard bg"+(+m.bg||0);
+  $("meAva").style.backgroundImage=AVA(m.ava)?`url("${AVA(m.ava)}")`:"";$("meAva").textContent=AVA(m.ava)?"":(nick||"?")[0].toUpperCase();
+  $("meName").textContent=nick||"Безымянный герой";$("meBioV").textContent=(m.bio||"").trim()||"Расскажите о себе — в поле «О себе».";
+  const sub=!!SUBS.find(x=>x.id===UID),B=[["Новичок",true],["Представился",!!nick],["Своё лицо",!!m.ava],["Коллекционер",(m.fav||[]).length>=3],["В курсе",sub]];
+  $("meBadges").innerHTML=B.map(([t,on])=>`<span class="mbadge${on?" on":""}" title="${on?"Получено":"Ещё не получено"}">${on?"★":"☆"} ${t}</span>`).join("");
+  $("meBgs").querySelectorAll("[data-bg]").forEach(b=>b.setAttribute("aria-pressed",String(+b.dataset.bg===(+m.bg||0))));
+  $("meGenres").querySelectorAll("[data-gen]").forEach(b=>b.setAttribute("aria-pressed",String((m.genres||[]).includes(b.dataset.gen))));
+  $("meRoles").querySelectorAll("[data-role]").forEach(b=>b.setAttribute("aria-pressed",String((m.roles||[]).includes(b.dataset.role))));
+  const meta=[m.age?m.age+" лет":"",(m.city||"").trim(),(m.roles||[]).join(", ")].filter(Boolean).join(" · ");
+  const tags=(m.hobby||"").split(",").map(x=>x.trim()).filter(Boolean).concat(m.genres||[]).slice(0,8);
+  $("meMeta").textContent=meta;$("meTags").innerHTML=tags.map(t=>`<span>${esc(t)}</span>`).join("");
+  const vis=Object.assign({},VDEF,m.vis||{}),C=[["Телефон","phone"],["Почта","mail"],["Telegram","tg"],["VK","vk"],["","other"]].filter(([,k])=>(m[k]||"").trim());
+  $("meCont").innerHTML=C.map(([l,k])=>`<span class="${vis[k]?"":"off"}" title="${vis[k]?"Видно другим":"Скрыто — видите только вы"}">${vis[k]?"👁":"🔒"} ${l?l+": ":""}${esc(m[k])}</span>`).join("")}
+function renderMe(){
+  const ok=!!(db&&UID);$("meBody").hidden=!ok;$("meLock").hidden=ok;if(!ok)return;
+  if(!DRAFT){$("meNick").value=ME.nick||"";$("meMail").value=ME.mail||"";$("meBio").value=ME.bio||"";
+    XF.forEach(([id,k])=>$(id).value=ME[k]??"");const v=Object.assign({},VDEF,ME.vis||{});VF.forEach(([id,k])=>$(id).checked=!!v[k])}
+  const sub=SUBS.find(x=>x.id===UID);$("meSub").checked=!!sub;$("meSubState").textContent=sub?"Вы подписаны на рассылку.":"Вы не подписаны.";
+  const F=(ME.fav||[]).map(id=>byId[id]).filter(Boolean);
+  $("favGrid").innerHTML=F.map(cardHtml).join("");$("favEmpty").hidden=F.length>0;paintCard();
+}
+const draft=()=>{if(!DRAFT)DRAFT=Object.assign({},ME);return DRAFT};
+["meNick","meBio","meMail"].forEach(id=>$(id).addEventListener("input",()=>{const d=draft();d.nick=$("meNick").value;d.bio=$("meBio").value;d.mail=$("meMail").value;paintCard()}));
+$("meBgs").onclick=e=>{const b=e.target.closest("[data-bg]");if(!b)return;draft().bg=+b.dataset.bg;paintCard()};
+$("meAvaDel").onclick=()=>{draft().ava="";paintCard()};
+$("meFile").onchange=e=>{const f=e.target.files&&e.target.files[0];e.target.value="";if(!f)return;
+  if(!/^image\//.test(f.type)){toast("Нужна картинка.");return}if(f.size>8e6){toast("Файл больше 8 МБ — выберите поменьше.");return}
+  const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const c=document.createElement("canvas"),S=160;c.width=c.height=S;const k=Math.max(S/im.width,S/im.height),w=im.width*k,h=im.height*k;
+    c.getContext("2d").drawImage(im,(S-w)/2,(S-h)/2,w,h);draft().ava=c.toDataURL("image/jpeg",.82);paintCard()};im.onerror=()=>toast("Не удалось открыть картинку.");im.src=r.result};r.readAsDataURL(f)};
+$("meForm").onsubmit=async e=>{e.preventDefault();if(!UID)return;const mail=$("meMail").value.trim();
+  if(mail&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)){toast("Проверьте адрес почты.");return}
+  const lk=$("meLink").value.trim();if(lk&&!safe(lk)){toast("Ссылка должна начинаться с https://");return}
+  const age=Math.round(Number($("meAge").value)||0);
+  const d=Object.assign({},ME,DRAFT||{},{nick:$("meNick").value.trim().slice(0,30),mail,bio:$("meBio").value.trim().slice(0,160),
+    age:age>0&&age<=120?age:"",city:$("meCity").value.trim().slice(0,40),hobby:$("meHobby").value.trim().slice(0,200),link:safe(lk),
+    phone:$("mePhone").value.replace(/[^\d+()\- ]/g,"").slice(0,20),tg:$("meTg").value.trim().slice(0,40),vk:$("meVk").value.trim().slice(0,40),other:$("meOther").value.trim().slice(0,60),
+    vis:Object.fromEntries(VF.map(([id,k])=>[k,$(id).checked]))});
+  try{await meRef().set(d);DRAFT=null;toast("Профиль сохранён.")}catch(_){toast("Не удалось сохранить. Возможно, картинка слишком большая.")}};
+$("meSub").onchange=async e=>{if(!UID)return;const on=e.target.checked,mail=($("meMail").value||ME.mail||"").trim();
+  if(on&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)){e.target.checked=false;toast("Сначала укажите и сохраните почту в профиле.");return}
+  try{if(on)await db.collection("subs").doc(UID).set(Object.assign({ts:Date.now()},await seal({mail:S(mail,120)})));else await db.collection("subs").doc(UID).delete();toast(on?"Подписка оформлена.":"Вы отписались.")}catch(_){e.target.checked=!on;toast("Не удалось изменить подписку.")}};
+$("favGrid").onclick=e=>{const c=e.target.closest(".card");if(c)openGame(c.dataset.id)};
+async function toggleFav(id){if(!UID){toast("Избранное доступно после входа.");return}
+  const f=new Set(ME.fav||[]);f.has(id)?f.delete(id):f.add(id);
+  try{await meRef().set(Object.assign({},ME,{fav:[...f]}));toast(f.has(id)?"Добавлено в избранное.":"Убрано из избранного.")}catch(_){toast("Не удалось сохранить.")}}
+function renderMail(){if(!isAdmin)return;$("mSubs").textContent="Подписчиков: "+SUBS.length;
+  $("mList").innerHTML=MAILS.sort((a,b)=>(b.ts||0)-(a.ts||0)).map(m=>`<div class="aitem"><div><strong>${esc(m.t)}</strong><span>${ago(m.ts)} · черновик</span></div></div>`).join("")}
+$("mSave").onclick=async()=>{const t=$("mT").value.trim(),x=$("mX").value.trim();if(!t||!x){toast("Нужны тема и текст письма.");return}
+  try{await db.collection("mail").doc().set({t,x,ts:Date.now()});$("mT").value="";$("mX").value="";toast("Письмо сохранено.")}catch(_){toast("Не удалось сохранить.")}};
+
+/* Жалобы на проект, автора или сообщение */
+const REASONS={project:["Не запускается или сломан","Похоже на вирус или подозрительный файл","Чужой проект — украден или скопирован","Реклама или посторонний контент","Неприемлемый контент","Неверная цена или описание","Другое"],
+  user:["Спам или реклама","Оскорбления или травля","Мошенничество","Выдаёт себя за другого","Ворует чужие проекты","Другое"],
+  msg:["Спам или реклама","Оскорбления или травля","Мошенничество или выманивание денег","Ссылки на сторонние ресурсы","Раскрытие чужих личных данных","Другое"]};
+let REP=null;
+document.addEventListener("click",e=>{const b=e.target.closest("[data-rep]");if(!b)return;e.preventDefault();e.stopPropagation();
+  const [kind,...rest]=b.dataset.rep.split("|");REP={kind,ref:rest.join("|")};
+  $("repWhat").textContent=kind==="project"?"Проект: «"+((byId[rest[0]]||{}).t||rest[0])+"»":kind==="user"?"Пользователь: @"+rest[0]:"Сообщение от "+rest[0]+": «"+(rest[1]||"")+"»";
+  $("repReasons").innerHTML="<span>Что не так?</span>"+REASONS[kind].map((r,i)=>`<label class="check"><input type="radio" name="repR" value="${r}"${i===0?" checked":""}> ${r}</label>`).join("");
+  $("repX").value="";$("repRobot").checked=false;$("repDlg").showModal()},true);
+$("repClose").onclick=()=>$("repDlg").close();
+$("repForm").onsubmit=async e=>{e.preventDefault();if(!REP)return;
+  if(!$("repRobot").checked){toast("Подтвердите, что вы не робот.");return}
+  const reason=(document.querySelector('input[name="repR"]:checked')||{}).value||"Другое",x=$("repX").value.trim();
+  if(reason==="Другое"&&!x){toast("Опишите, что случилось, хотя бы парой слов.");return}
+  const rm=$("repMail").value.trim();if(rm&&!/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(rm)){toast("Проверьте адрес почты.");return}
+  if(Date.now()-(window.__repT||0)<30000){toast("Жалоба уже отправлена. Следующую можно через полминуты.");return}
+  if(!db){window.__repT=Date.now();MAILTO("жалоба",[$("repWhat").textContent.slice(0,300),"Причина: "+reason,x,rm?"Почта для ответа: "+rm:""]);$("repDlg").close();return}
+  try{window.__repT=Date.now();await db.collection("claims").doc().set(Object.assign({type:"Жалоба: "+({project:"проект",user:"пользователь",msg:"сообщение"}[REP.kind]),ts:Date.now()},await seal({mail:rm,ref:($("repWhat").textContent.slice(0,300))+" — "+reason,x:x.slice(0,2000)})));
+    $("repDlg").close();toast("Жалоба отправлена. Спасибо, что помогаете!");track("ev","report")}catch(_){window.__repT=0;toast(SEALFAIL)}};
+
+/* Проверка правописания во всех полях ввода — по словарям браузера, на любом языке */
+document.querySelectorAll("textarea,input:not([type]),input[type=text],input[type=search]").forEach(el=>el.spellcheck=true);
+
+/* Доверие: посетитель сам отмечает проверенные пункты */
+let TRUST={};try{TRUST=JSON.parse(store.get("trust","{}"))||{}}catch(_){}
+function renderTrust(){const d=TRUST,n=Object.values(d).filter(Boolean).length;
+  document.querySelectorAll("[data-tcheck]").forEach(b=>{const on=!!d[b.dataset.tcheck];b.setAttribute("aria-pressed",String(on));b.closest(".tcard").classList.toggle("done",on)});
+  $("tFill").style.width=(n/6*100)+"%";$("tTxt").textContent=n>=6?"Все 6 из 6. Теперь вы знаете о нас больше, чем мы о вас":"Вы проверили "+n+" из 6"}
+document.querySelector(".tgrid").addEventListener("click",e=>{const b=e.target.closest("[data-tcheck]");if(!b)return;
+  TRUST[b.dataset.tcheck]=!TRUST[b.dataset.tcheck];store.set("trust",JSON.stringify(TRUST));renderTrust();track("ev","trust")});
+renderTrust();
+
+/* Проверка в ФНС: ИНН копируется сам, сайт ФНС открывается в новой вкладке */
+$("innBtn").addEventListener("click",()=>{try{navigator.clipboard.writeText("695207648961").then(()=>toast("ИНН скопирован — вставьте его на сайте ФНС."),()=>toast("ИНН: 695207648961 — вставьте его на сайте ФНС."))}catch(_){toast("ИНН: 695207648961 — вставьте его на сайте ФНС.")}});
+
+/* Технические работы */
+let MAINT={on:false,msg:""};
+const DEF_MMSG=$("mMsg").textContent;
+const mg=$("mgame"),mgx=mg.getContext("2d");let mb=[],ms=0,mt=0,mrun=false,mlast=0,mloopOn=false;
+function mloop(t){const dt=Math.min(.05,(t-mlast)/1000||0);mlast=t;mgx.clearRect(0,0,420,220);
+  if(mrun){mt-=dt;if(Math.random()<dt*2.4)mb.push({x:20+Math.random()*380,y:20+Math.random()*180,r:15,l:1.7,f:Math.random()<.22});mb.forEach(b=>b.l-=dt);mb=mb.filter(b=>b.l>0);if(mt<=0){mrun=false;mb=[]}}
+  mb.forEach(b=>{mgx.fillStyle=b.f?"#4ADE95":"#E8333F";mgx.beginPath();mgx.arc(b.x,b.y,b.r,0,7);mgx.fill()});
+  if(!mrun){mgx.fillStyle="#F4F4F6";mgx.font="600 16px Golos Text, sans-serif";mgx.textAlign="center";mgx.fillText(ms?"Поймано багов: "+ms+". Ещё раз?":"Пока мы чиним — половите баги",210,104);
+    mgx.fillStyle="#B9B6C2";mgx.font="13px Golos Text, sans-serif";mgx.fillText("Красные — баги, зелёные — фичи, их не трогать",210,128)}
+  $("mScore").textContent=ms;if($("mOver").hidden){mloopOn=false;return}requestAnimationFrame(mloop)}
+mg.addEventListener("pointerdown",e=>{if(!mrun)return;const r=mg.getBoundingClientRect(),x=(e.clientX-r.left)*420/r.width,y=(e.clientY-r.top)*220/r.height;
+  for(let i=mb.length-1;i>=0;i--){const b=mb[i];if(Math.hypot(b.x-x,b.y-y)<b.r*1.4){ms=Math.max(0,ms+(b.f?-2:1));mb.splice(i,1);return}}});
+$("mPlay").onclick=()=>{ms=0;mt=20;mb=[];mrun=true};
+$("mChat").onclick=()=>{$("lc").hidden=false;renderLive()};
+function applyMaint(){$("mMsg").textContent=MAINT.msg||DEF_MMSG;$("mOver").hidden=!(MAINT.on&&!isAdmin);
+  document.body.classList.toggle("maint-on",!$("mOver").hidden);if(!$("mOver").hidden&&!mloopOn){mloopOn=true;requestAnimationFrame(mloop)}$("mBar").hidden=!(MAINT.on&&isAdmin);
+  if(document.activeElement!==$("mTxt"))$("mTxt").value=MAINT.msg||"";$("mOn").checked=!!MAINT.on}
+$("mApply").onclick=async()=>{try{await db.doc("site/status").set({on:$("mOn").checked,msg:$("mTxt").value.trim().slice(0,300)});toast($("mOn").checked?"Сайт выключен для посетителей.":"Сайт снова открыт.")}catch(_){toast("Не удалось применить.")}};
+
+/* Заявки «ИИ — каждому» */
+let helpType="Хочу помочь";
+document.querySelectorAll("[data-help]").forEach(b=>b.onclick=()=>{helpType=b.dataset.help;const give=helpType==="Хочу помочь";
+  $("helpTitle").textContent=helpType;
+  $("helpHint").textContent=give?"Чем можете помочь: провести занятие, настроить помощника для фонда или школы, сделать бесплатный проект. Мы свяжемся с вами.":"Расскажите, что нужно: кого научить, что настроить, для какой организации. Помощь бесплатная.";
+  $("hXl").firstChild.textContent=give?"Чем хотите помочь":"Что нужно";$("helpDlg").showModal()});
+$("hClose").onclick=()=>$("helpDlg").close();
+$("helpForm").onsubmit=async e=>{e.preventDefault();const n=$("hN").value.trim(),c=$("hC").value.trim(),x=$("hX").value.trim();
+  if(!n||!c||!x){toast("Заполните имя, контакт и описание.");return}
+  if(!$("hRobot").checked){toast("Подтвердите, что вы не робот.");return}
+  if(!$("hOk").checked){toast("Нужно согласие на обработку данных, чтобы мы могли связаться с вами.");return}
+  if(!db){MAILTO(helpType,["Имя: "+n,"Контакт: "+c,"Организация: "+$("hG").value.trim(),x]);$("helpDlg").close();return}
+  try{await db.collection("help").doc().set(Object.assign({type:S(helpType,40),ts:Date.now()},await seal({n:S(n,60),c:S(c,120),g:S($("hG").value.trim(),120),x:S(x,2000)})));$("hX").value="";$("helpDlg").close();toast("Заявка отправлена. Спасибо! Мы свяжемся с вами.")}catch(_){toast("Не удалось отправить. Напишите в Telegram @dsaskarov.")}};
+
+/* Резюме в команду */
+$("teamForm").onsubmit=async e=>{e.preventDefault();const n=$("rN").value.trim(),c=$("rC").value.trim(),x=$("rX").value.trim();
+  if(!n||!c||!x){toast("Заполните имя, контакт и пару слов о себе.");return}
+  if(!$("rRobot").checked){toast("Подтвердите, что вы не робот.");return}
+  if(!db){MAILTO("резюме в команду",["Имя: "+n,"Роль: "+$("rRole").value,"Контакт: "+c,x]);return}
+  try{await db.collection("resumes").doc().set(Object.assign({role:S($("rRole").value,40),ts:Date.now()},await seal({n:S(n,60),c:S(c,120),x:S(x,2000)})));$("rX").value="";toast("Резюме отправлено. Мы свяжемся с вами.")}catch(_){toast("Не удалось отправить. Напишите в Telegram @dsaskarov.")}};
+
+/* Чек-лист проверки (только для владельца) */
+const QA=[["Верхняя полоса и шапка",["Вид: авто, светлый, тёмный — меняется и запоминается","Эффекты вкл/выкл: фон, фонарик и наклон пропадают и возвращаются","Простая версия: плоский вид без градиентов, всё читается","Тёмная тема: текст подсвечивается под курсором","Светлая тема: карточки наклоняются за мышью","Меню открывает нужные вкладки"]],
+ ["Главная",["Ссылки в карточках «Игрокам / Авторам / Доработчикам» ведут в нужные разделы","«Открыть весь каталог» над топом работает","Клик по игре в топе открывает карточку","Кнопки под манифестом и возможностями ведут куда нужно"]],
+ ["Каталог и карточка",["Вкладки категорий и фильтры сужают список","Метки: демо — красная, скачать — зелёная, скоро — золотая","Клик по автору в цепочке открывает его версию","«Чаевые» и «Написать» у каждого автора; чат и перевод работают","«Купить» — золотая, «Скачать» — зелёная, есть выбор качества демо"]],
+ ["Новости и обсуждения",["Новость видна; «Предложить новость» без «не робот» не уходит","Обсуждения: сообщение публикуется в выбранной теме","Мат, ссылки и реклама не проходят фильтр"]],
+ ["Доверие",["Блок «Почему нам можно доверять» на главной, ссылка на проверку статуса в ФНС открывается"]],
+ ["Авторам, Добро, документы",["«Хочу помочь» и «Нужна помощь» открывают форму, заявка видна в редакторе","Форма публикации проверяет галочки","Резюме в команду отправляется и видно в редакторе","Ссылки на соглашение и согласие открывают документы","Страница «ИИ — каждому» открывается","Жалобы и претензии: обращение отправляется"]],
+ ["Регистрация",["Без галочки «не робот» вход и регистрация не проходят","Без двух согласий регистрация не проходит","Статус и ИНН появляются по галочке; неверный ИНН не принимается"]],
+ ["Кабинет и рассылка",["Кабинет: профиль сохраняется","«В избранное» в карточке — проект появляется в кабинете","Подписка на рассылку без почты не оформляется","В редакторе виден счётчик подписчиков и сохраняются письма"]],
+ ["Жалобы",["«Пожаловаться» в карточке проекта, ⚑ у автора, в чате и в обсуждениях открывает форму с причинами","«Другое» без описания не отправляется","Жалоба видна в редакторе в «Обращениях»"]],
+ ["Живой чат",["Кнопка «Чат онлайн» открывает чат в углу","Сообщение без «не робот» не уходит","Мат и ссылки блокируются, флуд и частые сообщения — тоже"]],
+ ["Технические работы",["В редакторе «Выключить сайт» — посетители видят шутливую заглушку, вы — жёлтую полосу","На заглушке работают мини-игра и живой чат","Снять галочку — сайт снова открыт"]],
+ ["Редактор",["Добавить проект с «В топе» — появляется на главной","Цена доработки ниже основы не сохраняется","Новость публикуется и удаляется","Обращения из «Жалоб» видны в редакторе","На телефоне редактор на весь экран"]],
+ ["Телефон",["Ничего не вылезает за край экрана","Меню и кнопки удобно нажимаются","Чат онлайн не закрывает важное"]]];
+function renderQA(){let done={};try{done=JSON.parse(store.get("qa","{}"))||{}}catch(_){}
+  let i=0;$("qaList").innerHTML=QA.map(([h,items])=>`<h4>${h}</h4>`+items.map(t=>{const k="q"+(i++);return `<label><input type="checkbox" data-qa="${k}" ${done[k]?"checked":""}><span>${t}</span></label>`}).join("")).join("")}
+$("qaList").onchange=e=>{const b=e.target.closest("[data-qa]");if(!b)return;let d={};try{d=JSON.parse(store.get("qa","{}"))||{}}catch(_){}d[b.dataset.qa]=b.checked;store.set("qa",JSON.stringify(d))};
+$("qaReset").onclick=()=>{store.set("qa","{}");renderQA()};
+renderQA();
+
+/* Живой чат */
+let LV=[],LVD={};
+function renderLive(){const L=LV.slice().sort((a,b)=>(a.ts||0)-(b.ts||0)).slice(-60);
+  $("lcMsgs").innerHTML=L.length?L.map(m=>`<div class="msg"><div class="who">${esc(m.n)} · ${ago(m.ts)}<button class="x" data-rep="msg|${esc(m.n)}|${esc(S(m.t,80))}" title="Пожаловаться" aria-label="Пожаловаться на сообщение">⚑</button>${isAdmin?`<button class="x" data-ldel="${esc(m.id)}|${m.ts}" title="Удалить">✕</button>`:""}</div>${esc(m.t)}</div>`).join(""):'<p class="hint">Здесь пока тихо. Поздоровайтесь — это бесплатно.</p>';
+  $("lcMsgs").scrollTop=$("lcMsgs").scrollHeight}
+$("lcBtn").onclick=()=>{$("lc").hidden=!$("lc").hidden;if(!$("lc").hidden)renderLive()};
+$("lcClose").onclick=()=>$("lc").hidden=true;
+$("lcForm").onsubmit=async e=>{e.preventDefault();const t=$("lcIn").value.trim(),err=check(t,$("lcRobot").checked);if(err){toast(err);return}
+  if(!db){toast("Чат сейчас недоступен.");return}
+  if(!UID){toast("Чат доступен после входа.");return}
+  const mine=ARR(LVD[UID]&&LVD[UID].msgs);
+  try{await db.collection("live").doc(UID).set({n:nick($("lcName").value),msgs:mine.concat([{t,ts:Date.now()}]).slice(-20)});lastSend=Date.now();$("lcIn").value=""}catch(_){toast("Не удалось отправить.")}};
+$("lcMsgs").onclick=async e=>{const b=e.target.closest("[data-ldel]");if(!b||!isAdmin)return;const [u,ts]=b.dataset.ldel.split("|"),d=LVD[u];if(!d)return;
+  try{await db.collection("live").doc(u).set(Object.assign({},d,{msgs:ARR(d.msgs).filter(m=>m&&String(TS(m.ts))!==ts)}))}catch(_){toast("Не удалось удалить.")}};
+
+const STATIC_P=[{"a": "pixel_ira", "c": "game", "cv": 0, "d": "Кот-космонавт собирает рыбу между астероидами. Гравитация работает, коту всё равно.", "demo": true, "dl": false, "g": "Аркада", "order": 1, "p": 0, "par": "", "soon": false, "t": "Кот на орбите", "top": true, "id": "p01", "ex": true}, {"a": "lunar_dev", "c": "game", "cv": 1, "d": "Лунная база, 12 уровней и босс-пылесос — главный враг любого кота.", "demo": true, "dl": true, "g": "Аркада", "order": 2, "p": 100, "par": "p01", "soon": false, "t": "Кот на орбите: Луна", "top": true, "id": "p02", "ex": true}, {"a": "kosmo_max", "c": "game", "cv": 2, "d": "Кооператив на двоих и редактор уровней. Теперь виноваты двое.", "demo": true, "dl": true, "g": "Аркада", "order": 3, "p": 113, "par": "p02", "soon": false, "t": "Кот на орбите: Луна+", "id": "p03", "ex": true}, {"a": "nightcoder", "c": "game", "cv": 1, "d": "Фонарь освещает только часть лабиринта. Как и любое знание.", "demo": true, "dl": true, "g": "Головоломка", "order": 4, "p": 149, "par": "", "soon": false, "t": "Лабиринт теней", "top": true, "id": "p04", "ex": true}, {"a": "tanya_words", "c": "game", "cv": 2, "d": "Собирайте урожай из букв и составляйте слова на время. Орфографический словарь не прилагается, но пригодится.", "demo": true, "dl": false, "g": "Словесная", "order": 5, "p": 0, "par": "", "soon": false, "t": "Ферма слов", "top": true, "id": "p05", "ex": true}, {"a": "ivan_k", "c": "game", "cv": 0, "d": "Два игрока, одно поле, ноль компромиссов.", "demo": true, "dl": false, "g": "Словесная", "order": 6, "p": 60, "par": "p05", "soon": false, "t": "Ферма слов: Дуэль", "id": "p06", "ex": true}, {"a": "retro_sasha", "c": "game", "cv": 0, "d": "Ретро-шутер с видом сверху. Пиксели крупные, решения — нет.", "demo": true, "dl": true, "g": "Экшен", "order": 7, "p": 249, "par": "", "soon": false, "t": "Пиксельный рейд", "top": true, "id": "p07", "ex": true}, {"a": "origami_bot", "c": "game", "cv": 2, "d": "Складывайте бумажные фигуры без пустот. Медитация с таймером.", "demo": true, "dl": false, "g": "Головоломка", "order": 8, "p": 0, "par": "", "soon": false, "t": "Оригами-блоки", "id": "p08", "ex": true}, {"a": "cafe_lena", "c": "app", "cv": 1, "d": "Собирает меню для кафе из списка блюд и цен. Опечатки в «эспрессо» исправляет молча.", "demo": true, "dl": false, "g": "Для бизнеса", "order": 9, "p": 0, "par": "", "soon": false, "t": "Меню за минуту", "top": true, "id": "p09", "ex": true}, {"a": "dsaskarov", "c": "app", "cv": 0, "d": "Проект DSAskarov. Описание и цена появятся при публикации.", "demo": false, "dl": false, "g": "Работа", "order": 10, "p": 0, "par": "", "soon": true, "t": "Приложение для риелторов", "id": "p10"}, {"a": "dsaskarov", "c": "mod", "cv": 2, "d": "Сборка с собственными модами. Описание появится при публикации.", "demo": false, "dl": false, "g": "Minecraft", "order": 11, "p": 0, "par": "", "soon": true, "t": "Сборка Minecraft от DSAskarov", "id": "p11"}, {"a": "dsaskarov", "c": "server", "cv": 1, "d": "Сервер для сборки DSAskarov. Адрес и правила появятся при запуске.", "demo": false, "dl": false, "g": "Minecraft", "order": 12, "p": 0, "par": "", "soon": true, "t": "Сервер Minecraft DSAskarov", "id": "p12"}, {"a": "dsaskarov", "c": "game", "co": [], "cv": 0, "d": "Ночная смена в отделе разработки: 30 секунд, чтобы поймать баги и не задеть фичи. Игра самой площадки — бесплатно и навсегда.", "demo": true, "demoUrl": "games/lovi-bagi.html", "dl": false, "dlUrl": "", "g": "Аркада", "order": 0, "p": 0, "par": "", "soon": false, "t": "Лови баги", "tipUrl": "https://boosty.to/dsaskarov", "top": true, "id": "p13"}, {"a": "dsaskarov", "c": "game", "co": [], "cv": 2, "d": "Прыгайте с планеты на планету и доставляйте письма. Одна кнопка, ноль права на ошибку — иначе письмо улетит в спам вселенной. Демо — 10 планет.", "demo": true, "demoUrl": "games/pochtalyon.html", "dl": false, "dlUrl": "", "g": "Аркада в одну кнопку", "order": 0, "p": 49, "par": "", "soon": false, "t": "Звёздный почтальон", "tipUrl": "https://boosty.to/dsaskarov", "top": true, "id": "p14"}, {"a": "dsaskarov", "c": "game", "co": [], "cv": 1, "d": "Жмите, как только поле станет золотым. Нейросеть отвечает за доли секунды — посмотрим, кто кого. Демо — 5 попыток, полная версия — история результатов и дуэль.", "demo": true, "demoUrl": "games/bystree.html", "dl": false, "dlUrl": "", "g": "На реакцию", "order": 0, "p": 1, "par": "", "soon": false, "t": "Быстрее нейросети", "tipUrl": "https://boosty.to/dsaskarov", "top": true, "id": "p15"}],STATIC_N=[{"a": "dsaskarov", "t": "Черновик ИИгр онлайн открыт", "ts": 1792937000000, "x": "Собрали первую версию площадки: каталог с цепочками доработок, демо до покупки, чаевые авторам, светлую и тёмную темы. Сейчас это бета-тест — проекты в каталоге пока примерные. Ищем первых авторов: пишите @dsaskarov.", "id": "n001"}];
+route();render();renderNews();renderTalk();
+(async()=>{
+  db=window.claude&&window.claude.use?await window.claude.use("db"):null;
+  if(!db){loaded=newsLoaded=true;dbFail=false;setData(STATIC_P);N=STATIC_N;renderNews();return}
+  db.collection("projects").onSnapshot(s=>{loaded=true;dbFail=false;setData(s.docs.map(d=>Object.assign({id:d.id},d.data())))},()=>{loaded=true;dbFail=true;render()});
+  db.collection("news").onSnapshot(s=>{newsLoaded=true;N=s.docs.map(d=>Object.assign({id:d.id},d.data())).sort((a,b)=>(b.ts||0)-(a.ts||0));renderNews()},()=>{newsLoaded=true;renderNews()});
+  db.collection("talk").onSnapshot(s=>{TD=Object.fromEntries(s.docs.map(d=>[d.id,d.data()]));T=s.docs.flatMap(d=>{const o=d.data()||{};return ARR(o.posts).filter(m=>m&&typeof m==="object").slice(-50).map(m=>({id:d.id,n:who(o.n,d.id),topic:S(m.topic,20),t:S(m.t,1000),ts:TS(m.ts)}))});renderTalk()},()=>{});
+  db.collection("live").onSnapshot(s=>{LVD=Object.fromEntries(s.docs.map(d=>[d.id,d.data()]));LV=s.docs.flatMap(d=>{const o=d.data()||{};return ARR(o.msgs).filter(m=>m&&typeof m==="object").slice(-20).map(m=>({id:d.id,n:who(o.n,d.id),t:S(m.t,500),ts:TS(m.ts)}))});if(!$("lc").hidden)renderLive()},()=>{});
+  db.doc("site/pubkey").onSnapshot(q=>{const k=q.exists&&q.data().keys;PUB=k&&typeof k==="object"?Object.fromEntries(Object.entries(k).slice(0,20)):{}},()=>{});
+  db.doc("site/admins").onSnapshot(q=>{ADMINS=ARR(q.exists&&q.data().ids).map(String).slice(0,50);renderTalk();if(!$("lc").hidden)renderLive();if(isAdmin&&!$("ftTraffic").hidden)renderTraffic()},()=>{});
+  db.doc("site/status").onSnapshot(q=>{MAINT=Object.assign({on:false,msg:""},q.exists?q.data():{});applyMaint()},()=>{});
+  db.doc("site/texts").onSnapshot(s=>{const d=s.exists?s.data():{};
+    $("heroTitle").innerHTML=d.title?hl(esc(d.title)):DEF_TITLE;$("heroSub").textContent=d.sub||DEF_SUB;
+    if(!$("admin").open){$("tTitle").value=d.title||"";$("tSub").value=d.sub||""}},()=>{});
+  const user=await window.claude.use("user");
+  try{UID=user?await user.id():null}catch(_){UID=null}
+  statInit();
+  if(UID){meRef().onSnapshot(q=>{ME=Object.assign({nick:"",mail:"",fav:[]},q.exists?q.data():{});renderMe()},()=>{})}
+  db.collection("subs").onSnapshot(q=>{SUBS=q.docs.map(d=>Object.assign({id:d.id},d.data()));renderMe();renderMail()},()=>{});
+  renderMe();
+  isAdmin=user?await user.canEdit():false;
+  $("adminBtn").hidden=!isAdmin;$("finBtn").hidden=!isAdmin;document.body.classList.toggle("adm",isAdmin);applyMaint();if(isAdmin){STAT.adm=true;statSave()}$("finBody").hidden=!isAdmin;$("finLock").hidden=isAdmin;
+  if(isAdmin){
+    const sub=(c,f)=>db.collection(c).onSnapshot(s=>{f(s.docs.map(d=>Object.assign({id:d.id},d.data())));renderFin()},()=>{});
+    db.collection("stats").onSnapshot(q=>{SS=q.docs.flatMap(d=>{const o=d.data()||{},ds=o.days&&typeof o.days==="object"?o.days:{};return Object.entries(ds).filter(([day])=>/^\d{4}-\d{2}-\d{2}$/.test(day)).slice(-120).map(([day,v])=>({d:day,v:d.id,views:NUM(v&&v.views),pg:OBJN(v&&v.pg),ev:OBJN(v&&v.ev)}))});if(!$("ftTraffic").hidden)renderTraffic()},()=>{});
+    db.collection("mail").onSnapshot(q=>{MAILS=q.docs.map(d=>Object.assign({id:d.id},d.data()));renderMail()},()=>{});
+    sub("finsales",x=>FS=x);sub("finexp",x=>FE=x);sub("fininv",x=>FI=x);
+    db.doc("fincfg/main").onSnapshot(s=>{if(s.exists)FC=Object.assign({com:1,tax:6,team:25,people:0},s.data());renderFin()},()=>{});
+  }$("qaBox").hidden=!isAdmin;renderTalk();renderLive();
+  if(isAdmin&&UID&&db)try{await keysInit()}catch(_){toast("Не удалось подготовить ключ шифрования.")}
+  if(isAdmin)db.collection("help").onSnapshot(async s=>{const C=(await Promise.all(s.docs.map(d=>unseal(Object.assign({id:d.id},d.data()))))).sort((a,b)=>(b.ts||0)-(a.ts||0));
+    $("hList").innerHTML=C.length?C.map(c=>`<div class="aitem"><div><strong>${esc(c.type)} · ${esc(c.n)}</strong><span>${esc(c.c)}${c.g?" · "+esc(c.g):""} · ${ago(c.ts)}</span><span style="display:block;white-space:normal">${esc(c.x)}</span></div></div>`).join(""):'<p class="hint">Пока нет.</p>'},()=>{});
+  if(isAdmin)db.collection("resumes").onSnapshot(async s=>{const C=(await Promise.all(s.docs.map(d=>unseal(Object.assign({id:d.id},d.data()))))).sort((a,b)=>(b.ts||0)-(a.ts||0));
+    $("rList").innerHTML=C.length?C.map(c=>`<div class="aitem"><div><strong>${esc(c.n)} · ${esc(c.role)}</strong><span>${esc(c.c)} · ${ago(c.ts)}</span><span style="display:block;white-space:normal">${esc(c.x)}</span></div></div>`).join(""):'<p class="hint">Пока нет.</p>'},()=>{});
+  if(isAdmin)db.collection("claims").onSnapshot(async s=>{const C=(await Promise.all(s.docs.map(d=>unseal(Object.assign({id:d.id},d.data()))))).sort((a,b)=>(b.ts||0)-(a.ts||0));
+    $("cList").innerHTML=C.length?C.map(c=>`<div class="aitem"><div><strong>${esc(c.type)}</strong><span>${esc(c.mail)} · ${ago(c.ts)}${c.ref?" · "+esc(c.ref):""}</span><span style="display:block;white-space:normal">${esc(c.x)}</span></div></div>`).join(""):'<p class="hint">Пока нет.</p>'},()=>{});
+})();
+</script>
+
+</body></html>

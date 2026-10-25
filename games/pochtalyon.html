@@ -1,0 +1,81 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"><meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="description" content="Игра площадки «ИИгры онлайн»"><meta property="og:title" content="Звёздный почтальон — ИИгры онлайн"><meta property="og:description" content="Игра площадки «ИИгры онлайн»"><meta name="theme-color" content="#0B0A0E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23B3141F'/%3E%3Ctext x='32' y='44' font-size='30' font-family='Arial' font-weight='700' text-anchor='middle' fill='%23F6DE8D'%3EИИ%3C/text%3E%3C/svg%3E">
+<style>*{box-sizing:border-box}html,body{margin:0}[hidden]{display:none!important}</style></head><body>
+<title>Звёздный почтальон</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800&family=Golos+Text:wght@400;600&display=swap">
+<style>
+/* Layout: заголовок, счёт, вертикальное космическое поле с планетами, одна кнопка-действие. Глубокий космос, золотые письма, красные планеты. */
+:root{--bg:#07060C;--panel:#14121B;--fg:#F4F4F6;--muted:#B9B6C2;--red:#E8333F;--gold:#E7BD52;--line:rgba(255,255,255,.12);color-scheme:dark;
+  --f-d:"Unbounded","Golos Text",system-ui,sans-serif;--f-b:"Golos Text",system-ui,sans-serif}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:radial-gradient(60vmax 60vmax at 80% 0%,rgba(231,189,82,.18),transparent 60%),var(--bg);color:var(--fg);font-family:var(--f-b);display:grid;place-items:center;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px}
+.game{width:min(460px,100%);display:grid;gap:12px}
+h1{font:800 clamp(1.3rem,5vw,1.8rem)/1.1 var(--f-d);margin:0}
+h1 b{color:var(--gold)}
+.sub{color:var(--muted);margin:0;font-size:.95rem}
+.hud{display:flex;gap:10px;flex-wrap:wrap}
+.hud div{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px 12px;font-variant-numeric:tabular-nums}
+.hud b{font:800 1.1rem var(--f-d)}
+canvas{width:100%;aspect-ratio:9/14;max-width:100%;max-height:70vh;object-fit:contain;background:#05040A;border:1px solid var(--line);border-radius:14px;touch-action:manipulation;cursor:pointer;display:block}
+.note{font-size:.85rem;color:var(--muted);margin:0}
+.credit{font-size:.8rem;color:var(--muted)}
+.credit a{color:var(--gold)}
+</style>
+<div class="game">
+  <h1>Звёздный <b>почтальон</b></h1>
+  <p class="sub">Вы облетаете планету с письмом. Нажмите — и полетите по касательной. Попадите на следующую планету, иначе письмо улетит в спам вселенной.</p>
+  <div class="hud"><div>Доставлено: <b id="sc">0</b></div><div>Рекорд: <b id="best">0</b></div></div>
+  <canvas id="cv" width="450" height="700" aria-label="Игровое поле. Нажмите, чтобы прыгнуть"></canvas>
+  <p class="note" id="demoNote">Демо-версия: 10 планет. Полная версия — бесконечный космос и новые планеты — 49 ₽, появится вместе с оплатой на площадке.</p>
+  <p class="credit">Игра DSAskarov для площадки «ИИгры онлайн». Поддержать автора: <a href="https://boosty.to/dsaskarov" target="_blank" rel="noopener">Boosty</a> · связь: Telegram @dsaskarov</p>
+</div>
+<script>
+const cv=document.getElementById("cv"),cx=cv.getContext("2d"),W=cv.width,H=cv.height,DEMO=10;
+let P=[],cur=0,ang=0,dir=1,ship={x:0,y:0,vx:0,vy:0},fly=false,cam=0,score=0,best=0,state="ready",last=0,trail=[];
+try{best=+localStorage.getItem("post-best")||0}catch(e){}
+const stars=[...Array(90)].map(()=>({x:Math.random()*W,y:Math.random()*H*3,r:Math.random()*1.4+.3}));
+const rnd=(a,b)=>a+Math.random()*(b-a);
+function planet(i){return{x:rnd(80,W-80),y:-i*230,r:rnd(22,34),orb:0,hue:i%3}}
+function reset(){P=[];for(let i=0;i<14;i++)P.push(planet(i));P[0].x=W/2;cur=0;ang=-Math.PI/2;dir=1;fly=false;cam=0;score=0;trail=[];state="ready"}
+reset();
+const ORB=k=>P[k].r+26,SPD=()=>2.2+Math.min(score,20)*.06;
+function pos(){const p=P[cur];return{x:p.x+Math.cos(ang)*ORB(cur),y:p.y+Math.sin(ang)*ORB(cur)}}
+function jump(){if(state==="ready"){state="play";return}if(state==="over"||state==="win"){reset();state="play";return}
+  if(fly)return;const s=pos(),v=SPD()*2.6;ship={x:s.x,y:s.y,vx:-Math.sin(ang)*v*dir,vy:Math.cos(ang)*v*dir};fly=true}
+cv.addEventListener("pointerdown",jump);
+addEventListener("keydown",e=>{if(e.code==="Space"||e.code==="Enter"){e.preventDefault();jump()}});
+function frame(t){const dt=Math.min(.05,(t-last)/1000||0);last=t;
+  if(state==="play"){
+    if(!fly){ang+=dir*SPD()*dt;const s=pos();ship.x=s.x;ship.y=s.y}
+    else{ship.x+=ship.vx*dt*60;ship.y+=ship.vy*dt*60;
+      for(let k=cur+1;k<Math.min(P.length,cur+3);k++){const p=P[k],d=Math.hypot(ship.x-p.x,ship.y-p.y);
+        if(d<ORB(k)+6){cur=k;fly=false;ang=Math.atan2(ship.y-p.y,ship.x-p.x);dir=Math.random()<.5?1:-1;score++;
+          if(P.length-cur<6)for(let j=0;j<6;j++)P.push(planet(P.length));
+          if(score>best){best=score;try{localStorage.setItem("post-best",best)}catch(e){}}
+          if(score>=DEMO){state="win"}break}}
+      if(fly&&(ship.x<-40||ship.x>W+40||ship.y>-cam+H+40||ship.y<-cam-200))state="over"}
+    cam+=((-P[cur].y+H*.68)-cam)*Math.min(1,dt*3)}
+  trail.push({x:ship.x,y:ship.y});if(trail.length>24)trail.shift();
+  cx.clearRect(0,0,W,H);
+  stars.forEach(s=>{const y=((s.y+cam*.3)%(H*3)+H*3)%(H*3)-H;cx.fillStyle="rgba(255,255,255,.7)";cx.beginPath();cx.arc(s.x,y,s.r,0,7);cx.fill()});
+  cx.save();cx.translate(0,cam);
+  P.forEach((p,k)=>{if(p.y+cam<-80||p.y+cam>H+80)return;
+    cx.strokeStyle="rgba(255,255,255,.08)";cx.setLineDash([4,6]);cx.beginPath();cx.arc(p.x,p.y,ORB(k),0,7);cx.stroke();cx.setLineDash([]);
+    const g=cx.createRadialGradient(p.x-p.r*.4,p.y-p.r*.4,p.r*.2,p.x,p.y,p.r);const C=[["#FF8A91","#8E0E1A"],["#FFF0BF","#9C7420"],["#8E8A9C","#24222A"]][p.hue];
+    g.addColorStop(0,C[0]);g.addColorStop(1,C[1]);cx.fillStyle=g;cx.beginPath();cx.arc(p.x,p.y,p.r,0,7);cx.fill();
+    if(k<cur){cx.fillStyle="#E7BD52";cx.font="bold 14px sans-serif";cx.textAlign="center";cx.fillText("✓",p.x,p.y+5)}});
+  trail.forEach((q,i)=>{cx.fillStyle=`rgba(231,189,82,${i/trail.length*.5})`;cx.beginPath();cx.arc(q.x,q.y,2,0,7);cx.fill()});
+  cx.fillStyle="#E7BD52";cx.fillRect(ship.x-8,ship.y-6,16,12);cx.strokeStyle="#1A1306";cx.lineWidth=1.5;cx.beginPath();cx.moveTo(ship.x-8,ship.y-6);cx.lineTo(ship.x,ship.y+1);cx.lineTo(ship.x+8,ship.y-6);cx.stroke();
+  cx.restore();
+  if(state!=="play"){cx.fillStyle="rgba(5,4,10,.6)";cx.fillRect(0,H/2-70,W,140);cx.fillStyle="#F4F4F6";cx.textAlign="center";cx.font="700 22px Golos Text, sans-serif";
+    const T={ready:["Нажмите, чтобы начать","Нажатие — прыжок по касательной"],over:["Письмо улетело в спам","Доставлено: "+score+". Нажмите, чтобы снова"],win:["Демо пройдено!","10 писем доставлено. Полная версия — скоро"]}[state];
+    cx.fillText(T[0],W/2,H/2-6);cx.font="16px Golos Text, sans-serif";cx.fillStyle="#B9B6C2";cx.fillText(T[1],W/2,H/2+22)}
+  document.getElementById("sc").textContent=score;document.getElementById("best").textContent=best;
+  requestAnimationFrame(frame)}
+requestAnimationFrame(frame);
+</script>
+
+</body></html>

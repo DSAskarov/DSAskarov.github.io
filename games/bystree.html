@@ -1,0 +1,54 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"><meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="description" content="Игра площадки «ИИгры онлайн»"><meta property="og:title" content="Быстрее нейросети — ИИгры онлайн"><meta property="og:description" content="Игра площадки «ИИгры онлайн»"><meta name="theme-color" content="#0B0A0E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23B3141F'/%3E%3Ctext x='32' y='44' font-size='30' font-family='Arial' font-weight='700' text-anchor='middle' fill='%23F6DE8D'%3EИИ%3C/text%3E%3C/svg%3E">
+<style>*{box-sizing:border-box}html,body{margin:0}[hidden]{display:none!important}</style></head><body>
+<title>Быстрее нейросети</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800&family=Golos+Text:wght@400;600&display=swap">
+<style>
+/* Layout: заголовок, одна большая кнопка-поле на весь блок, итоги под ней. Красный «жди», золотой «жми». */
+:root{--bg:#0B0A0E;--panel:#16141B;--fg:#F4F4F6;--muted:#B9B6C2;--red:#B3141F;--gold:#E7BD52;--line:rgba(255,255,255,.12);color-scheme:dark;
+  --f-d:"Unbounded","Golos Text",system-ui,sans-serif;--f-b:"Golos Text",system-ui,sans-serif}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-b);display:grid;place-items:center;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px}
+.game{width:min(560px,100%);display:grid;gap:12px}
+h1{font:800 clamp(1.3rem,5vw,1.9rem)/1.1 var(--f-d);margin:0}
+h1 b{color:var(--gold)}
+.sub{color:var(--muted);margin:0}
+#pad{border:0;border-radius:18px;min-height:260px;font:800 clamp(1.2rem,5vw,1.7rem)/1.3 var(--f-d);color:#fff;background:#24222A;cursor:pointer;padding:24px;touch-action:manipulation;transition:background .08s}
+#pad.wait{background:var(--red)}#pad.go{background:var(--gold);color:#1A1306}
+#pad small{display:block;font:500 1rem var(--f-b);margin-top:8px;opacity:.85}
+#pad:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.hud{display:flex;gap:10px;flex-wrap:wrap}
+.hud div{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px 12px;font-variant-numeric:tabular-nums}
+.hud b{font:800 1.05rem var(--f-d)}
+.note,.credit{font-size:.85rem;color:var(--muted);margin:0}
+.credit a{color:var(--gold)}
+</style>
+<div class="game">
+  <h1>Быстрее <b>нейросети</b></h1>
+  <p class="sub">Жмите, как только поле станет золотым. Нейросеть отвечает за доли секунды — посмотрим, кто кого.</p>
+  <button id="pad" type="button">Нажмите, чтобы начать<small>Красное — ждать. Золотое — жать!</small></button>
+  <div class="hud"><div>Попытка: <b id="n">0</b>/5</div><div>Лучшее: <b id="best">—</b></div><div>Среднее: <b id="avg">—</b></div></div>
+  <p class="note">Демо: 5 попыток подряд. Полная версия — история результатов и режим «дуэль» на одном экране — 1 ₽, появится вместе с оплатой на площадке.</p>
+  <p class="credit">Игра DSAskarov для площадки «ИИгры онлайн». Поддержать автора: <a href="https://boosty.to/dsaskarov" target="_blank" rel="noopener">Boosty</a> · Telegram @dsaskarov</p>
+</div>
+<script>
+const pad=document.getElementById("pad");let st="idle",t0=0,tm=0,res=[];
+const say=(a,b)=>{pad.innerHTML=a+(b?`<small>${b}</small>`:"")};
+const verdict=ms=>ms<200?"Нейросеть нервно перезагружается":ms<260?"Почти машина. Почти":ms<350?"Человеческая классика":"Нейросеть успела бы написать поэму";
+function start(){st="wait";pad.className="wait";say("Ждите золота…","Не нажимайте раньше времени");tm=setTimeout(()=>{st="go";pad.className="go";say("ЖМИТЕ!");t0=performance.now()},1200+Math.random()*2300)}
+function tap(){
+  if(st==="idle"||st==="done"){if(res.length>=5){res=[];upd()}start();return}
+  if(st==="wait"){clearTimeout(tm);st="idle";pad.className="";say("Рано! Фальстарт","Нажмите, чтобы попробовать снова");return}
+  if(st==="go"){const ms=Math.round(performance.now()-t0);res.push(ms);upd();pad.className="";
+    if(res.length>=5){st="done";say("Демо пройдено: "+Math.round(res.reduce((a,b)=>a+b,0)/res.length)+" мс в среднем","Нажмите, чтобы сыграть ещё")}
+    else{st="idle";say(ms+" мс",verdict(ms)+". Нажмите для следующей попытки")}}}
+function upd(){document.getElementById("n").textContent=res.length;document.getElementById("best").textContent=res.length?Math.min(...res)+" мс":"—";
+  document.getElementById("avg").textContent=res.length?Math.round(res.reduce((a,b)=>a+b,0)/res.length)+" мс":"—"}
+pad.addEventListener("pointerdown",e=>{e.preventDefault();tap()});
+pad.addEventListener("keydown",e=>{if(e.code==="Space"||e.code==="Enter"){e.preventDefault();tap()}});
+</script>
+
+</body></html>
