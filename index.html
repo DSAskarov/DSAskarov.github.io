@@ -1393,7 +1393,7 @@ async function keysInit(){
   if(JSON.stringify(cur[UID])!==JSON.stringify(pub))await db.doc("site/pubkey").set({keys:Object.assign({},cur,{[UID]:pub})})}
 const SEALFAIL="Приём обращений сейчас недоступен. Напишите на dsaskarov.dmitry@gmail.com.";
 
-const MAILTO=(subj,lines)=>{location.href="mailto:dsaskarov.dmitry@gmail.com?subject="+encodeURIComponent("ИИгры: "+subj)+"&body="+encodeURIComponent(lines.filter(Boolean).join("\n").slice(0,1800));toast("Открываем почту — проверьте письмо и отправьте его.")};
+const MAILTO=(subj,lines)=>{location.href="mailto:askarov.dmitry@yandex.ru?subject="+encodeURIComponent("ИИгры: "+subj)+"&body="+encodeURIComponent(lines.filter(Boolean).join("\n").slice(0,1800));toast("Открываем почту — проверьте письмо и отправьте его.")};
 /* Жалобы и претензии */
 $("claimForm").onsubmit=async e=>{e.preventDefault();const x=$("cX").value.trim(),m=$("cMail").value.trim();
   if(!x||!m.includes("@")){toast("Укажите почту и суть обращения.");return}
