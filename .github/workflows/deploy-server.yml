@@ -81,8 +81,8 @@ jobs:
           environment: |
             YDB_CS=${{ steps.db.outputs.cs }}
             ALLOW_ORIGIN=https://dsaskarov.github.io
-            CAPTCHA_SITEKEY=${{ steps.cap.outputs.key }}
-            CAPTCHA_SECRET=${{ steps.cap.outputs.sec }}
+            CAPTCHA_SITEKEY=${{ steps.cap.outputs.key || '-' }}
+            CAPTCHA_SECRET=${{ steps.cap.outputs.sec || '-' }}
       - name: Открыть функцию для сайта и проверить
         env: { IAM: "${{ steps.tok.outputs.iam }}", FID: "${{ steps.fn.outputs.function-id }}" }
         run: |

@@ -77,7 +77,8 @@ async function limit(ip, now, gap, perHour) {
   return { cnt };
 }
 // Проверка «не робот» (Yandex SmartCaptcha): после успешной проверки выдаём пропуск на 12 часов, привязанный к адресу
-const CAP_SECRET = process.env.CAPTCHA_SECRET || "", CAP_KEY = process.env.CAPTCHA_SITEKEY || "";
+const env = k => { const v = process.env[k] || ""; return v === "-" ? "" : v };
+const CAP_SECRET = env("CAPTCHA_SECRET"), CAP_KEY = env("CAPTCHA_SITEKEY");
 const sign = (ip, exp) => crypto.createHmac("sha256", salt).update(ip + "|" + exp).digest("base64url").slice(0, 32);
 const passOk = (p, ip) => { if (!CAP_SECRET) return true; const m = /^(\d{13})\.([\w-]{32})$/.exec(String(p || "")); if (!m) return false;
   const exp = Number(m[1]); return exp > Date.now() && crypto.timingSafeEqual(Buffer.from(sign(ip, exp)), Buffer.from(m[2])) };
