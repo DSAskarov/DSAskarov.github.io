@@ -45,6 +45,23 @@ jobs:
           for i in $(seq 1 40); do D=$(find_db); S=$(echo "$D" | jq -r .status); echo "Статус базы: $S"; [ "$S" = RUNNING ] && break; sleep 10; done
           [ "$S" = RUNNING ] || { echo "$D"; exit 1; }
           CS=$(echo "$D" | jq -r .endpoint); echo "Адрес базы: $CS"; echo "cs=$CS" >> $GITHUB_OUTPUT
+      - name: Капча «не робот» (создаётся один раз)
+        id: cap
+        env: { IAM: "${{ steps.tok.outputs.iam }}" }
+        run: |
+          API=https://smartcaptcha.api.cloud.yandex.net/smartcaptcha/v1/captchas
+          find_c(){ curl -sS -H "Authorization: Bearer $IAM" "$API?folderId=$FOLDER_ID" | jq -c '[(.resources // .captchas // [])[]|select(.name=="iigry-captcha")][0] // empty'; }
+          C=$(find_c || true)
+          if [ -z "$C" ]; then
+            curl -sS -X POST -H "Authorization: Bearer $IAM" -H "Content-Type: application/json" "$API" -d "{\"folderId\":\"$FOLDER_ID\",\"name\":\"iigry-captcha\",\"allowedSites\":[\"dsaskarov.github.io\"],\"complexity\":\"EASY\",\"preCheckType\":\"CHECKBOX\",\"challengeType\":\"IMAGE_TEXT\",\"description\":\"Проверка «не робот» на сайте ИИгры онлайн\",\"labels\":{\"project\":\"iigry\",\"owner\":\"dsaskarov\",\"source\":\"github\"}}" | jq -c '{done,error}' || true
+            sleep 5; C=$(find_c || true)
+          fi
+          if [ -z "$C" ]; then echo "::warning::Капча не создана (нет роли smart-captcha.editor?) — сервер работает без неё"; exit 0; fi
+          CID=$(echo "$C" | jq -r .id); KEY=$(echo "$C" | jq -r .clientKey)
+          SEC=$(curl -sS -H "Authorization: Bearer $IAM" "$API/$CID:getSecretKey" | jq -r '.serverKey // empty')
+          [ -n "$SEC" ] || { echo "::warning::Нет серверного ключа капчи"; exit 0; }
+          echo "::add-mask::$SEC"; echo "Капча: $CID, ключ сайта: $KEY"
+          echo "key=$KEY" >> $GITHUB_OUTPUT; echo "sec=$SEC" >> $GITHUB_OUTPUT
       - name: Функция сервера
         id: fn
         uses: yc-actions/yc-sls-function@v3.1.0
@@ -64,6 +81,8 @@ jobs:
           environment: |
             YDB_CS=${{ steps.db.outputs.cs }}
             ALLOW_ORIGIN=https://dsaskarov.github.io
+            CAPTCHA_SITEKEY=${{ steps.cap.outputs.key }}
+            CAPTCHA_SECRET=${{ steps.cap.outputs.sec }}
       - name: Открыть функцию для сайта и проверить
         env: { IAM: "${{ steps.tok.outputs.iam }}", FID: "${{ steps.fn.outputs.function-id }}" }
         run: |
@@ -80,5 +99,7 @@ jobs:
           echo "Проверка чужого сайта:"; curl -sS -H "Origin: https://evil.example" "$U?a=list&room=live"; echo
           curl -sS -H "$O" "$U?a=list&room=test"; echo
           echo "Проверка рейтинга:"; curl -sS -X POST -H "$O" -H "Content-Type: application/json" "$U?a=score" -d '{"game":"test","n":"проверка","v":250,"ms":99999}'; echo
+          echo "Проверка без капчи:"; curl -sS -X POST -H "$O" -H "Content-Type: application/json" "$U?a=post" -d '{"room":"live","t":"привет","ms":5000}'; echo
+          echo "Настройки:"; curl -sS -H "$O" "$U?a=cfg"; echo
           echo "Проверка подделки:"; curl -sS -X POST -H "$O" -H "Content-Type: application/json" "$U?a=score" -d '{"game":"bugs","n":"читер","v":250,"ms":100}'; echo
           curl -sS -H "$O" "$U?a=top&game=test"; echo

@@ -1,5 +1,5 @@
 <!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src https://functions.yandexcloud.net; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"><meta name="referrer" content="strict-origin-when-cross-origin">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; font-src https://fonts.gstatic.com; img-src 'self' data: https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; connect-src https://functions.yandexcloud.net https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; frame-src https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; object-src 'none'; base-uri 'none'; form-action 'none'"><meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="description" content="Игра площадки «ИИгры онлайн»"><meta property="og:title" content="Звёздный почтальон — ИИгры онлайн"><meta property="og:description" content="Игра площадки «ИИгры онлайн»"><meta name="theme-color" content="#0B0A0E">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23B3141F'/%3E%3Ctext x='32' y='44' font-size='30' font-family='Arial' font-weight='700' text-anchor='middle' fill='%23F6DE8D'%3EИИ%3C/text%3E%3C/svg%3E">
 <style>*{box-sizing:border-box}html,body{margin:0}[hidden]{display:none!important}</style></head><body>
@@ -77,7 +77,28 @@ function frame(t){const dt=Math.min(.05,(t-last)/1000||0);last=t;
   requestAnimationFrame(frame)}
 requestAnimationFrame(frame);
 </script>
-<script data-game="post" data-asc="0" data-unit="писем">/* Таблица лидеров ИИгр: общий ник для всех игр и чата, результаты — на сервере в Yandex Cloud */
+<script>/* Проверка «не робот» Yandex SmartCaptcha: один раз на 12 часов для всего сайта и игр */
+(function(){
+  const API="https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av",PK="iigry-pass";
+  const get=()=>{try{const o=JSON.parse(localStorage.getItem(PK)||"null");return o&&o.exp>Date.now()+60e3?o.v:""}catch(_){return ""}};
+  let cfgP=null,scriptP=null,busy=null;
+  const cfg=()=>cfgP||(cfgP=fetch(API+"?a=cfg",{cache:"no-store"}).then(r=>r.json()).catch(()=>({captcha:""})));
+  const load=()=>scriptP||(scriptP=new Promise((ok,no)=>{const s=document.createElement("script");s.src="https://smartcaptcha.cloud.yandex.ru/captcha.js?render=onload&onload=__iigryCap";
+    window.__iigryCap=ok;s.onerror=()=>{scriptP=null;no(new Error("Проверка не загрузилась. Проверьте интернет."))};document.head.appendChild(s)}));
+  function overlay(){const d=document.createElement("div");d.setAttribute("role","dialog");d.setAttribute("aria-modal","true");d.setAttribute("aria-label","Проверка, что вы не робот");
+    d.style.cssText="position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;background:rgba(10,9,14,.72);padding:16px";
+    d.innerHTML='<div style="background:#16141B;color:#F4F4F6;border:1px solid rgba(231,189,82,.4);border-radius:16px;padding:18px;width:min(360px,100%);display:grid;gap:12px;font:500 15px/1.4 system-ui,sans-serif"><b style="font-size:17px">Проверим, что вы не робот</b><div id="iigryCapBox" style="min-height:100px"></div><button type="button" style="justify-self:end;background:transparent;color:#B9B6C2;border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:7px 12px;cursor:pointer">Отмена</button></div>';
+    document.body.appendChild(d);return d}
+  async function need(){const p=get();if(p)return p;if(busy)return busy;
+    busy=(async()=>{const c=await cfg();if(!c.captcha)return "";await load();const d=overlay();
+      try{return await new Promise((ok,no)=>{d.querySelector("button").onclick=()=>no(new Error("Проверка отменена."));
+        window.smartCaptcha.render(d.querySelector("#iigryCapBox"),{sitekey:c.captcha,hl:"ru",callback:async token=>{
+          try{const r=await fetch(API+"?a=pass",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({token})}),j=await r.json();
+            if(!r.ok||!j.pass)throw new Error(j.error||"Проверка не пройдена.");try{localStorage.setItem(PK,JSON.stringify({v:j.pass,exp:j.exp}))}catch(_){}ok(j.pass)}catch(e){no(e)}}})})}
+      finally{d.remove()}})().finally(()=>{busy=null});return busy}
+  window.IIGRY_PASS={get,need,clear:()=>{try{localStorage.removeItem(PK)}catch(_){}}};
+})();
+</script><script data-game="post" data-asc="0" data-unit="писем">/* Таблица лидеров ИИгр: общий ник для всех игр и чата, результаты — на сервере в Yandex Cloud */
 (function(){
   const me=document.currentScript,G=me.dataset.game,ASC=me.dataset.asc==="1",UNIT=me.dataset.unit||"",
     API="https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av",K="iigry-nick",t0=Date.now();
@@ -101,8 +122,9 @@ requestAnimationFrame(frame);
       if(!items.length){const li=document.createElement("li");li.className="mu";li.textContent="Пока пусто. Станьте первым!";ol.appendChild(li);return}
       items.forEach(x=>{const li=document.createElement("li");li.textContent=S(x.n,30);const b=document.createElement("b");b.textContent=Math.round(+x.v||0)+" "+UNIT;li.appendChild(b);if(S(x.n,30).toLowerCase()===nick)li.className="me";ol.appendChild(li)})}
     catch(_){ol.textContent="";say("Таблица временно недоступна.")}}
-  async function send(v,n){say("Отправляем результат…");
-    try{const r=await fetch(API+"?a=score",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({game:G,v,n,aid,ms:Date.now()-t0})}),j=await r.json();
+  async function send(v,n,again){say("Отправляем результат…");
+    try{const P=window.IIGRY_PASS,r=await fetch(API+"?a=score",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({game:G,v,n,aid,ms:Date.now()-t0,pass:P?P.get():""})}),j=await r.json();
+      if(r.status===401&&j.need==="captcha"&&P&&!again){P.clear();await P.need();return send(v,n,true)}
       if(!r.ok)throw new Error(j.error||"Не удалось сохранить");
       say(j.improved?"Новый личный рекорд: "+j.best+" "+UNIT+"!":"Ваш рекорд — "+j.best+" "+UNIT+". Этот результат не лучше, но вы близко.");form.hidden=true;top()}
     catch(e){say(S(e.message,200))}}
