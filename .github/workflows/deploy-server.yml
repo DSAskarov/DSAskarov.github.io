@@ -79,3 +79,6 @@ jobs:
           echo "Проверка фильтра ссылок:"; curl -sS -X POST -H "$O" -H "Content-Type: application/json" "$U?a=post" -d '{"room":"test","t":"заходи на spam.ru","ms":5000}'; echo
           echo "Проверка чужого сайта:"; curl -sS -H "Origin: https://evil.example" "$U?a=list&room=live"; echo
           curl -sS -H "$O" "$U?a=list&room=test"; echo
+          echo "Проверка рейтинга:"; curl -sS -X POST -H "$O" -H "Content-Type: application/json" "$U?a=score" -d '{"game":"test","n":"проверка","v":250,"ms":99999}'; echo
+          echo "Проверка подделки:"; curl -sS -X POST -H "$O" -H "Content-Type: application/json" "$U?a=score" -d '{"game":"bugs","n":"читер","v":250,"ms":100}'; echo
+          curl -sS -H "$O" "$U?a=top&game=test"; echo

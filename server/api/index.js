@@ -8,6 +8,13 @@ const ORIGINS = (process.env.ALLOW_ORIGIN || "https://dsaskarov.github.io").spli
 const ROOMS = { test: 200, live: 500, "talk-site": 1000, "talk-industry": 1000, "talk-wishes": 1000 };
 const BAD = /(ху[йяеёи]|пизд|бля|[её]б[аоуи]н|муда[кч]|пидо|гандон|шлюх|сука|казино|ставк|букмекер|водк|пиво|алкогол|viagra|casino)/i;
 const LINK = /(https?:\/\/|www\.|t\.me\/|\.(ru|com|net|org|рф|io|me)\b)/i;
+// Игры с рейтингом: допустимые результаты и минимальное время игры (защита от явной подделки)
+const GAMES = {
+  test:  { min: 1,  max: 1000, asc: false, minMs: v => 0 },            // проверочная, на сайте не показывается
+  bugs:  { min: 1,  max: 300,  asc: false, minMs: v => 25000 },          // «Лови баги»: очки за 30 секунд
+  post:  { min: 1,  max: 1000, asc: false, minMs: v => v * 600 },        // «Звёздный почтальон»: доставлено писем
+  react: { min: 90, max: 3000, asc: true,  minMs: v => 5 * (v + 1000) }  // «Быстрее нейросети»: среднее время реакции, мс
+};
 const RESV = /dsaskarov|адм[иi]н|admin|модер|moder|иигр|iigr|поддержк|support|claude|anthropic|официал|official/i;
 
 let driver = null, token = "", salt = "", ready = null;
@@ -30,6 +37,10 @@ async function db(ctx) {
         await ensure("rl", new TableDescription()
           .withColumn(new Column("ip", Types.optional(Types.UTF8))).withColumn(new Column("ts", Types.optional(Types.UINT64)))
           .withColumn(new Column("cnt", Types.optional(Types.UINT64))).withPrimaryKeys("ip"));
+        await ensure("scores", new TableDescription()
+          .withColumn(new Column("game", Types.optional(Types.UTF8))).withColumn(new Column("nk", Types.optional(Types.UTF8)))
+          .withColumn(new Column("n", Types.optional(Types.UTF8))).withColumn(new Column("v", Types.optional(Types.UINT64)))
+          .withColumn(new Column("ts", Types.optional(Types.UINT64))).withPrimaryKeys("game", "nk"));
         await ensure("cfg", new TableDescription()
           .withColumn(new Column("k", Types.optional(Types.UTF8))).withColumn(new Column("v", Types.optional(Types.UTF8)))
           .withPrimaryKeys("k"));
@@ -55,6 +66,18 @@ function reply(code, obj, origin) {
 }
 const clean = (s, n) => String(s == null ? "" : s).replace(/[\u0000-\u0008\u000B-\u001F\u007F​-‏‪-‮⁦-⁩]/g, "").trim().slice(0, n);
 
+const nickOf = b => { const n = clean(b.n, 30).replace(/^@/, ""); return !n || RESV.test(n) || BAD.test(n) || LINK.test(n) ? "Аноним #" + clean(b.aid, 6).replace(/[^0-9A-Z]/g, "").slice(0, 6) : n };
+const ipOf = (event, hd) => { const raw = (event.requestContext && event.requestContext.identity && event.requestContext.identity.sourceIp) || String(hd["X-Forwarded-For"] || hd["x-forwarded-for"] || "").split(",")[0] || "0";
+  return crypto.createHash("sha256").update(salt + raw).digest("hex").slice(0, 32) };
+async function limit(ip, now, gap, perHour) {
+  const lim = await q(`DECLARE $ip AS Utf8; SELECT ts, cnt FROM rl WHERE ip=$ip;`, { $ip: TypedValues.utf8(ip) });
+  const last = lim[0] ? num(lim[0].ts) : 0, cnt = lim[0] && now - last < 3600e3 ? num(lim[0].cnt) : 0;
+  if (now - last < gap) return { err: `Не так быстро: не чаще раза в ${Math.round(gap / 1000)} секунд.` };
+  if (cnt >= perHour) return { err: `Лимит: ${perHour} в час. Отдохните немного.` };
+  return { cnt };
+}
+const parse = event => { try { return JSON.parse(event.isBase64Encoded ? Buffer.from(event.body || "", "base64").toString() : event.body || "{}") || {} } catch (_) { return null } };
+
 exports.handler = async (event, ctx) => {
   const hd = event.headers || {}, origin = hd.Origin || hd.origin || "";
   const method = event.httpMethod || "GET", qs = event.queryStringParameters || {}, a = qs.a || "";
@@ -72,7 +95,7 @@ exports.handler = async (event, ctx) => {
   }
 
   if (a === "post" && method === "POST") {
-    let b = {}; try { b = JSON.parse(event.isBase64Encoded ? Buffer.from(event.body || "", "base64").toString() : event.body || "{}") } catch (_) { return reply(400, { error: "Неверный запрос" }, origin) }
+    const b = parse(event); if (!b) return reply(400, { error: "Неверный запрос" }, origin);
     const room = String(b.room || ""); if (!ROOMS[room]) return reply(400, { error: "Нет такой комнаты" }, origin);
     if (b.hp) return reply(200, { ok: true }, origin);                       // поле-ловушка для ботов: делаем вид, что всё хорошо
     if (!(Number(b.ms) >= 2500)) return reply(429, { error: "Слишком быстро. Похоже на робота — попробуйте ещё раз." }, origin);
@@ -81,19 +104,37 @@ exports.handler = async (event, ctx) => {
     if (BAD.test(t)) return reply(400, { error: "Сообщение не прошло фильтр: мат, реклама или запрещённая тема." }, origin);
     if (LINK.test(t)) return reply(400, { error: "Ссылки в сообщениях запрещены — так меньше спама." }, origin);
     if (/(.)\1{7,}/.test(t) || /[A-ZА-ЯЁ]{20,}/.test(t)) return reply(400, { error: "Похоже на флуд. Попробуйте спокойнее." }, origin);
-    let n = clean(b.n, 30).replace(/^@/, ""); if (!n || RESV.test(n) || BAD.test(n) || LINK.test(n)) n = "Аноним #" + clean(b.aid, 6).replace(/[^0-9A-Z]/g, "").slice(0, 6);
-    const ipRaw = (event.requestContext && event.requestContext.identity && event.requestContext.identity.sourceIp) || String(hd["X-Forwarded-For"] || hd["x-forwarded-for"] || "").split(",")[0] || "0";
-    const ip = crypto.createHash("sha256").update(salt + ipRaw).digest("hex").slice(0, 32), now = Date.now();
-    const lim = await q(`DECLARE $ip AS Utf8; SELECT ts, cnt FROM rl WHERE ip=$ip;`, { $ip: TypedValues.utf8(ip) });
-    const last = lim[0] ? num(lim[0].ts) : 0, cnt = lim[0] && now - last < 3600e3 ? num(lim[0].cnt) : 0;
-    if (now - last < 8000) return reply(429, { error: "Не так быстро: одно сообщение в 8 секунд." }, origin);
-    if (cnt >= 40) return reply(429, { error: "Лимит: 40 сообщений в час. Отдохните немного." }, origin);
+    const n = nickOf(b), now = Date.now(), ip = ipOf(event, hd);
+    const lim = await limit(ip, now, 8000, 40); if (lim.err) return reply(429, { error: lim.err }, origin); const cnt = lim.cnt;
     const id = crypto.randomBytes(6).toString("hex");
     await q(`DECLARE $r AS Utf8; DECLARE $ts AS Uint64; DECLARE $id AS Utf8; DECLARE $n AS Utf8; DECLARE $t AS Utf8; DECLARE $ip AS Utf8; DECLARE $c AS Uint64;
       UPSERT INTO msgs (room, ts, id, n, t, ip) VALUES ($r, $ts, $id, $n, $t, $ip);
       UPSERT INTO rl (ip, ts, cnt) VALUES ($ip, $ts, $c);`,
       { $r: TypedValues.utf8(room), $ts: TypedValues.uint64(now), $id: TypedValues.utf8(id), $n: TypedValues.utf8(n), $t: TypedValues.utf8(t), $ip: TypedValues.utf8(ip), $c: TypedValues.uint64(cnt + 1) });
     return reply(200, { ok: true, item: { ts: now, id, n, t } }, origin);
+  }
+  if (a === "top" && method === "GET") {
+    const g = GAMES[qs.game]; if (!g) return reply(400, { error: "Нет такой игры" }, origin);
+    const rows = await q(`DECLARE $g AS Utf8; SELECT n, v, ts FROM scores WHERE game=$g ORDER BY v ${g.asc ? "ASC" : "DESC"}, ts ASC LIMIT 10;`, { $g: TypedValues.utf8(qs.game) });
+    return reply(200, { asc: g.asc, items: rows.map(r => ({ n: r.n, v: num(r.v), ts: num(r.ts) })) }, origin);
+  }
+
+  if (a === "score" && method === "POST") {
+    const b = parse(event); if (!b) return reply(400, { error: "Неверный запрос" }, origin);
+    const g = GAMES[b.game]; if (!g) return reply(400, { error: "Нет такой игры" }, origin);
+    const v = Math.round(Number(b.v));
+    if (!Number.isFinite(v) || v < g.min || v > g.max) return reply(400, { error: "Такой результат не принимается." }, origin);
+    if (!(Number(b.ms) >= g.minMs(v))) return reply(400, { error: "Результат пришёл слишком быстро — похоже на подделку." }, origin);
+    const n = nickOf(b), nk = n.toLowerCase(), now = Date.now(), ip = ipOf(event, hd);
+    const lim = await limit("s:" + ip, now, 5000, 60); if (lim.err) return reply(429, { error: lim.err }, origin);
+    const old = await q(`DECLARE $g AS Utf8; DECLARE $k AS Utf8; SELECT v FROM scores WHERE game=$g AND nk=$k;`, { $g: TypedValues.utf8(b.game), $k: TypedValues.utf8(nk) });
+    const prev = old[0] ? num(old[0].v) : null, better = prev === null || (g.asc ? v < prev : v > prev);
+    const P = { $ip: TypedValues.utf8("s:" + ip), $ts: TypedValues.uint64(now), $c: TypedValues.uint64(lim.cnt + 1) };
+    if (better) await q(`DECLARE $g AS Utf8; DECLARE $k AS Utf8; DECLARE $n AS Utf8; DECLARE $v AS Uint64; DECLARE $ts AS Uint64; DECLARE $ip AS Utf8; DECLARE $c AS Uint64;
+      UPSERT INTO scores (game, nk, n, v, ts) VALUES ($g, $k, $n, $v, $ts); UPSERT INTO rl (ip, ts, cnt) VALUES ($ip, $ts, $c);`,
+      Object.assign({ $g: TypedValues.utf8(b.game), $k: TypedValues.utf8(nk), $n: TypedValues.utf8(n), $v: TypedValues.uint64(v) }, P));
+    else await q(`DECLARE $ip AS Utf8; DECLARE $ts AS Uint64; DECLARE $c AS Uint64; UPSERT INTO rl (ip, ts, cnt) VALUES ($ip, $ts, $c);`, P);
+    return reply(200, { ok: true, best: better ? v : prev, improved: better, n }, origin);
   }
   return reply(404, { error: "Нет такого действия" }, origin);
 };
