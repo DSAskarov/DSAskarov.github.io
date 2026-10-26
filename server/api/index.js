@@ -3,6 +3,7 @@
 "use strict";
 const { Driver, TokenAuthService, TypedValues, TypedData, TableDescription, Column, Types } = require("ydb-sdk");
 const crypto = require("crypto");
+const dns = require("dns").promises, net = require("net");
 
 const ORIGINS = (process.env.ALLOW_ORIGIN || "https://dsaskarov.github.io").split(",");
 const ROOMS = { test: 200, live: 500, "talk-site": 1000, "talk-industry": 1000, "talk-wishes": 1000 };
@@ -559,7 +560,30 @@ exports.handler = async (event, ctx) => {
     const id = String(qs.id || ""); if (!/^[0-9a-z]{8,20}$/.test(id)) return reply(400, { error: "Неверный номер обращения" }, origin);
     const r = await q(`DECLARE $id AS Utf8; SELECT kind, st FROM inbox WHERE id=$id;`, { $id: TypedValues.utf8(id) }); if (!r[0] || r[0].kind === "call") return reply(404, { error: "Обращение не найдено" }, origin);
     const rp = await q(`DECLARE $id AS Utf8; SELECT ts, by, text FROM replies WHERE id=$id ORDER BY ts;`, { $id: TypedValues.utf8(id) });
-    return reply(200, { kind: KINDS[r[0].kind], st: QST[r[0].st] || r[0].st, replies: rp.map(x => ({ ts: num(x.ts), by: x.by, text: x.text })) }, origin);
+    const ck = (await q(`DECLARE $id AS Utf8; SELECT verdict, res FROM checks WHERE id=$id;`, { $id: TypedValues.utf8(id) }))[0]; let cl = []; try { cl = ck ? (JSON.parse(ck.res).lines || []).filter(l => !/журнал/i.test(l)) : [] } catch (_) {}
+    return reply(200, { check: ck ? { verdict: ck.verdict, lines: cl } : null, kind: KINDS[r[0].kind], st: QST[r[0].st] || r[0].st, replies: rp.map(x => ({ ts: num(x.ts), by: x.by, text: x.text })) }, origin);
+  }
+  // Быстрая проверка ссылки для мастера публикации: открывается ли, HTTPS, что внутри. Защита от обращений к внутренним адресам.
+  if (a === "probe" && method === "POST") {
+    const b = parse(event) || {}, now = Date.now(), ip = ipOf(event, hd);
+    const lim = await limit("p:" + ip, now, 1500, 60); if (lim.err) return reply(429, { error: lim.err }, origin);
+    await q(`DECLARE $ip AS Utf8; DECLARE $ts AS Uint64; DECLARE $c AS Uint64; UPSERT INTO rl (ip, ts, cnt) VALUES ($ip, $ts, $c);`, { $ip: TypedValues.utf8("p:" + ip), $ts: TypedValues.uint64(now), $c: TypedValues.uint64(lim.cnt + 1) });
+    const issues = [], privIp = a => net.isIPv4(a) ? /^(10\.|127\.|0\.|169\.254\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.)/.test(a) : /^(::1|fc|fd|fe80|::ffff:(10|127|169\.254|192\.168)\.)/i.test(a) || a === "::";
+    let u = String(b.url || "").trim().slice(0, 400), res = null, hops = 0;
+    try { while (hops++ < 5) { const x = new URL(u); if (x.protocol !== "https:") return reply(200, { ok: false, issues: ["Ссылка должна начинаться с https://"] }, origin);
+        if (x.username || x.password || /^(localhost|.*\.local|.*\.internal|metadata.*)$/i.test(x.hostname) || net.isIP(x.hostname)) return reply(200, { ok: false, issues: ["Такой адрес не подходит — нужна обычная публичная ссылка"] }, origin);
+        const addrs = await dns.lookup(x.hostname, { all: true }); if (!addrs.length || addrs.some(r => privIp(r.address))) return reply(200, { ok: false, issues: ["Адрес не найден или недоступен из интернета"] }, origin);
+        res = await fetch(u, { redirect: "manual", signal: AbortSignal.timeout(9000), headers: { "User-Agent": "Mozilla/5.0 (IIgry link check)" } });
+        if (res.status >= 300 && res.status < 400 && res.headers.get("location")) { const nx = new URL(res.headers.get("location"), u).href; if (new URL(nx).hostname !== x.hostname) issues.push("Перенаправляет на другой сайт: " + new URL(nx).hostname); u = nx; continue }
+        break } } catch (e) { return reply(200, { ok: false, issues: ["Ссылка не открывается: " + String(e && e.message || e).slice(0, 80)] }, origin) }
+    if (!res) return reply(200, { ok: false, issues: ["Слишком много перенаправлений"] }, origin);
+    const ct = res.headers.get("content-type") || "", cd = res.headers.get("content-disposition") || "", len = +res.headers.get("content-length") || 0;
+    try { res.body && res.body.cancel() } catch (_) {}
+    if (res.status >= 400) return reply(200, { ok: false, status: res.status, issues: issues.concat("Сайт ответил ошибкой " + res.status + " — проверьте, открыт ли доступ всем") }, origin);
+    const kind = /text\/html/.test(ct) && !/attachment/i.test(cd) ? "page" : "file", host = new URL(u).hostname;
+    if (/^(bit\.ly|tinyurl\.com|clck\.ru|goo\.su|t\.co|cutt\.ly|is\.gd|vk\.cc|u\.to)$/i.test(host)) issues.push("Сокращённая ссылка — дайте прямую");
+    if (kind === "file" && /\.(exe|scr|bat|cmd|msi|vbs|ps1|jar|apk|dll|hta)(\?|$)/i.test(new URL(u).pathname)) issues.push("Исполняемый файл — модератор проверит его вручную в песочнице");
+    return reply(200, { ok: !issues.some(i => /Сокращённая/.test(i)), kind, status: res.status, host, size: len, final: u, issues }, origin);
   }
   if (a === "submit" && method === "POST") {
     const b = parse(event); if (!b) return reply(400, { error: "Неверный запрос" }, origin);

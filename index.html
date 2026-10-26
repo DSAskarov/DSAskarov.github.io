@@ -581,7 +581,7 @@ html.tilt .card:hover{transform:perspective(900px) rotateX(var(--rx,0deg)) rotat
     <div class="two">
       <div class="box">
         <h3>Как опубликовать</h3>
-        <p style="margin:0">Шесть шагов: выбрать тип, указать основу (если это доработка), описать проект, дать ссылку на демо, назначить цену и отправить на проверку. Модератор ответит обычно в течение дня.</p><p style="margin:0"><a class="btn ghost sm" href="kak-opublikovat.html">Пошаговая инструкция с чек-листом →</a></p>
+        <p style="margin:0">Пошаговый мастер: на каждом шаге сайт сам проверяет, всё ли готово, — ссылки, описание, цену, — и только тогда пускает дальше. В конце — номер заявки и живой статус проверки.</p>
         <div><button class="btn" id="pubBtn" type="button">Опубликовать проект</button></div>
         <p style="margin:0">Или пришлите ссылку либо файл на почту:</p>
         <div class="copyrow"><code id="mail">askarov.dmitry@yandex.ru</code><button class="btn sm ghost" data-copy="mail">Скопировать</button></div>
@@ -1259,7 +1259,7 @@ $("authForm").onsubmit=e=>{e.preventDefault();
 setMode("in");
 
 /* Публикация — образец */
-const openPub=par=>{$("pPar").innerHTML='<option value="">Нет, это мой оригинал</option>'+G.filter(g=>!g.soon).map(g=>`<option value="${esc(g.id)}">${esc(g.t)} · @${esc(g.a)}</option>`).join("");
+const openPub=par=>{location.href="kak-opublikovat.html"+(par?"#remix="+encodeURIComponent(par):"")};const openPubOld=par=>{$("pPar").innerHTML='<option value="">Нет, это мой оригинал</option>'+G.filter(g=>!g.soon).map(g=>`<option value="${esc(g.id)}">${esc(g.t)} · @${esc(g.a)}</option>`).join("");
   $("pPar").value=par&&byId[par]?par:"";$("pChgL").hidden=!$("pPar").value;if($("pPar").value){const p=byId[par];$("pCat").value=p.c||"game";$("pOpen").checked=true}$("pForL").hidden=!/mod|server/.test($("pCat").value);
   try{$("pNick").value=$("pNick").value||localStorage.getItem("iigry-nick")||""}catch(_){}$("pub").showModal()};
 $("pubBtn").onclick=()=>openPub("");

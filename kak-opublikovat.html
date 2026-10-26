@@ -1,84 +1,141 @@
-<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://functions.yandexcloud.net; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
-<meta name="description" content="Как опубликовать игру, приложение, мод или сервер на «ИИгры онлайн» — пошаговый чек-лист для авторов.">
-<title>Как опубликовать проект — ИИгры онлайн</title>
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; font-src https://fonts.gstatic.com; img-src 'self' data: https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; connect-src https://functions.yandexcloud.net https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; frame-src https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; object-src 'none'; base-uri 'none'; form-action 'none'"><meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="description" content="Опубликовать игру, приложение, мод или сервер на «ИИгры онлайн»: пошаговый мастер с автопроверкой."><meta property="og:title" content="Публикация проекта — ИИгры онлайн"><meta property="og:description" content="Опубликовать игру, приложение, мод или сервер на «ИИгры онлайн»: пошаговый мастер с автопроверкой."><meta name="theme-color" content="#0B0A0E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23B3141F'/%3E%3Ctext x='32' y='44' font-size='30' font-family='Arial' font-weight='700' text-anchor='middle' fill='%23F6DE8D'%3EИИ%3C/text%3E%3C/svg%3E">
+<style>*{box-sizing:border-box}html,body{margin:0}[hidden]{display:none!important}</style></head><body>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@700;800;900&family=Golos+Text:wght@400;600&display=swap">
 <style>
 :root{--bg:#0B0A0E;--panel:#16141B;--fg:#F4F4F6;--muted:#B9B6C2;--red:#E8333F;--gold:#E7BD52;--green:#4ADE95;--line:rgba(255,255,255,.12);color-scheme:dark}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(60vmax 50vmax at 85% 0%,rgba(231,189,82,.12),transparent 60%),var(--bg);color:var(--fg);font:400 16px/1.55 "Golos Text",system-ui,sans-serif;padding:16px}
-main{max-width:820px;margin:0 auto;display:grid;gap:16px}a{color:var(--gold)}
-h1{font:900 clamp(1.6rem,6vw,2.4rem)/1.1 Rubik,sans-serif;margin:8px 0 0}h1 b{color:var(--red)}h2{font:800 1.25rem Rubik,sans-serif;margin:0}
-.lead{color:var(--muted);margin:0}.bar{height:10px;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),#F6DE8D);transition:width .3s}
-.nav{display:flex;gap:6px;flex-wrap:wrap}.nav button{border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:999px;padding:6px 12px;font:600 .85rem "Golos Text";cursor:pointer}
-.nav button[aria-current=true]{border-color:var(--gold);color:var(--gold)}.nav button.done{border-color:rgba(74,222,149,.6)}.nav button.done::before{content:"✓ ";color:var(--green)}
+body{background:radial-gradient(60vmax 50vmax at 85% 0%,rgba(231,189,82,.12),transparent 60%),var(--bg);color:var(--fg);font:400 16px/1.55 "Golos Text",system-ui,sans-serif;padding:16px}
+main{max-width:760px;margin:0 auto;display:grid;gap:14px}a{color:var(--gold)}
+h1{font:900 clamp(1.5rem,6vw,2.2rem)/1.1 Rubik,sans-serif;margin:6px 0 0}h1 b{color:var(--red)}h2{font:800 1.2rem Rubik,sans-serif;margin:0}
+.lead,.muted{color:var(--muted);margin:0}.muted{font-size:.88rem}
+.bar{height:10px;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),#F6DE8D);transition:width .3s}
+.nav{display:flex;gap:6px;flex-wrap:wrap}.nav span{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:4px 10px;font:600 .8rem "Golos Text";color:var(--muted)}
+.nav span.cur{border-color:var(--gold);color:var(--gold)}.nav span.ok{border-color:rgba(74,222,149,.6);color:var(--fg)}.nav span.ok::before{content:"✓ ";color:var(--green)}
 .step{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;display:grid;gap:12px}
-.step .n{font:800 .8rem Rubik;letter-spacing:2px;color:var(--gold);text-transform:uppercase}
-.ck{display:flex;gap:10px;align-items:flex-start;padding:10px;border-radius:10px;background:#0F0E13;border:1px solid var(--line);cursor:pointer}
-.ck input{width:20px;height:20px;margin-top:2px;accent-color:#E7BD52;flex:none}.ck small{display:block;color:var(--muted)}
-.btn{display:inline-block;border:0;border-radius:10px;padding:11px 16px;font:700 .95rem "Golos Text";background:linear-gradient(135deg,#FF4A55,#A3101C);color:#fff;text-decoration:none;cursor:pointer}
-.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--fg)}.btn.gold{background:var(--gold);color:#1A1306}
-.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.tip{border-left:3px solid var(--gold);padding:6px 12px;color:var(--muted);font-size:.92rem}
-.done-msg{color:var(--green);font-weight:600;min-height:1.4em;margin:0}
-button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
-</style></head><body><main>
-<p style="margin:0"><a href="./">← ИИгры онлайн</a></p>
-<h1>Как опубликовать <b>проект</b></h1>
-<p class="lead">Игра, приложение, мод или сервер — путь один. Идите по шагам и отмечайте галочки: прогресс сохранится в этом браузере, можно вернуться позже.</p>
+label.f{display:grid;gap:4px;font-weight:600;font-size:.92rem}
+input,select,textarea{background:#0F0E13;color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:10px;font:400 1rem "Golos Text";width:100%}
+textarea{min-height:90px;resize:vertical}
+.ck{display:flex;gap:10px;align-items:flex-start;font-size:.92rem}.ck input{width:20px;height:20px;flex:none;accent-color:#E7BD52;margin-top:2px}
+.checks{display:grid;gap:4px;background:#0F0E13;border:1px solid var(--line);border-radius:10px;padding:10px;font-size:.9rem}
+.checks div::before{display:inline-block;width:1.4em}.checks .y::before{content:"✅"}.checks .n::before{content:"❌"}.checks .w::before{content:"⏳"}.checks .i::before{content:"ℹ️"}
+.btn{border:0;border-radius:10px;padding:11px 16px;font:700 .95rem "Golos Text";background:linear-gradient(135deg,#FF4A55,#A3101C);color:#fff;cursor:pointer;text-decoration:none;display:inline-block}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--fg)}.btn.gold{background:var(--gold);color:#1A1306}.btn:disabled{opacity:.4;cursor:not-allowed}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.big{font:900 1.6rem Rubik;color:var(--gold);letter-spacing:1px}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+[hidden]{display:none!important}
+</style>
+<main>
+<p style="margin:0"><a href="./">← ИИгры онлайн</a> · <a href="otvet.html">Ответы на обращения</a></p>
+<h1>Публикация <b>проекта</b></h1>
+<p class="lead">Игра, приложение, мод или сервер. На каждом шаге сайт сам проверяет, всё ли готово: когда все пункты зелёные — откроется следующий шаг. Черновик сохраняется в этом браузере.</p>
 <div class="bar" aria-hidden="true"><i id="bar"></i></div>
-<div class="nav" id="nav" role="tablist" aria-label="Шаги"></div>
-<section class="step" id="step"></section>
-<div class="row"><button class="btn ghost" id="prev" type="button">← Назад</button><button class="btn" id="next" type="button">Дальше →</button><span class="done-msg" id="dm" aria-live="polite"></span></div>
-<p class="lead" style="font-size:.85rem">Вопросы — в <a href="./#talk">обсуждениях на сайте</a> или в Telegram <a href="https://t.me/dsaskarov" target="_blank" rel="noopener">@dsaskarov</a>.</p>
+<div class="nav" id="nav"></div>
+<section class="step" id="step" aria-live="polite"></section>
+<div class="row"><button class="btn ghost" id="prev" type="button">← Назад</button><button class="btn" id="next" type="button">Дальше →</button><button class="btn ghost" id="reset" type="button" style="margin-left:auto">Начать заново</button></div>
+<p class="muted">Вопросы — в <a href="./#talk">обсуждениях</a> или в Telegram <a href="https://t.me/dsaskarov" target="_blank" rel="noopener">@dsaskarov</a>.</p>
 </main>
 <script>
+const PROJ=[{"id": "p01", "t": "Кот на орбите", "a": "pixel_ira", "p": 0, "c": "game", "soon": false}, {"id": "p02", "t": "Кот на орбите: Луна", "a": "lunar_dev", "p": 100, "c": "game", "soon": false}, {"id": "p03", "t": "Кот на орбите: Луна+", "a": "kosmo_max", "p": 113, "c": "game", "soon": false}, {"id": "p04", "t": "Лабиринт теней", "a": "nightcoder", "p": 149, "c": "game", "soon": false}, {"id": "p05", "t": "Ферма слов", "a": "tanya_words", "p": 0, "c": "game", "soon": false}, {"id": "p06", "t": "Ферма слов: Дуэль", "a": "ivan_k", "p": 60, "c": "game", "soon": false}, {"id": "p07", "t": "Пиксельный рейд", "a": "retro_sasha", "p": 249, "c": "game", "soon": false}, {"id": "p08", "t": "Оригами-блоки", "a": "origami_bot", "p": 0, "c": "game", "soon": false}, {"id": "p09", "t": "Меню за минуту", "a": "cafe_lena", "p": 0, "c": "app", "soon": false}, {"id": "p10", "t": "Приложение для риелторов", "a": "dsaskarov", "p": 0, "c": "app", "soon": true}, {"id": "p11", "t": "Сборка Minecraft от DSAskarov", "a": "dsaskarov", "p": 0, "c": "server", "soon": true}, {"id": "p12", "t": "Сервер Minecraft DSAskarov", "a": "dsaskarov", "p": 0, "c": "server", "soon": true}, {"id": "p13", "t": "Лови баги", "a": "dsaskarov", "p": 0, "c": "game", "soon": false}, {"id": "p14", "t": "Звёздный почтальон", "a": "dsaskarov", "p": 49, "c": "game", "soon": false}, {"id": "p15", "t": "Быстрее нейросети", "a": "dsaskarov", "p": 1, "c": "game", "soon": false}, {"id": "p16", "t": "Кот на орбите: Марс", "a": "lunar_dev", "p": 120, "c": "game", "soon": false}],API="https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av",$=id=>document.getElementById(id);
+const BAD=/(ху[йяеёи]|пизд|бля|[её]б[аоуи]н|муда[кч]|пидо|гандон|шлюх|казино|ставк|букмекер|водк|алкогол|наркот|viagra|casino)/i,LINKRE=/(https?:\/\/|www\.|t\.me\/|\.(ru|com|net|org|рф|io|me)\b)/i,RESV=/dsaskarov|адм[иi]н|admin|модер|moder|иигр|iigr|поддержк|support|команд|официал|official|claude|anthropic/i;
+const K="iigry-pubwiz";let W={i:0,cat:"game",forG:"",par:"",chg:"",title:"",genre:"",desc:"",demo:"",full:"",price:0,buy:"",open:true,nick:"",con:"",own:false,pub:false,rules:false,pr:{},ticket:""};
+try{W=Object.assign(W,JSON.parse(localStorage.getItem(K)||"{}"))}catch(_){}
+try{if(!W.nick)W.nick=localStorage.getItem("iigry-nick")||""}catch(_){}
+{const m=/^#remix=([\w-]{1,20})$/.exec(location.hash);if(m&&PROJ.find(p=>p.id===m[1])&&!W.ticket){W.par=m[1];W.i=Math.max(W.i,1);const p=PROJ.find(p=>p.id===m[1]);W.cat=p.c;W.open=true}}
+const save=()=>{try{localStorage.setItem(K,JSON.stringify(W))}catch(_){}};
+const base=()=>PROJ.find(p=>p.id===W.par);
+const el=(t,x,c)=>{const e=document.createElement(t);if(x!=null)e.textContent=x;if(c)e.className=c;return e};
+async function probe(key,url){W.pr[key]={st:"w",url};draw();try{const r=await fetch(API+"?a=probe",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({url})}),j=await r.json();
+  W.pr[key]=r.ok?{st:j.ok?"y":"n",url,issues:j.issues||[],kind:j.kind,host:j.host}:{st:"n",url,issues:[j.error||"Не получилось проверить"]}}catch(_){W.pr[key]={st:"n",url,issues:["Нет связи с сервером проверки — попробуйте ещё раз"]}}save();draw()}
+const prOk=(key,url)=>W.pr[key]&&W.pr[key].url===url&&W.pr[key].st==="y";
 const S=[
- {t:"Подготовка",h:"Шаг 1. Проверьте, что проект готов",p:"Модератор пропустит проект, если всё ниже — правда.",c:[
-   ["Проект запускается","Демо открывается и в него можно поиграть или попробовать без установки."],
-   ["Без рекламы и запрещёнки","Нет рекламы, ставок, алкоголя, оскорблений и чужих персональных данных."],
-   ["Права в порядке","Проект ваш, или вы дорабатываете чужой с открытым кодом и указываете автора."],
-   ["Сделан с ИИ","Площадка — для проектов, созданных вместе с нейросетями. Как именно — неважно."]]},
- {t:"Демо",h:"Шаг 2. Разместите демо в интернете",p:"Нужна ссылка https://, по которой проект открывается в браузере. Подойдёт любой из вариантов:",c:[
-   ["Выбрал, где разместить","GitHub Pages, itch.io, ссылка «Поделиться» из Claude, Яндекс Игры, свой сайт — любая открытая ссылка."],
-   ["Проверил ссылку в другом браузере","Откройте её в режиме инкогнито: если работает там — работает у всех."]],
-  x:'<p class="tip">Для модов и серверов демо — это страница с описанием, скриншотами или видео и адресом сервера.</p>'},
- {t:"Оригинал или доработка",h:"Шаг 3. Оригинал или доработка?",p:"Если вы улучшили чужой проект — это доработка. Автор оригинала всегда указан и получает долю с продаж.",c:[
-   ["Определился","Оригинал — сразу к шагу 4. Доработка — откройте проект в каталоге и нажмите «Доработать»: форма заполнится сама."],
-   ["Для доработки: цена не ниже основы","Бесплатная основа — любая цена. Платная — не дешевле её."]],
-  x:'<div class="row"><a class="btn ghost" href="./#catalog" target="_blank">Открыть каталог →</a><a class="btn ghost" href="./#remix" target="_blank">Как работают доработки</a></div>'},
- {t:"Форма",h:"Шаг 4. Заполните форму",p:"Кнопка ниже откроет форму. В ней шесть коротких пунктов:",c:[
-   ["Тип и основа","Игра, приложение, мод или сервер; для мода или сервера — для какой игры. Если доработка — что изменили."],
-   ["Название, жанр, описание","Пара честных и живых предложений — лучше, чем длинный текст."],
-   ["Ссылки","Демо — обязательно. Полная версия или файл — если есть."],
-   ["Цена","0 — бесплатно. Для платного проекта — ссылка на вашу страницу оплаты (Boosty, ЮMoney и т. п.): деньги идут вам напрямую."],
-   ["Ник и контакт","Ник увидят все. Почту или Telegram видит только админ — чтобы задать вопрос по заявке."]],
-  x:'<div class="row"><a class="btn" href="./#publish" target="_blank">Открыть форму публикации →</a></div><p class="tip">Перед отправкой сайт попросит подтвердить, что вы не робот.</p>'},
- {t:"Проверка",h:"Шаг 5. Проверка модератором",p:"После отправки вы получите номер заявки. Модератор проверит проект, обычно в течение дня.",c:[
-   ["Сохранил номер заявки","Он также сохранился в браузере — ответ подставится сам."],
-   ["Знаю, где смотреть ответ","На странице «Ответы на обращения». Если модератор задаст вопрос — ответьте на почту или в Telegram."]],
-  x:'<div class="row"><a class="btn ghost" href="otvet.html" target="_blank">Ответы на обращения →</a></div><p class="tip">Что проверяют: демо открывается, описание честное, нет запрещённого, у доработки указана основа и цена не ниже.</p>'},
- {t:"Публикация",h:"Шаг 6. Проект в каталоге — что дальше",p:"После одобрения проект появится в каталоге с вашим ником.",c:[
-   ["Рассказал о проекте","Поделитесь ссылкой в соцсетях и обсуждениях — первые игроки приходят от автора."],
-   ["Знаю, как выпустить обновление","Новая версия — новая заявка с пометкой «обновление»: старую ссылку заменим."],
-   ["Понимаю про деньги","Сейчас платные проекты продаются через вашу ссылку оплаты. Продажа через площадку с автоматическим делением по цепочке доработок откроется позже — выплаты будут только официально оформленным авторам (самозанятым, ИП, юрлицам)."]],
-  x:'<div class="row"><a class="btn gold" href="./#publish" target="_blank">Опубликовать ещё один</a><a class="btn ghost" href="./#talk" target="_blank">Обсуждения</a></div>'}];
-const $=id=>document.getElementById(id),K="iigry-pubguide";let st={i:0,c:{}};try{st=Object.assign(st,JSON.parse(localStorage.getItem(K)||"{}"))}catch(_){}
-const save=()=>{try{localStorage.setItem(K,JSON.stringify(st))}catch(_){}};
-const doneStep=i=>S[i].c.every((_,j)=>st.c[i+"_"+j]);
-function draw(){const s=S[st.i],box=$("step");box.innerHTML="";
-  const n=document.createElement("div");n.className="n";n.textContent="Шаг "+(st.i+1)+" из "+S.length;const h=document.createElement("h2");h.textContent=s.h;const p=document.createElement("p");p.className="lead";p.textContent=s.p;box.append(n,h,p);
-  s.c.forEach(([t,d],j)=>{const l=document.createElement("label");l.className="ck";const c=document.createElement("input");c.type="checkbox";c.checked=!!st.c[st.i+"_"+j];
-    c.onchange=()=>{st.c[st.i+"_"+j]=c.checked;save();prog()};const tx=document.createElement("span");const b=document.createElement("b");b.textContent=t;const sm=document.createElement("small");sm.textContent=d;tx.append(b,sm);l.append(c,tx);box.append(l)});
-  if(s.x){const x=document.createElement("div");x.innerHTML=s.x;box.append(x)}
-  $("prev").disabled=st.i===0;$("next").textContent=st.i===S.length-1?"Готово ✓":"Дальше →";prog();
-  $("nav").innerHTML="";S.forEach((x,i)=>{const b=document.createElement("button");b.type="button";b.textContent=(i+1)+". "+x.t;b.setAttribute("aria-current",i===st.i);if(doneStep(i))b.className="done";b.onclick=()=>{st.i=i;save();draw()};$("nav").append(b)})}
-function prog(){const all=S.reduce((a,s)=>a+s.c.length,0),d=Object.values(st.c).filter(Boolean).length;$("bar").style.width=Math.round(d/all*100)+"%";
-  $("dm").textContent=d===all?"Все шаги пройдены — удачи с проектом!":"";[...$("nav").children].forEach((b,i)=>b.className=doneStep(i)?"done":"")}
-$("prev").onclick=()=>{if(st.i>0){st.i--;save();draw();scrollTo({top:0,behavior:"smooth"})}};
-$("next").onclick=()=>{if(st.i<S.length-1){st.i++;save();draw();scrollTo({top:0,behavior:"smooth"})}else $("dm").textContent=doneStep(S.length-1)?"Все шаги пройдены — удачи с проектом!":"Отметьте галочки последнего шага."};
+ {t:"Тип",h:"Шаг 1. Что публикуете",f:b=>{const s=sel("cat",[["game","ИИгра"],["app","ПрИИложение"],["mod","МодИИфикация"],["server","Онлайн-сервер или сборка"]]);b.append(lab("Тип проекта",s));
+   if(/mod|server/.test(W.cat))b.append(lab("Для какой игры (например, Minecraft)",inp("forG",60)))},
+  c:()=>[[!!W.cat,"Тип выбран"],...(/mod|server/.test(W.cat)?[[W.forG.trim().length>=2,"Указана игра, для которой мод или сервер"]]:[])]},
+ {t:"Основа",h:"Шаг 2. Оригинал или доработка",f:b=>{b.append(el("p","Если вы улучшили чужой проект с открытым кодом — выберите его. Автор оригинала будет указан и получит долю с продаж.","muted"));
+   const s=sel("par",[["","Нет, это мой оригинал"]].concat(PROJ.filter(p=>!p.soon).map(p=>[p.id,p.t+" · @"+p.a+(p.p?" · "+p.p+" ₽":" · бесплатно")])));b.append(lab("Основа",s));
+   if(W.par){b.append(lab("Что вы изменили (5–140 знаков)",inp("chg",140,"Например: новый режим на двоих")));const a=el("a","Посмотреть основу в каталоге →");a.href="./#catalog";a.target="_blank";b.append(a)}},
+  c:()=>W.par?[[!!base(),"Основа найдена в каталоге"],[W.chg.trim().length>=5,"Коротко описано, что изменено"]]:[[true,"Оригинальный проект"]]},
+ {t:"Описание",h:"Шаг 3. Название и описание",f:b=>{b.append(lab("Название (3–80 знаков)",inp("title",80)),lab("Жанр или назначение",inp("genre",40,"Аркада, головоломка, для бизнеса…")),lab("Описание (20–400 знаков): что это и чем интересно",area("desc",400)))},
+  c:()=>{const t=W.title.trim(),d=W.desc.trim(),all=t+" "+W.genre+" "+d;return[[t.length>=3,"Название не короче 3 знаков"],[d.length>=20,"Описание не короче 20 знаков ("+d.length+")"],[!LINKRE.test(all),"В названии и описании нет ссылок — для них отдельные поля"],[!BAD.test(all),"Нет мата, рекламы ставок, алкоголя и т. п."],[!PROJ.some(p=>p.t.toLowerCase()===t.toLowerCase()),"Такого названия ещё нет в каталоге"]]}},
+ {t:"Демо",h:"Шаг 4. Ссылка на демо",f:b=>{b.append(el("p","Ссылка https://, по которой проект открывается в браузере без установки. Подойдут GitHub Pages, itch.io, «Поделиться» в Claude, свой сайт. Для мода или сервера — страница с описанием, скриншотами и адресом.","muted"));
+   b.append(lab("Демо",inp("demo",300,"https://")));const r=el("div",null,"row");const bt=el("button","Проверить ссылку","btn gold");bt.type="button";bt.onclick=()=>probe("demo",W.demo.trim());r.append(bt);b.append(r);
+   b.append(lab("Полная версия или файл — если есть (необязательно)",inp("full",300,"https://")));if(W.full.trim()){const r2=el("div",null,"row"),b2=el("button","Проверить полную версию","btn ghost");b2.type="button";b2.onclick=()=>probe("full",W.full.trim());r2.append(b2);b.append(r2)}},
+  c:()=>{const d=W.demo.trim(),f=W.full.trim(),out=[[/^https:\/\//.test(d),"Ссылка на демо начинается с https://"],[prOk("demo",d),probeText("demo",d)]];if(f)out.push([prOk("full",f),probeText("full",f)]);return out}},
+ {t:"Цена",h:"Шаг 5. Цена и код",f:b=>{const p=inp("price",7);p.type="number";p.min=0;p.max=100000;p.step=1;b.append(lab("Цена, ₽ (0 — бесплатно)",p));
+   if(+W.price>0){b.append(el("p","Пока оплата идёт напрямую вам: укажите свою страницу оплаты (Boosty, ЮMoney и т. п.). Продажа через площадку с делением по цепочке доработок откроется позже.","muted"));
+     b.append(lab("Ссылка на вашу оплату",inp("buy",300,"https://")));const r=el("div",null,"row"),bt=el("button","Проверить ссылку оплаты","btn gold");bt.type="button";bt.onclick=()=>probe("buy",W.buy.trim());r.append(bt);b.append(r)}
+   b.append(ck("open","Код открыт: другие могут делать доработки"))},
+  c:()=>{const p=+W.price,bs=base(),out=[[Number.isInteger(p)&&p>=0&&p<=100000,"Цена — целое число от 0 до 100 000"]];if(bs)out.push([p>=(+bs.p||0),"Цена доработки не ниже основы ("+(+bs.p||0)+" ₽)"]);
+   if(p>0)out.push([/^https:\/\//.test(W.buy.trim())&&prOk("buy",W.buy.trim()),probeText("buy",W.buy.trim())]);return out}},
+ {t:"Автор",h:"Шаг 6. Автор и согласия",f:b=>{b.append(lab("Ваш ник на сайте — его увидят все (2–30 знаков)",inp("nick",30)),lab("Почта или Telegram для связи — видит только админ",inp("con",120,"you@mail.ru или @username")));
+   b.append(ck("own","Проект мой или у меня есть права; если это доработка — автор оригинала указан"),ck("pub","Согласен, что ник, название и описание будут опубликованы на сайте"));
+   const r=ck("rules","Принимаю условия публикации");const a=el("a"," (прочитать)");a.href="./#terms";a.target="_blank";r.append(a);b.append(r)},
+  c:()=>{const n=W.nick.trim(),c=W.con.trim();return[[n.length>=2&&n.length<=30,"Ник от 2 до 30 знаков"],[!RESV.test(n)&&!BAD.test(n)&&!LINKRE.test(n),"Ник не похож на служебный и без ссылок"],
+   [/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(c)||/^@[\w]{4,32}$/.test(c)||/^https:\/\/t\.me\/[\w]{4,32}$/.test(c),"Контакт — почта или @ник в Telegram"],[W.own,"Права на проект подтверждены"],[W.pub,"Согласие на публикацию ника"],[W.rules,"Условия публикации приняты"]]}},
+ {t:"Отправка",h:"Шаг 7. Проверьте и отправьте",f:b=>{const bs=base();const L=[["Тип",{game:"ИИгра",app:"ПрИИложение",mod:"МодИИфикация",server:"Онлайн-сервер или сборка"}[W.cat]+(W.forG?" для «"+W.forG+"»":"")],["Основа",bs?bs.t+" (@"+bs.a+") — "+W.chg:"оригинал"],["Название",W.title],["Описание",W.desc],["Демо",W.demo],["Полная версия",W.full||"—"],["Цена",+W.price?W.price+" ₽ · оплата: "+W.buy:"бесплатно"],["Код открыт",W.open?"да":"нет"],["Ник",W.nick]];
+   const d=el("div",null,"checks");L.forEach(([k,v])=>{const x=el("div",k+": "+v,"i");d.append(x)});b.append(d);b.append(el("p","После отправки сайт попросит подтвердить, что вы не робот. Модератор проверит заявку, обычно в течение дня, а бот — проверит ссылки на вирусы и безопасность.","muted"));
+   const bt=el("button","Отправить на проверку","btn");bt.type="button";bt.id="send";bt.onclick=send;b.append(bt);b.append(el("p","","muted"))},c:()=>[[true,"Все шаги пройдены"]]},
+ {t:"Статус",h:"Шаг 8. Заявка отправлена",f:b=>{b.append(el("p","Номер заявки:","muted"),el("div",W.ticket,"big"),el("p","Статус обновляется сам. Номер сохранён и на странице «Ответы на обращения».","muted"));const st=el("div","Загрузка статуса…","checks");st.id="tst";b.append(st);
+   const r=el("div",null,"row"),a=el("a","Ответы на обращения →","btn ghost");a.href="otvet.html#"+W.ticket;const n=el("button","Опубликовать ещё один проект","btn gold");n.type="button";n.onclick=()=>{localStorage.removeItem(K);location.hash="";location.reload()};r.append(a,n);b.append(r);poll()},c:()=>[[true,""]]}];
+function probeText(key,url){const p=W.pr[key];if(!url)return "Ссылка указана";if(!p||p.url!==url)return "Нажмите «Проверить ссылку»";if(p.st==="w")return "Проверяем…";
+  if(p.st==="y")return "Ссылка открывается"+(p.kind==="file"?" (это файл)":" (страница)")+(p.issues&&p.issues.length?" · "+p.issues.join("; "):"");return "Проблема: "+(p.issues||[]).join("; ")}
+function lab(t,c){const l=el("label",null,"f");l.append(t,c);return l}
+function inp(k,max,ph){const i=el("input");i.value=W[k]==null?"":W[k];i.maxLength=max;if(ph)i.placeholder=ph;i.oninput=()=>{W[k]=k==="price"?i.value:i.value;save();upd()};return i}
+function area(k,max){const i=el("textarea");i.value=W[k]||"";i.maxLength=max;i.oninput=()=>{W[k]=i.value;save();upd()};return i}
+function sel(k,opts){const s=el("select");opts.forEach(([v,t])=>{const o=el("option",t);o.value=v;s.append(o)});s.value=W[k];s.onchange=()=>{W[k]=s.value;if(k==="par"&&s.value){const p=base();if(p){W.cat=p.c;W.open=true}}save();draw()};return s}
+function ck(k,t){const l=el("label",null,"ck"),c=el("input");c.type="checkbox";c.checked=!!W[k];c.onchange=()=>{W[k]=c.checked;save();upd()};l.append(c,el("span",t));return l}
+let chk=null;
+function upd(){const r=S[W.i].c(),ok=r.every(x=>x[0]);chk.innerHTML="";r.forEach(([g,t])=>{if(t)chk.append(el("div",t,/Проверяем/.test(t)?"w":g?"y":"n"))});
+  $("next").disabled=!ok;$("next").hidden=W.i>=S.length-2;$("prev").hidden=W.i===0||W.i===S.length-1;$("reset").hidden=W.i===S.length-1;
+  const done=S.slice(0,-1).filter((s,i)=>i<W.i||(i===W.i&&ok)).length;$("bar").style.width=Math.round(done/(S.length-1)*100)+"%";
+  [...$("nav").children].forEach((x,i)=>x.className=i===W.i?"cur":i<W.i?"ok":"")}
+function draw(){if(W.ticket)W.i=S.length-1;const s=S[W.i],b=$("step");b.innerHTML="";b.append(el("h2",s.h));s.f(b);if(W.i<S.length-2){chk=el("div",null,"checks");b.append(el("p","Автопроверка шага:","muted"),chk)}else chk=el("div");
+  $("nav").innerHTML="";S.forEach((x,i)=>$("nav").append(el("span",(i+1)+". "+x.t)));upd()}
+$("next").onclick=()=>{if(S[W.i].c().every(x=>x[0])&&W.i<S.length-2){W.i++;save();draw();scrollTo({top:0,behavior:"smooth"})}};
+$("prev").onclick=()=>{if(W.i>0){W.i--;save();draw()}};
+$("reset").onclick=()=>{if(confirm("Очистить черновик и начать заново?")){localStorage.removeItem(K);location.hash="";location.reload()}};
+async function send(){const bt=$("send"),msg=bt.nextSibling;bt.disabled=true;msg.textContent="Отправляем…";
+  for(let i=0;i<S.length-2;i++)if(!S[i].c().every(x=>x[0])){W.i=i;save();draw();return}
+  const bs=base(),text=["Категория: "+{game:"ИИгра",app:"ПрИИложение",mod:"МодИИфикация",server:"Онлайн-сервер или сборка"}[W.cat]+(W.forG?" для «"+W.forG+"»":""),"Название: "+W.title.trim(),"Жанр: "+W.genre.trim(),"Описание: "+W.desc.trim(),"Демо: "+W.demo.trim(),W.full.trim()?"Полная версия: "+W.full.trim():"",
+    "Цена: "+(+W.price?W.price+" ₽ · оплата: "+W.buy.trim():"бесплатно"),"Открытый код: "+(W.open?"да":"нет"),bs?"Доработка проекта «"+bs.t+"» (@"+bs.a+", "+bs.id+") — что изменено: "+W.chg.trim():"Оригинал","Ник автора: "+W.nick.trim(),"Права подтверждены, согласие на публикацию ника дано"].filter(Boolean).join("\n");
+  try{let pass=window.IIGRY_PASS?await IIGRY_PASS.need():"";let r=await fetch(API+"?a=submit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({kind:"publish",subj:"Новый проект: "+W.title.trim(),text,contact:W.con.trim(),pass})});
+    if(r.status===401&&window.IIGRY_PASS){IIGRY_PASS.clear&&IIGRY_PASS.clear();pass=await IIGRY_PASS.need();r=await fetch(API+"?a=submit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({kind:"publish",subj:"Новый проект: "+W.title.trim(),text,contact:W.con.trim(),pass})})}
+    const j=await r.json();if(!r.ok||!j.id)throw new Error(j.error||"Не получилось отправить");
+    W.ticket=j.id;try{const L=JSON.parse(localStorage.getItem("iigry-tickets")||"[]");L.push(j.id);localStorage.setItem("iigry-tickets",JSON.stringify(L.slice(-20)));localStorage.setItem("iigry-nick",W.nick.trim())}catch(_){}
+    save();draw();scrollTo({top:0,behavior:"smooth"})}catch(e){msg.textContent=e.message;bt.disabled=false}}
+async function poll(){const box=$("tst");if(!box)return;try{const r=await fetch(API+"?a=ticket&id="+encodeURIComponent(W.ticket)),j=await r.json();box.innerHTML="";
+    if(!r.ok){box.append(el("div",j.error||"Статус пока недоступен","w"))}else{
+      box.append(el("div","Модерация: "+j.st,j.st==="Принято"?"y":j.st==="Отклонено"?"n":"w"));
+      if(!j.check)box.append(el("div","Автопроверка ботом: идёт (обычно до часа) — ссылки проверяются на вирусы, шпионские программы и безопасность","w"));
+      else{box.append(el("div",{ok:"Автопроверка пройдена",warn:"Автопроверка: есть замечания — модератор посмотрит",bad:"Автопроверка нашла опасность — заявку не опубликуют, напишите нам"}[j.check.verdict],j.check.verdict==="ok"?"y":j.check.verdict==="bad"?"n":"w"));j.check.lines.forEach(l=>box.append(el("div",l,"i")))}
+      (j.replies||[]).forEach(x=>box.append(el("div","Ответ команды ("+x.by+"): "+x.text,"i")))}}catch(_){box.textContent="Нет связи — обновим позже"}
+  setTimeout(poll,30000)}
 draw();
 </script>
-
-<script>/* Счётчик посещений «ИИгр»: случайный номер устройства хранится только в этом браузере; без cookie и слежки на других сайтах. Команда сайта не считается. */
+<script>/* Проверка «не робот» Yandex SmartCaptcha: один раз на 12 часов для всего сайта и игр */
+(function(){
+  const API="https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av",PK="iigry-pass";
+  const get=()=>{try{const o=JSON.parse(localStorage.getItem(PK)||"null");return o&&o.exp>Date.now()+60e3?o.v:""}catch(_){return ""}};
+  let cfgP=null,scriptP=null,busy=null;
+  const cfg=()=>cfgP||(cfgP=fetch(API+"?a=cfg",{cache:"no-store"}).then(r=>r.json()).catch(()=>({captcha:""})));
+  const load=()=>scriptP||(scriptP=new Promise((ok,no)=>{const s=document.createElement("script");s.src="https://smartcaptcha.cloud.yandex.ru/captcha.js?render=onload&onload=__iigryCap";
+    window.__iigryCap=ok;s.onerror=()=>{scriptP=null;no(new Error("Проверка не загрузилась. Проверьте интернет."))};document.head.appendChild(s)}));
+  function overlay(){const d=document.createElement("div");d.setAttribute("role","dialog");d.setAttribute("aria-modal","true");d.setAttribute("aria-label","Проверка, что вы не робот");
+    d.style.cssText="position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;background:rgba(10,9,14,.72);padding:16px";
+    d.innerHTML='<div style="background:#16141B;color:#F4F4F6;border:1px solid rgba(231,189,82,.4);border-radius:16px;padding:18px;width:min(360px,100%);display:grid;gap:12px;font:500 15px/1.4 system-ui,sans-serif"><b style="font-size:17px">Проверим, что вы не робот</b><div id="iigryCapBox" style="min-height:100px"></div><button type="button" style="justify-self:end;background:transparent;color:#B9B6C2;border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:7px 12px;cursor:pointer">Отмена</button></div>';
+    document.body.appendChild(d);return d}
+  async function need(){const p=get();if(p)return p;if(busy)return busy;
+    busy=(async()=>{const c=await cfg();if(!c.captcha)return "";await load();const d=overlay();
+      try{return await new Promise((ok,no)=>{d.querySelector("button").onclick=()=>no(new Error("Проверка отменена."));
+        window.smartCaptcha.render(d.querySelector("#iigryCapBox"),{sitekey:c.captcha,hl:"ru",callback:async token=>{
+          try{const r=await fetch(API+"?a=pass",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({token})}),j=await r.json();
+            if(!r.ok||!j.pass)throw new Error(j.error||"Проверка не пройдена.");try{localStorage.setItem(PK,JSON.stringify({v:j.pass,exp:j.exp}))}catch(_){}ok(j.pass)}catch(e){no(e)}}})})}
+      finally{d.remove()}})().finally(()=>{busy=null});return busy}
+  window.IIGRY_PASS={get,need,clear:()=>{try{localStorage.removeItem(PK)}catch(_){}}};
+})();
+</script><script>/* Счётчик посещений «ИИгр»: случайный номер устройства хранится только в этом браузере; без cookie и слежки на других сайтах. Команда сайта не считается. */
 (function(){try{if(navigator.webdriver||localStorage.getItem("iigry-mod"))return;let d=localStorage.getItem("iigry-did");
  if(!/^[0-9a-f]{32}$/.test(d||"")){const a=new Uint8Array(16);crypto.getRandomValues(a);d=[...a].map(x=>x.toString(16).padStart(2,"0")).join("");localStorage.setItem("iigry-did",d)}
  const go=()=>{if(document.visibilityState!=="visible")return;document.removeEventListener("visibilitychange",go);fetch("https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av?a=hit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({d}),keepalive:true}).catch(()=>{})};
@@ -96,4 +153,5 @@ draw();
  async function check(){try{const j=await (await fetch(API,{cache:"no-store"})).json();
    if(j.maint){was=true;if(!document.getElementById("iigry-maint-bar"))show(j)}else if(was){location.reload()}}catch(_){} }
  check();setInterval(check,20000)})();
-</script></body></html>
+</script>
+</body></html>
