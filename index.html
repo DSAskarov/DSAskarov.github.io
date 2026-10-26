@@ -1393,12 +1393,15 @@ async function keysInit(){
   if(JSON.stringify(cur[UID])!==JSON.stringify(pub))await db.doc("site/pubkey").set({keys:Object.assign({},cur,{[UID]:pub})})}
 const SEALFAIL="Приём обращений сейчас недоступен. Напишите на dsaskarov.dmitry@gmail.com.";
 
-const MAILTO=(subj,lines)=>{location.href="mailto:askarov.dmitry@yandex.ru?subject="+encodeURIComponent("ИИгры: "+subj)+"&body="+encodeURIComponent(lines.filter(Boolean).join("\n").slice(0,1800));toast("Открываем почту — проверьте письмо и отправьте его.")};
+const MAILTO0=(subj,lines)=>{location.href="mailto:askarov.dmitry@yandex.ru?subject="+encodeURIComponent("ИИгры: "+subj)+"&body="+encodeURIComponent(lines.filter(Boolean).join("\n").slice(0,1800));toast("Открываем почту — проверьте письмо и отправьте его.")};
+const MAILTO=async(subj,lines,kind)=>{lines=lines.filter(Boolean);const c=lines.filter(l=>/^(Почта|Контакт)/.test(l)).map(l=>l.replace(/^[^:]+:\s*/,"")).join(", "),t=lines.filter(l=>!/^(Почта|Контакт)/.test(l)).join("\n");
+  kind=kind||(/резюме/.test(subj)?"resume":/проект/.test(subj)?"publish":/жалоб|претенз|наруш/i.test(subj)?"complaint":"idea");
+  try{await api("submit",null,{kind,subj:String(subj).slice(0,120),text:t.slice(0,3000),contact:c.slice(0,200)});toast("Отправлено! Команда рассмотрит обращение и ответит.")}catch(err){if(/робот|captcha/i.test(err.message||"")){toast(err.message);return}MAILTO0(subj,lines)}};
 /* Жалобы и претензии */
 $("claimForm").onsubmit=async e=>{e.preventDefault();const x=$("cX").value.trim(),m=$("cMail").value.trim();
   if(!x||!m.includes("@")){toast("Укажите почту и суть обращения.");return}
   if(!$("cRobot").checked){toast("Подтвердите, что вы не робот.");return}
-  if(!db){MAILTO($("cType").value,["Суть: "+x,"Ссылка: "+$("cRef").value.trim(),"Почта для ответа: "+m]);return}
+  if(!db){MAILTO($("cType").value,["Суть: "+x,"Ссылка: "+$("cRef").value.trim(),"Почта для ответа: "+m],"complaint");return}
   try{await db.collection("claims").doc().set(Object.assign({type:S($("cType").value,40),ts:Date.now()},await seal({mail:S(m,120),ref:S($("cRef").value.trim(),300),x:S(x,2000)})));$("cX").value="";$("cRef").value="";toast("Обращение принято. Ответим на указанную почту.")}catch(_){toast("Не удалось отправить. Напишите на dsaskarov.dmitry@gmail.com.")}};
 
 /* Финансы (только для владельца) */
@@ -1632,7 +1635,7 @@ $("helpForm").onsubmit=async e=>{e.preventDefault();const n=$("hN").value.trim()
   if(!n||!c||!x){toast("Заполните имя, контакт и описание.");return}
   if(!$("hRobot").checked){toast("Подтвердите, что вы не робот.");return}
   if(!$("hOk").checked){toast("Нужно согласие на обработку данных, чтобы мы могли связаться с вами.");return}
-  if(!db){MAILTO(helpType,["Имя: "+n,"Контакт: "+c,"Организация: "+$("hG").value.trim(),x]);$("helpDlg").close();return}
+  if(!db){MAILTO(helpType,["Имя: "+n,"Контакт: "+c,"Организация: "+$("hG").value.trim(),x],"idea");$("helpDlg").close();return}
   try{await db.collection("help").doc().set(Object.assign({type:S(helpType,40),ts:Date.now()},await seal({n:S(n,60),c:S(c,120),g:S($("hG").value.trim(),120),x:S(x,2000)})));$("hX").value="";$("helpDlg").close();toast("Заявка отправлена. Спасибо! Мы свяжемся с вами.")}catch(_){toast("Не удалось отправить. Напишите в Telegram @dsaskarov.")}};
 
 /* Резюме в команду */

@@ -71,6 +71,12 @@ async function db(ctx) {
         await ensure("tgout", new TableDescription()
           .withColumn(new Column("id", Types.optional(Types.UTF8))).withColumn(new Column("m", Types.optional(Types.UTF8)))
           .withColumn(new Column("b", Types.optional(Types.UTF8))).withPrimaryKeys("id"));
+        await ensure("inbox", new TableDescription()
+          .withColumn(new Column("id", Types.optional(Types.UTF8))).withColumn(new Column("kind", Types.optional(Types.UTF8)))
+          .withColumn(new Column("subj", Types.optional(Types.UTF8))).withColumn(new Column("text", Types.optional(Types.UTF8)))
+          .withColumn(new Column("contact", Types.optional(Types.UTF8))).withColumn(new Column("st", Types.optional(Types.UTF8)))
+          .withColumn(new Column("who", Types.optional(Types.UTF8))).withColumn(new Column("note", Types.optional(Types.UTF8)))
+          .withColumn(new Column("ts", Types.optional(Types.UINT64))).withPrimaryKeys("id"));
         await ensure("cfg", new TableDescription()
           .withColumn(new Column("k", Types.optional(Types.UTF8))).withColumn(new Column("v", Types.optional(Types.UTF8)))
           .withPrimaryKeys("k"));
@@ -189,12 +195,20 @@ async function npdCancel(id) {
 // Модерация: главный ключ админа — в GitHub Secrets (ADMIN_KEY); коды модераторов выдаёт админ, на сервере хранится только их отпечаток
 const ADMIN_KEY = env("ADMIN_KEY");
 // Уровни доступа команды: кто за что отвечает
+// q:* — очереди заявок (публикации, жалобы, предложения, резюме); contacts — видеть контакты заявителей (персональные данные)
 const ROLES = {
-  chat:   { t: "Модератор чата",      p: ["del", "ban"], ban: 7 },
-  games:  { t: "Модератор рейтингов", p: ["score"], ban: 0 },
-  senior: { t: "Старший модератор",   p: ["del", "ban", "score", "unban", "mods"], ban: 30 },
-  admin:  { t: "Админ",               p: ["del", "ban", "score", "unban", "mods", "team"], ban: 30 }
+  chat:      { t: "Модератор чата",           p: ["del", "ban"], ban: 7 },
+  games:     { t: "Модератор рейтингов",      p: ["score"], ban: 0 },
+  pub:       { t: "Модератор публикаций",     p: ["q:publish"], ban: 0 },
+  rep:       { t: "Модератор жалоб",          p: ["q:complaint"], ban: 0 },
+  idea:      { t: "Модератор предложений",    p: ["q:idea"], ban: 0 },
+  community: { t: "Старший модератор сообщества", p: ["del", "ban", "score", "unban", "mods"], ban: 30 },
+  content:   { t: "Старший модератор контента",   p: ["q:publish", "q:complaint", "q:idea", "mods"], ban: 0 },
+  senior:    { t: "Главный модератор",        p: ["del", "ban", "score", "unban", "q:publish", "q:complaint", "q:idea", "mods"], ban: 30 },
+  admin:     { t: "Админ",                    p: ["del", "ban", "score", "unban", "q:publish", "q:complaint", "q:idea", "q:resume", "contacts", "mods", "team"], ban: 30 }
 };
+const KINDS = { publish: "Заявки на публикацию", complaint: "Жалобы", idea: "Предложения и обращения", resume: "Резюме в команду" };
+const QST = { new: "Новая", work: "В работе", ok: "Принято", no: "Отклонено" };
 const kh = k => crypto.createHash("sha256").update(salt + "|mod|" + k).digest("hex");
 const same = (a, b) => a.length === b.length && crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
 async function modAuth(k, ip) {
@@ -232,9 +246,11 @@ async function tgUpdate(u) {
 }
 // Telegram-бот: уведомления команде по категориям. Токен — в GitHub Secrets (TG_BOT_TOKEN).
 const TG = env("TG_BOT_TOKEN"), TG_SECRET = TG ? crypto.createHash("sha256").update(TG + "|iigry-tg").digest("hex").slice(0, 48) : "";
-const CATS = { buy: "💰 Покупки и чеки", err: "⚠️ Ошибки и сбои", mod: "🛡 Действия модераторов", chat: "💬 Новые сообщения в чате", ban: "🚫 Баны" };
-const CAT_ROLES = { buy: ["admin"], err: ["admin"], mod: ["admin", "senior"], chat: ["admin", "senior", "chat"], ban: ["admin", "senior", "chat"] };
-const DEF_CATS = { admin: "buy,err,mod,ban", senior: "mod,ban,chat", chat: "chat,ban", games: "" };
+const CATS = { buy: "💰 Покупки и чеки", err: "⚠️ Ошибки и сбои", mod: "🛡 Действия команды", chat: "💬 Новые сообщения в чате", ban: "🚫 Баны",
+  pub: "🎮 Заявки на публикацию", rep: "🚩 Жалобы", idea: "💡 Предложения и обращения", job: "📄 Резюме в команду" };
+const CAT_PERM = { buy: "team", err: "team", mod: "mods", chat: "del", ban: "ban", pub: "q:publish", rep: "q:complaint", idea: "q:idea", job: "q:resume" };
+const CAT_ROLES = Object.fromEntries(Object.entries(CAT_PERM).map(([c, p]) => [c, Object.keys(ROLES).filter(r => ROLES[r].p.includes(p))]));
+const DEF_CATS = Object.fromEntries(Object.keys(ROLES).map(r => [r, Object.keys(CATS).filter(c => c !== "chat" && CAT_ROLES[c].includes(r)).join(",")]));
 // Telegram недоступен из российских дата-центров напрямую, поэтому сообщения кладём в очередь,
 // а пересылает их «ретранслятор» на GitHub Actions (он же забирает новые сообщения боту)
 let tgSeq = 0;
@@ -375,6 +391,22 @@ exports.handler = async (event, ctx) => {
     else await q(`DECLARE $ip AS Utf8; DECLARE $ts AS Uint64; DECLARE $c AS Uint64; UPSERT INTO rl (ip, ts, cnt) VALUES ($ip, $ts, $c);`, P);
     return reply(200, { ok: true, best: better ? v : prev, improved: better, n }, origin);
   }
+  if (a === "submit" && method === "POST") {
+    const b = parse(event); if (!b) return reply(400, { error: "Неверный запрос" }, origin);
+    const kind = String(b.kind || ""); if (!KINDS[kind]) return reply(400, { error: "Неизвестный тип обращения" }, origin);
+    if (!passOk(b.pass, ipOf(event, hd))) return reply(401, NEED, origin);
+    if (b.hp) return reply(200, { ok: true }, origin);
+    const subj = clean(b.subj, 120), text = clean(b.text, 3000), contact = clean(b.contact, 200);
+    if (text.length < 5) return reply(400, { error: "Напишите чуть подробнее." }, origin);
+    const now = Date.now(), ip = ipOf(event, hd), lim = await limit("q:" + ip, now, 20000, 10); if (lim.err) return reply(429, { error: lim.err }, origin);
+    const id = now.toString(36) + crypto.randomBytes(3).toString("hex");
+    await q(`DECLARE $id AS Utf8; DECLARE $k AS Utf8; DECLARE $s AS Utf8; DECLARE $t AS Utf8; DECLARE $c AS Utf8; DECLARE $st AS Utf8; DECLARE $e AS Utf8; DECLARE $ts AS Uint64; DECLARE $ip AS Utf8; DECLARE $n AS Uint64;
+      UPSERT INTO inbox (id, kind, subj, text, contact, st, who, note, ts) VALUES ($id, $k, $s, $t, $c, $st, $e, $e, $ts); UPSERT INTO rl (ip, ts, cnt) VALUES ($ip, $ts, $n);`,
+      { $id: TypedValues.utf8(id), $k: TypedValues.utf8(kind), $s: TypedValues.utf8(subj), $t: TypedValues.utf8(text), $c: TypedValues.utf8(contact), $st: TypedValues.utf8("new"), $e: TypedValues.utf8(""),
+        $ts: TypedValues.uint64(now), $ip: TypedValues.utf8("q:" + ip), $n: TypedValues.uint64(lim.cnt + 1) });
+    await notify({ publish: "pub", complaint: "rep", idea: "idea", resume: "job" }[kind], "<b>" + esc(KINDS[kind]) + "</b>: " + esc(subj || "без темы") + " — " + esc(kind === "resume" ? "откройте mod.html" : text.slice(0, 200)));
+    return reply(200, { ok: true, id }, origin);
+  }
   if (a === "mod" && method === "POST") {
     const b = parse(event) || {}, ip = ipOf(event, hd), me = await modAuth(b.k, ip);
     if (me && me.blocked) return reply(429, { error: "Слишком много неверных кодов. Попробуйте через час." }, origin);
@@ -401,6 +433,15 @@ exports.handler = async (event, ctx) => {
     if (op === "score") { if (!can("score")) return NO; const g = String(b.game || ""), nk = clean(b.n, 40).toLowerCase(); if (!GAMES[g]) return reply(400, { error: "Нет такой игры" }, origin);
       await q(`DECLARE $g AS Utf8; DECLARE $k AS Utf8; DELETE FROM scores WHERE game=$g AND nk=$k;`, { $g: TypedValues.utf8(g), $k: TypedValues.utf8(nk) });
       await mlog(who, "удалил рекорд", g + ": " + nk); return reply(200, { ok: true }, origin) }
+    if (op === "queue") { const kind = String(b.kind || ""); if (!KINDS[kind] || !can("q:" + kind)) return NO;
+      const st = QST[b.st] ? String(b.st) : "";
+      const r = await q(`DECLARE $k AS Utf8; SELECT id, subj, text, contact, st, who, note, ts FROM inbox WHERE kind=$k ORDER BY ts DESC LIMIT 100;`, { $k: TypedValues.utf8(kind) });
+      return reply(200, { items: r.filter(x => !st || x.st === st).map(x => ({ id: x.id, subj: x.subj, text: x.text, contact: can("contacts") ? x.contact : (x.contact ? "скрыто — видит только админ" : ""), st: x.st, stT: QST[x.st] || x.st, who: x.who, note: x.note, ts: num(x.ts) })) }, origin) }
+    if (op === "qset") { const id = clean(b.id, 40), st = String(b.st || ""), note = clean(b.note, 500); if (!QST[st]) return reply(400, { error: "Неверный статус" }, origin);
+      const r = await q(`DECLARE $id AS Utf8; SELECT kind, subj FROM inbox WHERE id=$id;`, { $id: TypedValues.utf8(id) }); if (!r[0]) return reply(404, { error: "Заявка не найдена" }, origin);
+      if (!can("q:" + r[0].kind)) return NO;
+      await q(`DECLARE $id AS Utf8; DECLARE $st AS Utf8; DECLARE $w AS Utf8; DECLARE $n AS Utf8; UPDATE inbox SET st=$st, who=$w, note=$n WHERE id=$id;`, { $id: TypedValues.utf8(id), $st: TypedValues.utf8(st), $w: TypedValues.utf8(me.name), $n: TypedValues.utf8(note) });
+      await mlog(who, "заявка «" + QST[st] + "»", KINDS[r[0].kind] + ": " + (r[0].subj || id) + (note ? " — " + note : "")); return reply(200, { ok: true }, origin) }
     if (op === "log") { const r = await q(`SELECT ts, who, act, what FROM modlog ORDER BY ts DESC LIMIT 60;`); return reply(200, { items: r.map(x => ({ ts: num(x.ts), who: x.who, act: x.act, what: x.what })) }, origin) }
     if (op === "mods") { if (!can("mods")) return NO; const r = await q(`SELECT name, role, ts FROM team;`); return reply(200, { items: r.map(x => ({ name: x.name, role: x.role, title: (ROLES[x.role] || {}).t || x.role, ts: num(x.ts) })) }, origin) }
     if (op === "unban") { if (!can("unban")) return NO; await q(`DELETE FROM bans;`); await mlog(who, "снял все баны", "-"); return reply(200, { ok: true }, origin) }
