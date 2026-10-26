@@ -6,8 +6,8 @@
 <title>Лови баги</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@700;800;900&family=Golos+Text:wght@400;600&display=swap">
 <style>
-/* Layout: одна игровая панель по центру — счёт сверху, поле, кнопка. Тёмная «ночная смена» с красными багами и зелёными фичами. */
-:root{--bg:#0B0A0E;--panel:#16141B;--fg:#F4F4F6;--muted:#B9B6C2;--red:#E8333F;--gold:#E7BD52;--green:#4ADE95;--line:rgba(255,255,255,.12);color-scheme:dark;
+/* Layout: заголовок, выбор смены (уровня), счёт, поле, кнопка. Тёмная «ночная смена» с красными багами и зелёными фичами. */
+:root{--bg:#0B0A0E;--panel:#16141B;--fg:#F4F4F6;--muted:#B9B6C2;--red:#E8333F;--gold:#E7BD52;--green:#4ADE95;--blue:#7CC4FF;--line:rgba(255,255,255,.12);color-scheme:dark;
   --f-d:"Rubik","Golos Text",system-ui,sans-serif;--f-b:"Golos Text",system-ui,sans-serif}
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -16,13 +16,19 @@ body{background:radial-gradient(70vmax 60vmax at 15% 0%,rgba(232,51,63,.25),tran
 h1{font:800 clamp(1.4rem,5vw,2rem)/1.1 var(--f-d);margin:0}
 h1 b{color:var(--red)}
 .sub{color:var(--muted);margin:0;font-size:.95rem}
+.lv{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.lv button{border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:10px;padding:8px 6px;font:600 .85rem/1.2 var(--f-b);cursor:pointer;text-align:left}
+.lv button b{display:block;font:800 .95rem var(--f-d)}
+.lv button[aria-pressed=true]{border-color:var(--red);box-shadow:inset 0 0 0 1px var(--red)}
+.lv button:disabled{opacity:.45;cursor:not-allowed}
+.lv button:focus-visible,.btn:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 .hud{display:flex;gap:10px;flex-wrap:wrap}
 .hud div{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px 12px;font-variant-numeric:tabular-nums}
 .hud b{font:800 1.1rem var(--f-d)}
+#mul{color:var(--gold)}
 canvas{width:100%;aspect-ratio:16/10;max-width:100%;background:linear-gradient(180deg,#121017,#0B0A0E);border:1px solid var(--line);border-radius:14px;touch-action:manipulation;cursor:crosshair;display:block}
 .btn{border:0;border-radius:10px;padding:12px 20px;font:700 1rem var(--f-b);background:linear-gradient(135deg,#FF4A55,#A3101C);color:#fff;cursor:pointer;justify-self:start}
-.btn:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
-.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
+.legend{display:flex;gap:6px 14px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px}
 .credit{font-size:.8rem;color:var(--muted)}
 .credit a{color:var(--gold)}
@@ -30,46 +36,76 @@ canvas{width:100%;aspect-ratio:16/10;max-width:100%;background:linear-gradient(1
 <div class="game">
   <h1>Лови <b>баги</b></h1>
   <p class="sub">Ночная смена в отделе разработки. Ловите красные баги, не трогайте зелёные фичи — они и так еле держатся.</p>
-  <div class="hud"><div>Счёт: <b id="sc">0</b></div><div>Время: <b id="tm">30</b></div><div>Рекорд: <b id="best">0</b></div></div>
+  <div class="lv" id="lv" role="group" aria-label="Выбор смены"></div>
+  <div class="hud"><div>Счёт: <b id="sc">0</b></div><div>Время: <b id="tm">30</b></div><div>Серия: <b id="mul">×1</b></div><div>Рекорд: <b id="best">0</b></div></div>
   <canvas id="cv" width="640" height="400" aria-label="Игровое поле"></canvas>
-  <div class="legend"><span><i style="background:#E8333F"></i>Баг: +1</span><span><i style="background:#E7BD52"></i>Золотой баг: +5</span><span><i style="background:#4ADE95"></i>Фича: −3, не трогать</span></div>
+  <div class="legend"><span><i style="background:#E8333F"></i>Баг: +1</span><span><i style="background:#E7BD52"></i>Золотой баг: +5</span><span><i style="background:#4ADE95"></i>Фича: −3 и сброс серии</span><span><i style="background:#7CC4FF"></i>Кофе: всё замедляется</span><span><i style="background:#fff"></i>Хотфикс: ловит все баги на экране</span></div>
   <button class="btn" id="go">Начать смену</button>
   <p class="credit">Игра DSAskarov для площадки «ИИгры онлайн». Поддержать автора: <a href="https://boosty.to/dsaskarov" target="_blank" rel="noopener">Boosty</a> · связь: Telegram @dsaskarov</p>
 </div>
 <script>
-const cv=document.getElementById("cv"),cx=cv.getContext("2d"),W=cv.width,H=cv.height;
-let bugs=[],score=0,time=30,run=false,last=0,spawn=0,best=0,msg="Нажмите «Начать смену»";
-try{best=+localStorage.getItem("bugs-best")||0}catch(e){}
-document.getElementById("best").textContent=best;
-const LINES=["Это не баг, это фича!","Работает на моём компьютере","Кто трогал прод?","Пятница, 18:59","Сейчас быстренько поправлю"];
-function add(){const r=Math.random(),type=r<.08?"gold":r<.3?"feat":"bug",sz=type==="gold"?14:18+Math.random()*8;
-  bugs.push({x:30+Math.random()*(W-60),y:30+Math.random()*(H-60),vx:(Math.random()-.5)*(1.4+score/25),vy:(Math.random()-.5)*(1.4+score/25),r:sz,type,life:type==="gold"?1.6:3.2})}
-function drawBug(b){const c=b.type==="gold"?"#E7BD52":b.type==="feat"?"#4ADE95":"#E8333F";
+const cv=document.getElementById("cv"),cx=cv.getContext("2d"),W=cv.width,H=cv.height,$=id=>document.getElementById(id);
+// Смены: скорость, частота появления, доля фич, особенность
+const LV=[
+  {n:"Понедельник",d:"разминка",sp:1,spawn:.9,feat:.22,need:15},
+  {n:"День релиза",d:"фичи повсюду",sp:1.35,spawn:.7,feat:.34,need:22},
+  {n:"Пятница, 18:59",d:"баги делятся",sp:1.7,spawn:.55,feat:.3,split:true}];
+const store={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:v}catch(e){return d}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+let lvl=0,open=Math.min(2,+store.get("bugs-open",0)||0),bests=LV.map((_,i)=>+store.get("bugs-best"+(i||""),0)||0);
+let bugs=[],fx=[],score=0,time=30,run=false,last=0,spawn=0,streak=0,slow=0,msg="Выберите смену и нажмите «Начать»";
+const LINES=["Это не баг, это фича!","Работает на моём компьютере","Кто трогал прод?","Пятница, 18:59","Сейчас быстренько поправлю","В тестах всё было зелёное"];
+function drawLv(){const box=$("lv");box.innerHTML="";LV.forEach((L,i)=>{const b=document.createElement("button");b.type="button";b.setAttribute("aria-pressed",i===lvl);b.disabled=i>open||run;
+  const lock=i>open?"🔒 "+LV[i-1].need+" очк. в смене "+i:L.d+(bests[i]?" · "+bests[i]:"");
+  b.innerHTML="<b></b><span></span>";b.firstChild.textContent=(i+1)+". "+L.n;b.lastChild.textContent=lock;b.onclick=()=>{lvl=i;drawLv();upd()};box.appendChild(b)})}
+const mul=()=>streak>=12?3:streak>=5?2:1;
+function add(){const L=LV[lvl],r=Math.random();let type=r<.06?"gold":r<.06+L.feat?"feat":r<.06+L.feat+.035?"coffee":r<.06+L.feat+.06?"fix":"bug";
+  const sz=type==="gold"?14:type==="coffee"||type==="fix"?15:18+Math.random()*8,s=(1.4+score/30)*L.sp;
+  bugs.push({x:30+Math.random()*(W-60),y:30+Math.random()*(H-60),vx:(Math.random()-.5)*s,vy:(Math.random()-.5)*s,r:sz,type,life:type==="bug"||type==="feat"?3.2:1.8})}
+function pop(x,y,t,c){fx.push({x,y,t,c,l:.9});for(let i=0;i<8;i++){const a=Math.random()*7;fx.push({x,y,vx:Math.cos(a)*2.4,vy:Math.sin(a)*2.4,c,l:.5,p:1})}}
+function drawBug(b){
+  if(b.type==="coffee"){cx.save();cx.translate(b.x,b.y);cx.fillStyle="#7CC4FF";cx.beginPath();cx.arc(0,0,b.r,0,7);cx.fill();cx.fillStyle="#0B2236";cx.fillRect(-6,-3,10,10);cx.strokeStyle="#0B2236";cx.lineWidth=2;cx.beginPath();cx.arc(5,2,3,-1.6,1.6);cx.stroke();cx.beginPath();cx.moveTo(-3,-6);cx.quadraticCurveTo(-6,-9,-3,-12);cx.moveTo(1,-6);cx.quadraticCurveTo(-2,-9,1,-12);cx.stroke();cx.restore();return}
+  if(b.type==="fix"){cx.save();cx.translate(b.x,b.y);cx.rotate(last/400);cx.fillStyle="#fff";cx.beginPath();for(let i=0;i<10;i++){const rr=i%2?b.r*.5:b.r;cx.lineTo(Math.cos(i*Math.PI/5)*rr,Math.sin(i*Math.PI/5)*rr)}cx.fill();cx.restore();return}
+  const c=b.type==="gold"?"#E7BD52":b.type==="feat"?"#4ADE95":"#E8333F";
   cx.save();cx.translate(b.x,b.y);cx.rotate(Math.atan2(b.vy,b.vx)+Math.PI/2);
   cx.strokeStyle=c;cx.lineWidth=2;for(let i=-1;i<=1;i++){cx.beginPath();cx.moveTo(-b.r*.6,i*b.r*.35);cx.lineTo(-b.r*1.1,i*b.r*.5);cx.moveTo(b.r*.6,i*b.r*.35);cx.lineTo(b.r*1.1,i*b.r*.5);cx.stroke()}
   cx.fillStyle=c;cx.beginPath();cx.ellipse(0,0,b.r*.7,b.r,0,0,7);cx.fill();
   cx.fillStyle="rgba(0,0,0,.35)";cx.beginPath();cx.arc(0,-b.r*.75,b.r*.4,0,7);cx.fill();
   if(b.type==="feat"){cx.fillStyle="#04170C";cx.font="bold "+(b.r*.8)+"px sans-serif";cx.textAlign="center";cx.fillText("✓",0,b.r*.35)}
   cx.restore()}
-function frame(t){const dt=Math.min(.05,(t-last)/1000||0);last=t;
+function finish(){run=false;time=0;bugs=[];window.IIGRY_SCORE&&IIGRY_SCORE(score);
+  if(score>bests[lvl]){bests[lvl]=score;store.set("bugs-best"+(lvl||""),score)}
+  const L=LV[lvl];let opened="";if(L.need&&score>=L.need&&open<lvl+1){open=lvl+1;store.set("bugs-open",open);opened=" Открыта смена «"+LV[open].n+"»!"}
+  msg=(score>=40?"Легенда ночной смены!":score>=20?"Прод спасён. Можно спать.":"Баги победили. Пока что.")+opened;$("go").textContent="Ещё смену";drawLv()}
+function frame(t){const dt=Math.min(.05,(t-last)/1000||0);last=t;const k=slow>0?.45:1;
   cx.clearRect(0,0,W,H);
-  if(run){time-=dt;spawn-=dt;if(spawn<=0){add();spawn=Math.max(.25,.9-score/80)}
-    bugs.forEach(b=>{b.x+=b.vx;b.y+=b.vy;b.life-=dt;if(b.x<b.r||b.x>W-b.r)b.vx*=-1;if(b.y<b.r||b.y>H-b.r)b.vy*=-1});
+  if(slow>0){slow-=dt;cx.fillStyle="rgba(124,196,255,.07)";cx.fillRect(0,0,W,H)}
+  if(run){time-=dt;spawn-=dt;if(spawn<=0){add();spawn=Math.max(.22,LV[lvl].spawn-score/90)}
+    bugs.forEach(b=>{b.x+=b.vx*k*dt*60;b.y+=b.vy*k*dt*60;b.life-=dt*k;if(b.x<b.r||b.x>W-b.r){b.vx*=-1;b.x=Math.max(b.r,Math.min(W-b.r,b.x))}if(b.y<b.r||b.y>H-b.r){b.vy*=-1;b.y=Math.max(b.r,Math.min(H-b.r,b.y))}});
     bugs=bugs.filter(b=>b.life>0);
-    if(time<=0){run=false;time=0;bugs=[];window.IIGRY_SCORE&&IIGRY_SCORE(score);if(score>best){best=score;try{localStorage.setItem("bugs-best",best)}catch(e){}}
-      msg=score>=40?"Легенда ночной смены!":score>=20?"Прод спасён. Можно спать.":"Баги победили. Пока что.";document.getElementById("go").textContent="Ещё смену"}
-    document.getElementById("tm").textContent=Math.ceil(time)}
+    if(time<=0)finish();
+    $("tm").textContent=Math.ceil(Math.max(0,time))}
   bugs.forEach(drawBug);
-  if(!run){cx.fillStyle="rgba(244,244,246,.92)";cx.font="700 22px Golos Text, sans-serif";cx.textAlign="center";cx.fillText(msg,W/2,H/2-6);
-    if(score){cx.fillStyle="#B9B6C2";cx.font="16px Golos Text, sans-serif";cx.fillText("Поймано: "+score+" · рекорд: "+best,W/2,H/2+22)}}
-  document.getElementById("sc").textContent=score;document.getElementById("best").textContent=best;
-  requestAnimationFrame(frame)}
-requestAnimationFrame(frame);
+  fx.forEach(f=>{f.l-=dt;if(f.p){f.x+=f.vx;f.y+=f.vy;cx.globalAlpha=Math.max(0,f.l*2);cx.fillStyle=f.c;cx.fillRect(f.x-2,f.y-2,4,4)}
+    else{f.y-=dt*40;cx.globalAlpha=Math.max(0,f.l);cx.fillStyle=f.c;cx.font="800 18px Rubik, sans-serif";cx.textAlign="center";cx.fillText(f.t,f.x,f.y)}cx.globalAlpha=1});
+  fx=fx.filter(f=>f.l>0);
+  if(!run){cx.fillStyle="rgba(244,244,246,.92)";cx.font="700 20px Golos Text, sans-serif";cx.textAlign="center";
+    const parts=msg.split("!").filter(Boolean);if(parts.length>1&&msg.length>34){cx.fillText(parts[0]+"!",W/2,H/2-16);cx.fillStyle="#E7BD52";cx.fillText(parts.slice(1).join("!").trim()+"!",W/2,H/2+12)}else cx.fillText(msg,W/2,H/2-6);
+    if(score){cx.fillStyle="#B9B6C2";cx.font="16px Golos Text, sans-serif";cx.fillText("Поймано: "+score+" · рекорд смены: "+bests[lvl],W/2,H/2+40)}}
+  upd();requestAnimationFrame(frame)}
+function upd(){$("sc").textContent=score;$("best").textContent=bests[lvl];$("mul").textContent="×"+mul()}
 function hit(e){if(!run)return;const r=cv.getBoundingClientRect(),x=(e.clientX-r.left)*W/r.width,y=(e.clientY-r.top)*H/r.height;
-  for(let i=bugs.length-1;i>=0;i--){const b=bugs[i];if(Math.hypot(b.x-x,b.y-y)<b.r*1.3){score+=b.type==="gold"?5:b.type==="feat"?-3:1;if(score<0)score=0;
-    if(b.type==="feat")msg=LINES[Math.floor(Math.random()*LINES.length)];bugs.splice(i,1);return}}}
+  for(let i=bugs.length-1;i>=0;i--){const b=bugs[i];if(Math.hypot(b.x-x,b.y-y)<b.r*1.35){bugs.splice(i,1);
+    if(b.type==="feat"){score=Math.max(0,score-3);streak=0;msg=LINES[Math.floor(Math.random()*LINES.length)];pop(b.x,b.y,"−3 · "+msg,"#4ADE95");return}
+    if(b.type==="coffee"){slow=4;pop(b.x,b.y,"Кофе! Всё медленнее","#7CC4FF");return}
+    if(b.type==="fix"){let n=0;bugs=bugs.filter(o=>{if(o.type==="bug"||o.type==="gold"){n+=o.type==="gold"?5:1;pop(o.x,o.y,"","#E8333F");return false}return true});
+      score+=n*mul();pop(b.x,b.y,"Хотфикс! +"+n*mul(),"#fff");return}
+    streak++;const v=(b.type==="gold"?5:1)*mul();score+=v;pop(b.x,b.y,"+"+v,b.type==="gold"?"#E7BD52":"#FF8A91");
+    if(LV[lvl].split&&b.type==="bug"&&b.r>17&&Math.random()<.5)for(let j=0;j<2;j++)bugs.push({x:b.x,y:b.y,vx:(Math.random()-.5)*5,vy:(Math.random()-.5)*5,r:12,type:"bug",life:2.2});
+    return}}
+  streak=0}
 cv.addEventListener("pointerdown",hit);
-document.getElementById("go").onclick=()=>{score=0;time=30;bugs=[];spawn=0;run=true;msg=""};
+$("go").onclick=()=>{score=0;time=30;bugs=[];fx=[];spawn=0;streak=0;slow=0;run=true;msg="";drawLv()};
+drawLv();requestAnimationFrame(frame);
 </script>
 <script>/* Проверка «не робот» Yandex SmartCaptcha: один раз на 12 часов для всего сайта и игр */
 (function(){

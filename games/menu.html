@@ -1,0 +1,103 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; font-src https://fonts.gstatic.com; img-src 'self' data: https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; connect-src https://functions.yandexcloud.net https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; frame-src https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; object-src 'none'; base-uri 'none'; form-action 'none'"><meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="description" content="Пример приложения на площадке «ИИгры онлайн»"><meta property="og:title" content="Меню за минуту — ИИгры онлайн"><meta property="og:description" content="Пример приложения на площадке «ИИгры онлайн»"><meta name="theme-color" content="#0B0A0E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23B3141F'/%3E%3Ctext x='32' y='44' font-size='30' font-family='Arial' font-weight='700' text-anchor='middle' fill='%23F6DE8D'%3EИИ%3C/text%3E%3C/svg%3E">
+<style>*{box-sizing:border-box}html,body{margin:0}[hidden]{display:none!important}</style></head><body>
+<title>Меню за минуту</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@700;800;900&family=Golos+Text:wght@400;600&family=Lora:ital,wght@0,500;0,700;1,500&display=swap">
+<style>
+/* Layout: слева/сверху — ввод (название, список блюд, стиль), справа/снизу — готовое меню на «бумаге». */
+:root{--bg:#0B0A0E;--panel:#16141B;--fg:#F4F4F6;--muted:#B9B6C2;--red:#E8333F;--gold:#E7BD52;--line:rgba(255,255,255,.12);color-scheme:dark;
+  --f-d:"Rubik","Golos Text",system-ui,sans-serif;--f-b:"Golos Text",system-ui,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-b);padding:16px max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px))}
+.app{max-width:1000px;margin:0 auto;display:grid;gap:16px;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);align-items:start}
+@media (max-width:760px){.app{grid-template-columns:1fr}}
+h1{font:800 clamp(1.4rem,5vw,2rem)/1.1 var(--f-d);margin:0 0 6px}
+h1 b{color:var(--gold)}
+.sub{color:var(--muted);margin:0 0 12px;font-size:.95rem}
+label{display:block;font-weight:600;font-size:.9rem;margin:10px 0 4px}
+input,textarea,select{width:100%;background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:10px;font:400 1rem var(--f-b)}
+textarea{min-height:260px;resize:vertical;line-height:1.45}
+input:focus-visible,textarea:focus-visible,select:focus-visible,.b:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
+.hint{font-size:.8rem;color:var(--muted);margin:4px 0 0}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.b{border:1px solid var(--line);border-radius:10px;padding:10px 14px;font:700 .95rem var(--f-b);background:var(--panel);color:var(--fg);cursor:pointer}
+.b.main{border:0;background:linear-gradient(135deg,#FF4A55,#A3101C);color:#fff}
+.fix{font-size:.85rem;color:var(--gold);min-height:1.2em;margin:8px 0 0}
+.paper{border-radius:6px;padding:32px 28px;min-height:420px;box-shadow:0 20px 40px rgba(0,0,0,.45)}
+.paper h2{margin:0;text-align:center}
+.paper .tag{text-align:center;margin:6px 0 22px;font-style:italic}
+.paper h3{margin:22px 0 8px;letter-spacing:.12em;text-transform:uppercase;font-size:.85rem}
+.it{display:flex;align-items:baseline;gap:8px;margin:7px 0}
+.it .n{flex:0 1 auto}
+.it .d{flex:1;border-bottom:1px dotted currentColor;opacity:.45;transform:translateY(-4px)}
+.it .p{font-variant-numeric:tabular-nums;white-space:nowrap}
+.it small{display:block;opacity:.7;font-size:.82em}
+.s-classic{background:#FBF7EE;color:#2A2018;font-family:"Lora",Georgia,serif}.s-classic h2{font:700 2rem "Lora",serif}.s-classic h3{color:#8E0E1A;border-bottom:1px solid #D9CFC0;padding-bottom:4px}
+.s-night{background:#14121A;color:#F4F4F6;font-family:var(--f-b);border:1px solid #2E2B36}.s-night h2{font:900 2rem var(--f-d);color:#E7BD52}.s-night h3{color:#E8333F}
+.s-loud{background:#B3141F;color:#FFF7E0;font-family:var(--f-b)}.s-loud h2{font:900 2.3rem var(--f-d);text-transform:uppercase}.s-loud h3{color:#F6DE8D}
+.credit{font-size:.8rem;color:var(--muted);margin-top:12px}
+@media print{body{background:#fff;padding:0}.ed,.credit{display:none}.app{display:block}.paper{box-shadow:none}}
+</style>
+<div class="app">
+  <div class="ed">
+    <h1>Меню <b>за минуту</b></h1>
+    <p class="sub">Вставьте список блюд и цен — меню соберётся само. Опечатки в «эспрессо» исправляем молча (почти).</p>
+    <label for="name">Название заведения</label>
+    <input id="name" maxlength="60" value="Кофейня «Байт»">
+    <label for="tag">Подпись под названием</label>
+    <input id="tag" maxlength="80" value="Кофе, который компилируется с первого раза">
+    <label for="list">Блюда</label>
+    <textarea id="list" spellcheck="false"># Кофе
+Экспрессо — 150
+Капучино 250
+Латте, 270
+Раф ванильный - 290 | сливки, ваниль
+# Еда
+Сырники со сметаной 320
+Круассан с ветчиной и сыром — 260
+Суп дня 290 | спросите у бариста
+# Десерты
+Чизкейк — 310
+Тирамису 340</textarea>
+    <p class="hint">Одна строка — одно блюдо: «Название цена». Описание — после символа «|». Раздел — строка с «#».</p>
+    <label for="st">Стиль</label>
+    <select id="st"><option value="classic">Классика — бумага и засечки</option><option value="night">Ночь — тёмный и золото</option><option value="loud">Громко — красный плакат</option></select>
+    <div class="row"><button class="b main" id="print" type="button">Распечатать или сохранить в PDF</button><button class="b" id="sort" type="button">Отсортировать по цене</button></div>
+    <p class="fix" id="fix" aria-live="polite"></p>
+  </div>
+  <div><div class="paper s-classic" id="paper" aria-label="Готовое меню"></div>
+  <p class="credit">Пример приложения на площадке «ИИгры онлайн». Всё работает в браузере, данные никуда не отправляются.</p></div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const FIX=[[/экспресс?о/gi,"эспрессо"],[/эспресо/gi,"эспрессо"],[/капучинно|капучино/gi,"капучино"],[/каппучино/gi,"капучино"],[/латэ/gi,"латте"],[/круасан/gi,"круассан"],[/чизкейг/gi,"чизкейк"],[/тирамиссу/gi,"тирамису"],[/сырнеки/gi,"сырники"]];
+const keepCase=(src,dst)=>src[0]===src[0].toUpperCase()?dst[0].toUpperCase()+dst.slice(1):dst;
+const store={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:v}catch(e){return d}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+["name","tag","list","st"].forEach(k=>{const v=store.get("menu-"+k,null);if(v!=null)$(k).value=v});
+function parse(){let fixed=0;const secs=[];let cur={t:"",items:[]};secs.push(cur);
+  $("list").value.split("\n").forEach(raw=>{let line=raw.trim();if(!line)return;
+    if(line.startsWith("#")){cur={t:line.replace(/^#+/,"").trim(),items:[]};secs.push(cur);return}
+    FIX.forEach(([re,to])=>{line=line.replace(re,m=>{if(m.toLowerCase()!==to){fixed++}return keepCase(m,to)})});
+    let [main,desc]=line.split("|");main=main.trim();const m=main.match(/^(.*?)[\s,;:—–-]*(\d[\d\s]*(?:[.,]\d{1,2})?)\s*(?:₽|р\.?|руб\.?)?$/i);
+    const name=(m?m[1]:main).replace(/[\s,;:—–-]+$/,"").trim(),price=m?m[2].replace(/\s/g,"").replace(",","."):"";
+    if(name)cur.items.push({name:name.slice(0,80),price,desc:(desc||"").trim().slice(0,120)})});
+  return{secs:secs.filter(s=>s.items.length||s.t),fixed}}
+function render(){const{secs,fixed}=parse(),p=$("paper");p.className="paper s-"+$("st").value;p.innerHTML="";
+  const h=document.createElement("h2");h.textContent=$("name").value||"Меню";p.append(h);
+  if($("tag").value){const t=document.createElement("p");t.className="tag";t.textContent=$("tag").value;p.append(t)}
+  secs.forEach(s=>{if(s.t){const e=document.createElement("h3");e.textContent=s.t;p.append(e)}
+    s.items.forEach(it=>{const r=document.createElement("div");r.className="it";const n=document.createElement("span");n.className="n";n.textContent=it.name;
+      if(it.desc){const sm=document.createElement("small");sm.textContent=it.desc;n.append(sm)}
+      const d=document.createElement("span");d.className="d";const pr=document.createElement("span");pr.className="p";pr.textContent=it.price?it.price+" ₽":"";r.append(n,d,pr);p.append(r)})});
+  $("fix").textContent=fixed?"Исправлено опечаток: "+fixed+". «Экспрессо» больше не пройдёт.":"";
+  ["name","tag","list","st"].forEach(k=>store.set("menu-"+k,$(k).value))}
+["name","tag","list"].forEach(k=>$(k).addEventListener("input",render));$("st").addEventListener("change",render);
+$("print").onclick=()=>{try{window.print()}catch(e){$("fix").textContent="Печать недоступна в этом окне — откройте страницу отдельно."}};
+$("sort").onclick=()=>{const out=[];let block=[];const flush=()=>{block.sort((a,b)=>(parseFloat((a.match(/(\d+)\s*(?:\||$)/)||[0,1e9])[1]))-(parseFloat((b.match(/(\d+)\s*(?:\||$)/)||[0,1e9])[1])));out.push(...block);block=[]};
+  $("list").value.split("\n").forEach(l=>{if(l.trim().startsWith("#")){flush();out.push(l)}else if(l.trim())block.push(l)});flush();$("list").value=out.join("\n");render()};
+render();
+</script>
+
+</body></html>

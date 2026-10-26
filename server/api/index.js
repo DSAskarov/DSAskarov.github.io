@@ -11,9 +11,11 @@ const LINK = /(https?:\/\/|www\.|t\.me\/|\.(ru|com|net|org|рф|io|me)\b)/i;
 // Игры с рейтингом: допустимые результаты и минимальное время игры (защита от явной подделки)
 const GAMES = {
   test:  { min: 1,  max: 1000, asc: false, minMs: v => 0 },            // проверочная, на сайте не показывается
-  bugs:  { min: 1,  max: 300,  asc: false, minMs: v => 25000 },          // «Лови баги»: очки за 30 секунд
+  bugs:  { min: 1,  max: 600,  asc: false, minMs: v => 25000 },          // «Лови баги»: очки за 30 секунд (с сериями ×3)
   post:  { min: 1,  max: 1000, asc: false, minMs: v => v * 600 },        // «Звёздный почтальон»: доставлено писем
-  react: { min: 90, max: 3000, asc: true,  minMs: v => 5 * (v + 1000) }  // «Быстрее нейросети»: среднее время реакции, мс
+  react: { min: 90, max: 3000, asc: true,  minMs: v => 5 * (v + 1000) }, // «Быстрее нейросети»: среднее время реакции, мс
+  cat:   { min: 1,  max: 400,  asc: false, minMs: v => Math.min(110000, v * 350) }, // «Кот на орбите»: рыба за 3 орбиты
+  words: { min: 1,  max: 3000, asc: false, minMs: v => Math.min(900000, v * 100) }  // «Ферма слов»: очки за сезон
 };
 const RESV = /dsaskarov|адм[иi]н|admin|модер|moder|иигр|iigr|поддержк|support|claude|anthropic|официал|official/i;
 

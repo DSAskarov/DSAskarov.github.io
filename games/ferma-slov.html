@@ -1,0 +1,158 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; font-src https://fonts.gstatic.com; img-src 'self' data: https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; connect-src https://functions.yandexcloud.net https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; frame-src https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; object-src 'none'; base-uri 'none'; form-action 'none'"><meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="description" content="Игра площадки «ИИгры онлайн»"><meta property="og:title" content="Ферма слов — ИИгры онлайн"><meta property="og:description" content="Игра площадки «ИИгры онлайн»"><meta name="theme-color" content="#0B0A0E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23B3141F'/%3E%3Ctext x='32' y='44' font-size='30' font-family='Arial' font-weight='700' text-anchor='middle' fill='%23F6DE8D'%3EИИ%3C/text%3E%3C/svg%3E">
+<style>*{box-sizing:border-box}html,body{margin:0}[hidden]{display:none!important}</style></head><body>
+<title>Ферма слов</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@700;800;900&family=Golos+Text:wght@400;600&display=swap">
+<style>
+/* Layout: заголовок, счёт, грядка с буквами-овощами, собранное слово, кнопки, корзина найденных слов. Ночное поле, золотой урожай. */
+:root{--bg:#0B0A0E;--panel:#16141B;--fg:#F4F4F6;--muted:#B9B6C2;--red:#E8333F;--gold:#E7BD52;--soil:#2A1C14;--green:#4ADE95;--line:rgba(255,255,255,.12);color-scheme:dark;
+  --f-d:"Rubik","Golos Text",system-ui,sans-serif;--f-b:"Golos Text",system-ui,sans-serif}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{margin:0;background:radial-gradient(60vmax 50vmax at 85% 0%,rgba(231,189,82,.16),transparent 60%),var(--bg);color:var(--fg);font-family:var(--f-b);display:grid;place-items:center;padding:16px max(16px,env(safe-area-inset-right,0px)) 16px max(16px,env(safe-area-inset-left,0px))}
+.game{width:min(560px,100%);display:grid;gap:12px}
+h1{font:800 clamp(1.4rem,5vw,2rem)/1.1 var(--f-d);margin:0}
+h1 b{color:var(--gold)}
+.sub{color:var(--muted);margin:0;font-size:.95rem}
+.hud{display:flex;gap:8px;flex-wrap:wrap}
+.hud div{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px 12px;font-variant-numeric:tabular-nums}
+.hud b{font:800 1.05rem var(--f-d)}
+.bar{height:8px;background:var(--panel);border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),#F6DE8D);transition:width .3s}
+.field{background:linear-gradient(180deg,#3A2719,var(--soil));border:1px solid var(--line);border-radius:16px;padding:16px 12px;display:flex;flex-wrap:wrap;gap:10px;justify-content:center;min-height:92px}
+.t{width:clamp(44px,12vw,58px);aspect-ratio:1;border:0;border-radius:50% 50% 44% 44%;background:radial-gradient(circle at 35% 30%,#FFE9A8,#C9952A 70%);color:#2A1806;font:900 clamp(1.3rem,5vw,1.7rem) var(--f-d);text-transform:uppercase;cursor:pointer;box-shadow:0 4px 0 #6B4A12;position:relative;touch-action:manipulation}
+.t::before{content:"";position:absolute;top:-8px;left:50%;width:14px;height:12px;transform:translateX(-50%);background:var(--green);border-radius:70% 10% 70% 10%}
+.t:disabled{opacity:.25;cursor:default;box-shadow:none;transform:translateY(4px)}
+.t:focus-visible,.b:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.word{min-height:52px;display:flex;align-items:center;justify-content:center;gap:4px;font:900 clamp(1.4rem,6vw,2rem) var(--f-d);letter-spacing:.08em;text-transform:uppercase;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px 10px}
+.word.bad{animation:sh .3s;border-color:var(--red)}.word.ok{border-color:var(--green)}
+@keyframes sh{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.b{border:1px solid var(--line);border-radius:10px;padding:10px 14px;font:700 .95rem var(--f-b);background:var(--panel);color:var(--fg);cursor:pointer}
+.b.main{border:0;background:linear-gradient(135deg,#FF4A55,#A3101C);color:#fff}
+.b.gold{border:0;background:var(--gold);color:#1A1306}
+.b:disabled{opacity:.45;cursor:not-allowed}
+.msg{min-height:1.4em;margin:0;color:var(--gold);font-weight:600}
+.found{display:flex;flex-wrap:wrap;gap:6px;min-height:30px}
+.found span{background:#1F2A20;border:1px solid rgba(74,222,149,.35);color:#CFF5DF;border-radius:999px;padding:3px 10px;font-size:.9rem}
+.found span.big{background:#3A2E10;border-color:var(--gold);color:#F6DE8D}
+.credit{font-size:.8rem;color:var(--muted);margin:0}
+.credit a{color:var(--gold)}
+</style>
+<div class="game">
+  <h1>Ферма <b>слов</b></h1>
+  <p class="sub">Собирайте урожай из букв: составляйте существительные в именительном падеже, единственном числе. Соберите нужное число слов, пока не стемнело, — и переходите на следующую грядку.</p>
+  <div class="hud"><div>Грядка: <b id="lvn">1</b>/<span id="lvt">9</span></div><div>Урожай: <b id="cnt">0</b>/<span id="need">0</span></div><div>Время: <b id="tm">120</b></div><div>Очки: <b id="sc">0</b></div><div>Рекорд: <b id="best">0</b></div></div>
+  <div class="bar" aria-hidden="true"><i id="bar"></i></div>
+  <div class="field" id="field" aria-label="Буквы"></div>
+  <div class="word" id="word" aria-live="polite">&nbsp;</div>
+  <div class="row">
+    <button class="b main" id="ok" type="button">Сорвать слово</button>
+    <button class="b" id="del" type="button">Стереть</button>
+    <button class="b" id="mix" type="button">Перемешать</button>
+    <button class="b" id="hint" type="button">Подсказка (3)</button>
+    <button class="b gold" id="next" type="button" hidden>Следующая грядка</button>
+  </div>
+  <p class="msg" id="msg">Нажмите «Начать сезон».</p>
+  <button class="b main" id="go" type="button">Начать сезон</button>
+  <div class="found" id="found"></div>
+  <p class="credit">Пример игры на площадке «ИИгры онлайн». С клавиатуры: буквы, Enter — сорвать, Backspace — стереть.</p>
+</div>
+<script>
+const LV=[{"l":"кнтруо","s":"контур","c":["утро","рок","урок","кот","ток","тон","трон","урон","корт","крот","тур","рот"],"w":["конт","контур","корн","корт","кот","крот","курт","кут","нок","норт","нотр","нут","нутро","орк","орт","откр","рок","рот","руно","ток","тон","тонк","тор","торн","тоун","трон","тун","тур","турк","укор","уорт","урок","урон","утро"]},{"l":"итслок","s":"листок","c":["стол","лист","кот","сок","ток","иск","кол","скот","столик","толк","лис","сток","лик","лот","кит","слот"],"w":["икс","икт","иск","исток","кил","кит","кол","колит","кот","лик","лис","лист","листок","лоик","лоис","лоск","лост","лот","ослик","отис","сило","сит","сито","скит","скол","скот","слик","слиток","слот","сок","стик","стоик","сток","стол","столик","тик","тис","ток","тол","толк"]},{"l":"тараке","s":"ракета","c":["карта","акт","рак","река","трек","кара","катер","тара","арка","карета"],"w":["ака","акр","акт","арак","арка","кара","карат","карета","карта","кат","катер","кета","крат","рак","ракета","река","такер","тара","тека","трак","трек"]},{"l":"адркно","s":"дракон","c":["народ","рок","код","дар","рак","дно","кадр","кран","кора","ода","нора","орда","крона"],"w":["акр","акрон","анк","анкор","анод","данк","дар","дно","дока","дон","дора","дорн","дракон","дрон","кадр","код","кон","кора","корд","корда","корн","кран","крона","нард","народ","нода","нок","нора","норд","норка","ода","орда","орк","радон","рак","ранд","рок","ронда"]},{"l":"ксораб","s":"сборка","c":["срок","рок","брак","сбор","рак","бар","сок","бок","бокс","барс","бор","кора","бас","коса","роса","оса"],"w":["акр","акс","аск","бак","бакр","бакс","бар","барк","барс","бас","баск","бок","бокс","бор","борк","брак","брок","коб","кобра","кора","корба","корс","коса","краб","окрас","орк","орс","оса","рак","раск","роба","рок","рокс","роса","сак","сбор","сборка","скарб","скоба","скраб","сок","сокр","сор","срок"]},{"l":"астклпи","s":"пластик","c":["тип","сила","акт","лист","иск","клип","пила","лиса","лис","плита","тик","лик","лак","пик","пакт","кит"],"w":["аист","акс","акт","аск","икс","икт","иск","кап","кат","кил","кипа","киса","киста","кит","клас","клип","лак","лакс","ласт","ластик","лик","липа","лис","лиса","лист","пак","пакс","пакт","пат","пик","пикс","пила","писк","пласт","пластик","плис","плита","плитка","сак","сап","сила","сип","сит","скат","скип","скит","слик","слип","стик","стика","тик","тип","тис"]},{"l":"стоидан","s":"стадион","c":["сан","сон","сад","нос","дно","тон","стан","стадо","ода","оса","дот","сито"],"w":["адонис","аист","анод","ант","астон","данс","диас","дно","дон","дос","дост","дот","иод","ион","истон","итан","итон","наст","нит","нода","нос","ода","одина","оса","осина","отан","отис","сад","сан","сант","сатин","синод","синт","сит","сито","сода","сон","сот","сота","стадион","стадо","стан","стина","стон","тан","тис","тода","тон","тоса"]},{"l":"пакасту","s":"капуста","c":["акт","суп","паук","стук","пуск","утка","куст","паста","пакт"],"w":["ака","акс","акт","аск","аут","кап","капуста","капут","каста","кат","купа","кус","куст","кут","пак","пакс","пакт","паста","пат","паук","пуск","сак","сап","сапа","саут","скат","скаут","скуп","стук","ступа","ступка","суп","такса","тупак","тупака","утка"]},{"l":"сотлиак","s":"кислота","c":["стол","сила","акт","лист","кот","сок","ток","иск","кол","скот","тоска","столик","лиса","толк","лис","сток","лик","лот","кит","слот","оса","коса","сота","лак"],"w":["аист","акс","акт","аск","икота","икс","икт","иск","исток","кат","кил","киса","кислота","киста","кит","клас","кол","колас","колит","коса","кот","лак","лакост","лакс","ласт","ластик","лик","лис","лиса","лист","листок","лоик","лоис","лоск","лост","лот","оса","оскал","ослик","отис","отка","сак","сало","сила","сило","сит","сито","скат","скит","скол","скот","слик","слиток","слот","сок","сота","сотка","стик","стика","стоик","сток","стол","столик","тик","тис","ток","тол","толика","толк","тоса","тоска"]}];
+const NEED=[4,5,5,6,6,7,7,7,8],TIME=120,$=id=>document.getElementById(id);
+const store={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:v}catch(e){return d}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+let L=0,letters=[],pick=[],found=[],score=0,time=TIME,run=false,hints=3,timer=0,best=+store.get("words-best",0)||0,t0=0;
+const pts=w=>w.length>=7?20:w.length===6?12:w.length===5?8:w.length===4?5:3;
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function drawField(){const f=$("field");f.innerHTML="";letters.forEach((ch,i)=>{const b=document.createElement("button");b.type="button";b.className="t";b.textContent=ch;b.disabled=!run||pick.includes(i);b.setAttribute("aria-label","Буква "+ch);b.onclick=()=>{pick.push(i);drawAll()};f.append(b)})}
+function drawAll(){drawField();const w=pick.map(i=>letters[i]).join("");$("word").textContent=w||" ";
+  const need=NEED[L];$("lvn").textContent=L+1;$("lvt").textContent=LV.length;$("cnt").textContent=found.length;$("need").textContent=need;$("sc").textContent=score;$("best").textContent=best;
+  $("bar").style.width=Math.min(100,found.length/need*100)+"%";$("tm").textContent=Math.ceil(time);
+  $("hint").textContent="Подсказка ("+hints+")";["ok","del","mix"].forEach(id=>$(id).disabled=!run);$("hint").disabled=!run||!hints;
+  $("found").innerHTML="";found.forEach(w=>{const s=document.createElement("span");s.textContent=w;if(w===LV[L].s)s.className="big";$("found").append(s)})}
+function say(t,cls){$("msg").textContent=t;const w=$("word");w.className="word"+(cls?" "+cls:"");if(cls==="bad"){void w.offsetWidth}}
+function startLevel(i){L=i;letters=shuffle([...LV[i].l]);pick=[];found=[];time=TIME;run=true;$("next").hidden=true;$("go").hidden=true;say("Грядка "+(i+1)+". Найдите "+NEED[i]+" слов из "+LV[i].l.length+" букв. Есть и длинное слово на все буквы — оно золотое.");drawAll()}
+function submit(){if(!run)return;const w=pick.map(i=>letters[i]).join("");pick=[];
+  if(w.length<3)say("Нужно хотя бы 3 буквы.","bad");
+  else if(found.includes(w))say("«"+w+"» уже в корзине.","bad");
+  else if(!LV[L].w.includes(w))say("«"+w+"» на этой грядке не растёт. Нужны существительные: «кот», а не «котов».","bad");
+  else{found.push(w);let p=pts(w);if(w===LV[L].s){p+=15;say("Золотой урожай! «"+w+"» +"+p,"ok")}else say("«"+w+"» +"+p,"ok");score+=p;
+    if(found.length===NEED[L]){if(L<LV.length-1){$("next").hidden=false;say("Норма грядки выполнена! Можно собирать дальше или перейти на следующую.","ok")}else say("Все грядки собраны — вы фермер года! Добирайте слова до заката.","ok")}}
+  drawAll()}
+function endSeason(why){run=false;clearInterval(timer);$("next").hidden=true;$("go").hidden=false;$("go").textContent="Новый сезон";
+  if(score>best){best=score;store.set("words-best",best)}
+  if(score>0&&window.IIGRY_SCORE)IIGRY_SCORE(score);
+  const miss=LV[L].c.filter(w=>!found.includes(w)).slice(0,4);
+  say(why+" Итог: "+score+" очк."+(miss.length?" Можно было найти: "+miss.join(", ")+".":""));drawAll()}
+function tick(){if(!run)return;time-=1;if(time<=0){time=0;if(found.length>=NEED[L]&&L<LV.length-1){nextLevel();return}endSeason(found.length>=NEED[L]?"Сезон окончен.":"Стемнело, урожай не собран.");return}$("tm").textContent=Math.ceil(time)}
+function nextLevel(){score+=Math.max(0,Math.ceil(time));const bonus=Math.ceil(time);startLevel(L+1);if(bonus)say("Бонус за скорость +"+bonus+". Грядка "+(L+1)+": найдите "+NEED[L]+" слов.")}
+$("ok").onclick=submit;$("del").onclick=()=>{pick.pop();drawAll()};
+$("mix").onclick=()=>{const w=pick.map(i=>letters[i]);letters=shuffle(letters);pick=[];const used=[...letters.keys()];w.forEach(ch=>{const k=used.find(i=>letters[i]===ch&&!pick.includes(i));if(k!=null)pick.push(k)});drawAll()};
+$("hint").onclick=()=>{const left=LV[L].c.filter(w=>!found.includes(w));if(!left.length||!hints)return;hints--;const w=left[Math.floor(Math.random()*left.length)];say("Подсказка: слово из "+w.length+" букв, начинается на «"+w[0].toUpperCase()+"».");drawAll()};
+$("next").onclick=nextLevel;
+$("go").onclick=()=>{score=0;hints=3;clearInterval(timer);startLevel(0);timer=setInterval(tick,1000)};
+addEventListener("keydown",e=>{if(!run)return;if(e.key==="Enter"){e.preventDefault();submit();return}if(e.key==="Backspace"){e.preventDefault();pick.pop();drawAll();return}
+  const ch=e.key.toLowerCase();if(/^[а-я]$/.test(ch)){const i=letters.findIndex((c,k)=>c===ch&&!pick.includes(k));if(i>=0){pick.push(i);drawAll()}}});
+drawAll();
+</script>
+<script>/* Проверка «не робот» Yandex SmartCaptcha: один раз на 12 часов для всего сайта и игр */
+(function(){
+  const API="https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av",PK="iigry-pass";
+  const get=()=>{try{const o=JSON.parse(localStorage.getItem(PK)||"null");return o&&o.exp>Date.now()+60e3?o.v:""}catch(_){return ""}};
+  let cfgP=null,scriptP=null,busy=null;
+  const cfg=()=>cfgP||(cfgP=fetch(API+"?a=cfg",{cache:"no-store"}).then(r=>r.json()).catch(()=>({captcha:""})));
+  const load=()=>scriptP||(scriptP=new Promise((ok,no)=>{const s=document.createElement("script");s.src="https://smartcaptcha.cloud.yandex.ru/captcha.js?render=onload&onload=__iigryCap";
+    window.__iigryCap=ok;s.onerror=()=>{scriptP=null;no(new Error("Проверка не загрузилась. Проверьте интернет."))};document.head.appendChild(s)}));
+  function overlay(){const d=document.createElement("div");d.setAttribute("role","dialog");d.setAttribute("aria-modal","true");d.setAttribute("aria-label","Проверка, что вы не робот");
+    d.style.cssText="position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;background:rgba(10,9,14,.72);padding:16px";
+    d.innerHTML='<div style="background:#16141B;color:#F4F4F6;border:1px solid rgba(231,189,82,.4);border-radius:16px;padding:18px;width:min(360px,100%);display:grid;gap:12px;font:500 15px/1.4 system-ui,sans-serif"><b style="font-size:17px">Проверим, что вы не робот</b><div id="iigryCapBox" style="min-height:100px"></div><button type="button" style="justify-self:end;background:transparent;color:#B9B6C2;border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:7px 12px;cursor:pointer">Отмена</button></div>';
+    document.body.appendChild(d);return d}
+  async function need(){const p=get();if(p)return p;if(busy)return busy;
+    busy=(async()=>{const c=await cfg();if(!c.captcha)return "";await load();const d=overlay();
+      try{return await new Promise((ok,no)=>{d.querySelector("button").onclick=()=>no(new Error("Проверка отменена."));
+        window.smartCaptcha.render(d.querySelector("#iigryCapBox"),{sitekey:c.captcha,hl:"ru",callback:async token=>{
+          try{const r=await fetch(API+"?a=pass",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({token})}),j=await r.json();
+            if(!r.ok||!j.pass)throw new Error(j.error||"Проверка не пройдена.");try{localStorage.setItem(PK,JSON.stringify({v:j.pass,exp:j.exp}))}catch(_){}ok(j.pass)}catch(e){no(e)}}})})}
+      finally{d.remove()}})().finally(()=>{busy=null});return busy}
+  window.IIGRY_PASS={get,need,clear:()=>{try{localStorage.removeItem(PK)}catch(_){}}};
+})();
+</script><script data-game="words" data-asc="0" data-unit="очк.">/* Таблица лидеров ИИгр: общий ник для всех игр и чата, результаты — на сервере в Yandex Cloud */
+(function(){
+  const me=document.currentScript,G=me.dataset.game,ASC=me.dataset.asc==="1",UNIT=me.dataset.unit||"",
+    API="https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av",K="iigry-nick",t0=Date.now();
+  const S=(v,n)=>String(v==null?"":v).slice(0,n);
+  const getNick=()=>{try{return S(localStorage.getItem(K),30)}catch(_){return ""}},setNick=v=>{try{localStorage.setItem(K,v)}catch(_){}};
+  let aid="";try{aid=localStorage.getItem("aid")||""}catch(_){}
+  const css=document.createElement("style");css.textContent=`.lb{width:min(560px,100%);margin-top:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:14px 16px;display:grid;gap:10px;font-family:inherit;color:inherit}
+.lb h2{margin:0;font:800 1.05rem/1.2 Rubik,"Golos Text",system-ui,sans-serif}.lb ol{margin:0;padding-left:1.6em;display:grid;gap:4px}
+.lb li{font-variant-numeric:tabular-nums}.lb li b{float:right;color:#E7BD52}.lb li.me{color:#E7BD52}.lb .mu{opacity:.7;font-size:.9rem;margin:0}
+.lb form{display:flex;gap:8px;flex-wrap:wrap}.lb input{flex:1 1 160px;min-width:0;padding:9px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.2);background:rgba(0,0,0,.25);color:inherit;font:inherit}
+.lb button{padding:9px 14px;border-radius:10px;border:0;background:#E7BD52;color:#1A1306;font-weight:800;cursor:pointer}.lb button:focus-visible,.lb input:focus-visible{outline:2px solid #E7BD52;outline-offset:2px}`;
+  document.head.appendChild(css);
+  const box=document.createElement("section");box.className="lb";box.setAttribute("aria-live","polite");
+  box.innerHTML='<h2>Таблица лидеров</h2><ol></ol><p class="mu" id="lbMsg"></p><form hidden><input maxlength="30" placeholder="Ваш ник" autocomplete="nickname" aria-label="Ваш ник"><button type="submit">В таблицу</button></form><p class="mu">Ник запоминается для всех игр и чата ИИгр.</p>';
+  (document.querySelector(".game")||document.body).appendChild(box);
+  const ol=box.querySelector("ol"),msg=box.querySelector("#lbMsg"),form=box.querySelector("form"),inp=form.querySelector("input");
+  let pending=null;
+  const say=t=>{msg.textContent=t};
+  async function top(){try{const r=await fetch(API+"?a=top&game="+G,{cache:"no-store"}),j=await r.json();ol.textContent="";
+      const items=Array.isArray(j.items)?j.items.slice(0,10):[],nick=getNick().toLowerCase();
+      if(!items.length){const li=document.createElement("li");li.className="mu";li.textContent="Пока пусто. Станьте первым!";ol.appendChild(li);return}
+      items.forEach(x=>{const li=document.createElement("li");li.textContent=S(x.n,30);const b=document.createElement("b");b.textContent=Math.round(+x.v||0)+" "+UNIT;li.appendChild(b);if(S(x.n,30).toLowerCase()===nick)li.className="me";ol.appendChild(li)})}
+    catch(_){ol.textContent="";say("Таблица временно недоступна.")}}
+  async function send(v,n,again){say("Отправляем результат…");
+    try{const P=window.IIGRY_PASS,r=await fetch(API+"?a=score",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({game:G,v,n,aid,ms:Date.now()-t0,pass:P?P.get():""})}),j=await r.json();
+      if(r.status===401&&j.need==="captcha"&&P&&!again){P.clear();await P.need();return send(v,n,true)}
+      if(!r.ok)throw new Error(j.error||"Не удалось сохранить");
+      say(j.improved?"Новый личный рекорд: "+j.best+" "+UNIT+"!":"Ваш рекорд — "+j.best+" "+UNIT+". Этот результат не лучше, но вы близко.");form.hidden=true;top()}
+    catch(e){say(S(e.message,200))}}
+  window.IIGRY_SCORE=v=>{v=Math.round(+v||0);if(!v)return;const n=getNick();
+    if(n){send(v,n)}else{pending=v;say("Ваш результат: "+v+" "+UNIT+". Впишите ник, чтобы попасть в таблицу.");form.hidden=false;try{inp.focus({preventScroll:true})}catch(_){}}};
+  form.addEventListener("submit",e=>{e.preventDefault();const n=S(inp.value,30).trim().replace(/^@/,"");if(!n){say("Впишите ник.");return}setNick(n);if(pending){send(pending,n);pending=null}});
+  top();setInterval(()=>{if(!document.hidden)top()},30000);
+})();
+</script>
+</body></html>

@@ -1,0 +1,156 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; font-src https://fonts.gstatic.com; img-src 'self' data: https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; connect-src https://functions.yandexcloud.net https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; frame-src https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; object-src 'none'; base-uri 'none'; form-action 'none'"><meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="description" content="Игра площадки «ИИгры онлайн»"><meta property="og:title" content="Кот на орбите — ИИгры онлайн"><meta property="og:description" content="Игра площадки «ИИгры онлайн»"><meta name="theme-color" content="#0B0A0E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23B3141F'/%3E%3Ctext x='32' y='44' font-size='30' font-family='Arial' font-weight='700' text-anchor='middle' fill='%23F6DE8D'%3EИИ%3C/text%3E%3C/svg%3E">
+<style>*{box-sizing:border-box}html,body{margin:0}[hidden]{display:none!important}</style></head><body>
+<title>Кот на орбите</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@700;800;900&family=Golos+Text:wght@400;600&display=swap">
+<style>
+/* Layout: заголовок, счёт, широкое космическое поле, подсказка по управлению. Тёмный космос, золотая рыба, красные астероиды. */
+:root{--bg:#07060C;--panel:#14121B;--fg:#F4F4F6;--muted:#B9B6C2;--red:#E8333F;--gold:#E7BD52;--line:rgba(255,255,255,.12);color-scheme:dark;
+  --f-d:"Rubik","Golos Text",system-ui,sans-serif;--f-b:"Golos Text",system-ui,sans-serif}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:radial-gradient(60vmax 60vmax at 20% 0%,rgba(179,20,31,.22),transparent 60%),var(--bg);color:var(--fg);font-family:var(--f-b);display:grid;place-items:center;padding:16px max(16px,env(safe-area-inset-right,0px)) 16px max(16px,env(safe-area-inset-left,0px))}
+.game{width:min(680px,100%);display:grid;gap:12px}
+h1{font:800 clamp(1.4rem,5vw,2rem)/1.1 var(--f-d);margin:0}
+h1 b{color:var(--gold)}
+.sub,.note{color:var(--muted);margin:0;font-size:.95rem}
+.note{font-size:.85rem}
+.hud{display:flex;gap:8px;flex-wrap:wrap}
+.hud div{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px 12px;font-variant-numeric:tabular-nums}
+.hud b{font:800 1.05rem var(--f-d)}
+canvas{width:100%;aspect-ratio:16/10;display:block;background:#05040A;border:1px solid var(--line);border-radius:14px;touch-action:none;cursor:pointer;user-select:none;-webkit-user-select:none}
+.credit{font-size:.8rem;color:var(--muted);margin:0}
+</style>
+<div class="game">
+  <h1>Кот на <b>орбите</b></h1>
+  <p class="sub">Кот-космонавт собирает рыбу между астероидами. Гравитация работает, коту всё равно.</p>
+  <div class="hud"><div>Рыба: <b id="sc">0</b></div><div>Орбита: <b id="lv">1</b>/3</div><div>Жизни: <b id="hp">3</b></div><div>Рекорд: <b id="best">0</b></div></div>
+  <canvas id="cv" width="680" height="425" aria-label="Игровое поле. Удерживайте, чтобы лететь вверх"></canvas>
+  <p class="note">Управление: удерживайте палец, мышь или пробел — кот включает реактивный ранец и летит вверх. Отпустите — плавно падает. Синий магнит притягивает рыбу, молоко добавляет жизнь. Три орбиты по 40 секунд, каждая быстрее прошлой.</p>
+  <p class="credit">Пример игры на площадке «ИИгры онлайн». Продолжения «Луна», «Луна+» и «Марс» — в дереве доработок на сайте.</p>
+</div>
+<script>
+const cv=document.getElementById("cv"),cx=cv.getContext("2d"),W=cv.width,H=cv.height,$=id=>document.getElementById(id);
+const LV=[{n:"Низкая орбита",sp:3,ast:1.1,col:"#B3141F"},{n:"Пояс астероидов",sp:3.8,ast:.7,col:"#8E0E1A"},{n:"Метеоритный дождь",sp:4.6,ast:.5,col:"#E8333F",rain:true}],DUR=40;
+const store={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:v}catch(e){return d}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+let cat,obj,fish,hp,lvl,lt,state="ready",hold=false,last=0,best=+store.get("cat-best",0)||0,magnet=0,inv=0,banner=0,spA=0,spF=0,spP=0,fx=[];
+const stars=[...Array(80)].map(()=>({x:Math.random()*W,y:Math.random()*H,z:Math.random()*.8+.2}));
+function reset(){cat={x:120,y:H/2,vy:0};obj=[];fish=0;hp=3;lvl=0;lt=DUR;magnet=0;inv=0;banner=2;fx=[];spA=1;spF=.4;spP=6}
+reset();
+const rnd=(a,b)=>a+Math.random()*(b-a);
+function spawn(dt){const L=LV[lvl];spA-=dt;spF-=dt;spP-=dt;
+  if(spA<=0){spA=L.ast*rnd(.7,1.3);const r=rnd(16,34);obj.push({k:"ast",x:W+r,y:rnd(r,H-r),r,vx:-L.sp*rnd(.9,1.3),vy:L.rain?rnd(.6,1.6):rnd(-.4,.4),rot:rnd(0,6),vr:rnd(-.05,.05)})}
+  if(spF<=0){spF=rnd(.35,.8);obj.push({k:"fish",x:W+20,y:rnd(30,H-30),r:12,vx:-L.sp,vy:0,ph:rnd(0,6)})}
+  if(spP<=0){spP=rnd(8,13);obj.push({k:Math.random()<.5&&hp<5?"milk":"mag",x:W+20,y:rnd(40,H-40),r:14,vx:-L.sp*.9,vy:0})}}
+function pop(x,y,t,c){fx.push({x,y,t,c,l:1})}
+function hurt(){if(inv>0)return;hp--;inv=1.6;pop(cat.x,cat.y-30,"Ай! −1 жизнь","#E8333F");if(hp<=0){state="over";if(fish>best){best=fish;store.set("cat-best",best)}window.IIGRY_SCORE&&IIGRY_SCORE(fish)}}
+function update(dt){const k=dt*60;
+  cat.vy+=(hold?-.55:.38)*k;cat.vy=Math.max(-7,Math.min(7,cat.vy));cat.y+=cat.vy*k;
+  if(cat.y<18){cat.y=18;cat.vy=0}if(cat.y>H-18){cat.y=H-18;cat.vy*=-.4}
+  lt-=dt;if(magnet>0)magnet-=dt;if(inv>0)inv-=dt;if(banner>0)banner-=dt;
+  if(lt<=0){if(lvl<2){lvl++;lt=DUR;banner=2;obj=obj.filter(o=>o.k!=="ast");pop(W/2,H/2+40,"+5 рыб за орбиту","#E7BD52");fish+=5}
+    else{state="win";fish+=10;if(fish>best){best=fish;store.set("cat-best",best)}window.IIGRY_SCORE&&IIGRY_SCORE(fish);return}}
+  spawn(dt);
+  obj.forEach(o=>{o.x+=o.vx*k;o.y+=o.vy*k;if(o.rot!=null)o.rot+=o.vr*k;if(o.k==="ast"&&(o.y<o.r||o.y>H-o.r))o.vy*=-1;
+    if(o.k==="fish"){o.ph+=dt*4;if(magnet>0){const dx=cat.x-o.x,dy=cat.y-o.y,d=Math.hypot(dx,dy);if(d<220){o.x+=dx/d*6*k;o.y+=dy/d*6*k}}}
+    const d=Math.hypot(o.x-cat.x,o.y-cat.y);
+    if(o.k==="ast"&&d<o.r*.85+14){o.dead=true;hurt()}
+    else if(o.k==="fish"&&d<o.r+16){o.dead=true;fish++;pop(o.x,o.y,"+1","#E7BD52")}
+    else if(o.k==="milk"&&d<o.r+16){o.dead=true;hp=Math.min(5,hp+1);pop(o.x,o.y,"Молоко! +1 жизнь","#fff")}
+    else if(o.k==="mag"&&d<o.r+16){o.dead=true;magnet=6;pop(o.x,o.y,"Магнит для рыбы!","#7CC4FF")}});
+  obj=obj.filter(o=>!o.dead&&o.x>-60&&o.y<H+80)}
+function drawCat(){cx.save();cx.translate(cat.x,cat.y);cx.rotate(cat.vy*.05);if(inv>0&&Math.floor(inv*10)%2)cx.globalAlpha=.4;
+  if(hold){cx.fillStyle="#E7BD52";cx.beginPath();cx.moveTo(-22,4);cx.lineTo(-36-Math.random()*10,10);cx.lineTo(-22,14);cx.fill()}
+  cx.fillStyle="#9A96A6";cx.fillRect(-24,0,10,16);
+  cx.fillStyle="#F4F4F6";cx.beginPath();cx.ellipse(0,6,16,12,0,0,7);cx.fill();
+  cx.fillStyle="#E7A14A";cx.beginPath();cx.arc(6,-8,13,0,7);cx.fill();
+  cx.beginPath();cx.moveTo(-3,-16);cx.lineTo(0,-28);cx.lineTo(6,-19);cx.moveTo(8,-19);cx.lineTo(14,-28);cx.lineTo(17,-15);cx.fill();
+  cx.fillStyle="#14121B";cx.beginPath();cx.arc(3,-9,2,0,7);cx.arc(11,-9,2,0,7);cx.fill();
+  cx.strokeStyle="rgba(124,196,255,.8)";cx.lineWidth=2;cx.beginPath();cx.arc(6,-9,18,0,7);cx.stroke();
+  if(magnet>0){cx.strokeStyle="rgba(124,196,255,.25)";cx.beginPath();cx.arc(0,0,40+Math.sin(last/120)*4,0,7);cx.stroke()}
+  cx.restore();cx.globalAlpha=1}
+function drawObj(o){cx.save();cx.translate(o.x,o.y);
+  if(o.k==="ast"){cx.rotate(o.rot);cx.fillStyle=LV[lvl].col;cx.beginPath();for(let i=0;i<8;i++){const a=i/8*Math.PI*2,r=o.r*(i%2?.82:1);cx.lineTo(Math.cos(a)*r,Math.sin(a)*r)}cx.fill();cx.fillStyle="rgba(0,0,0,.3)";cx.beginPath();cx.arc(o.r*.25,-o.r*.2,o.r*.25,0,7);cx.fill()}
+  else if(o.k==="fish"){cx.rotate(Math.sin(o.ph)*.25);cx.fillStyle="#E7BD52";cx.beginPath();cx.ellipse(0,0,12,7,0,0,7);cx.fill();cx.beginPath();cx.moveTo(10,0);cx.lineTo(19,-7);cx.lineTo(19,7);cx.fill();cx.fillStyle="#1A1306";cx.beginPath();cx.arc(-6,-2,1.6,0,7);cx.fill()}
+  else if(o.k==="milk"){cx.fillStyle="#fff";cx.fillRect(-9,-12,18,24);cx.fillStyle="#7CC4FF";cx.fillRect(-9,-2,18,6);cx.fillStyle="#fff";cx.beginPath();cx.moveTo(-9,-12);cx.lineTo(0,-19);cx.lineTo(9,-12);cx.fill()}
+  else{cx.strokeStyle="#7CC4FF";cx.lineWidth=6;cx.beginPath();cx.arc(0,0,10,Math.PI,0);cx.stroke();cx.fillStyle="#E8333F";cx.fillRect(-13,0,6,8);cx.fillRect(7,0,6,8)}
+  cx.restore()}
+function frame(t){const dt=Math.min(.05,(t-last)/1000||0);last=t;
+  if(state==="play")update(dt);
+  cx.fillStyle="#05040A";cx.fillRect(0,0,W,H);
+  stars.forEach(s=>{if(state==="play")s.x-=s.z*LV[lvl].sp*.4*dt*60;if(s.x<0)s.x+=W;cx.fillStyle="rgba(255,255,255,"+(.3+s.z*.6)+")";cx.fillRect(s.x,s.y,s.z*2,s.z*2)});
+  obj.forEach(drawObj);drawCat();
+  fx.forEach(f=>{f.l-=dt;f.y-=dt*30;cx.globalAlpha=Math.max(0,f.l);cx.fillStyle=f.c;cx.font="800 17px Rubik, sans-serif";cx.textAlign="center";cx.fillText(f.t,f.x,f.y)});cx.globalAlpha=1;fx=fx.filter(f=>f.l>0);
+  if(state==="play"){cx.fillStyle="rgba(255,255,255,.1)";cx.fillRect(0,0,W,4);cx.fillStyle="#E7BD52";cx.fillRect(0,0,W*(1-lt/DUR),4)}
+  if(state==="play"&&banner>0){cx.fillStyle="rgba(5,4,10,.55)";cx.fillRect(0,H/2-34,W,52);cx.fillStyle="#E7BD52";cx.font="800 22px Rubik, sans-serif";cx.textAlign="center";cx.fillText("Орбита "+(lvl+1)+": "+LV[lvl].n,W/2,H/2)}
+  if(state!=="play"){cx.fillStyle="rgba(5,4,10,.65)";cx.fillRect(0,H/2-60,W,120);cx.textAlign="center";cx.fillStyle="#F4F4F6";cx.font="700 22px Golos Text, sans-serif";
+    const T={ready:["Нажмите, чтобы взлететь","Удерживайте — вверх, отпустите — вниз"],over:["Кот вернулся на Землю","Рыбы: "+fish+". Нажмите, чтобы снова"],win:["Все три орбиты пройдены!","Рыбы: "+fish+" (с бонусами). Кот доволен"]}[state];
+    cx.fillText(T[0],W/2,H/2-6);cx.font="16px Golos Text, sans-serif";cx.fillStyle="#B9B6C2";cx.fillText(T[1],W/2,H/2+22)}
+  $("sc").textContent=fish;$("lv").textContent=lvl+1;$("hp").textContent=hp;$("best").textContent=best;
+  requestAnimationFrame(frame)}
+function down(e){e&&e.preventDefault&&e.preventDefault();if(state!=="play"){if(state!=="ready")reset();state="play";hold=false;return}hold=true}
+function up(){hold=false}
+cv.addEventListener("pointerdown",down);addEventListener("pointerup",up);addEventListener("pointercancel",up);
+addEventListener("keydown",e=>{if(e.code==="Space"||e.code==="ArrowUp"){e.preventDefault();if(!e.repeat)down()}});addEventListener("keyup",e=>{if(e.code==="Space"||e.code==="ArrowUp")up()});
+requestAnimationFrame(frame);
+</script>
+<script>/* Проверка «не робот» Yandex SmartCaptcha: один раз на 12 часов для всего сайта и игр */
+(function(){
+  const API="https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av",PK="iigry-pass";
+  const get=()=>{try{const o=JSON.parse(localStorage.getItem(PK)||"null");return o&&o.exp>Date.now()+60e3?o.v:""}catch(_){return ""}};
+  let cfgP=null,scriptP=null,busy=null;
+  const cfg=()=>cfgP||(cfgP=fetch(API+"?a=cfg",{cache:"no-store"}).then(r=>r.json()).catch(()=>({captcha:""})));
+  const load=()=>scriptP||(scriptP=new Promise((ok,no)=>{const s=document.createElement("script");s.src="https://smartcaptcha.cloud.yandex.ru/captcha.js?render=onload&onload=__iigryCap";
+    window.__iigryCap=ok;s.onerror=()=>{scriptP=null;no(new Error("Проверка не загрузилась. Проверьте интернет."))};document.head.appendChild(s)}));
+  function overlay(){const d=document.createElement("div");d.setAttribute("role","dialog");d.setAttribute("aria-modal","true");d.setAttribute("aria-label","Проверка, что вы не робот");
+    d.style.cssText="position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;background:rgba(10,9,14,.72);padding:16px";
+    d.innerHTML='<div style="background:#16141B;color:#F4F4F6;border:1px solid rgba(231,189,82,.4);border-radius:16px;padding:18px;width:min(360px,100%);display:grid;gap:12px;font:500 15px/1.4 system-ui,sans-serif"><b style="font-size:17px">Проверим, что вы не робот</b><div id="iigryCapBox" style="min-height:100px"></div><button type="button" style="justify-self:end;background:transparent;color:#B9B6C2;border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:7px 12px;cursor:pointer">Отмена</button></div>';
+    document.body.appendChild(d);return d}
+  async function need(){const p=get();if(p)return p;if(busy)return busy;
+    busy=(async()=>{const c=await cfg();if(!c.captcha)return "";await load();const d=overlay();
+      try{return await new Promise((ok,no)=>{d.querySelector("button").onclick=()=>no(new Error("Проверка отменена."));
+        window.smartCaptcha.render(d.querySelector("#iigryCapBox"),{sitekey:c.captcha,hl:"ru",callback:async token=>{
+          try{const r=await fetch(API+"?a=pass",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({token})}),j=await r.json();
+            if(!r.ok||!j.pass)throw new Error(j.error||"Проверка не пройдена.");try{localStorage.setItem(PK,JSON.stringify({v:j.pass,exp:j.exp}))}catch(_){}ok(j.pass)}catch(e){no(e)}}})})}
+      finally{d.remove()}})().finally(()=>{busy=null});return busy}
+  window.IIGRY_PASS={get,need,clear:()=>{try{localStorage.removeItem(PK)}catch(_){}}};
+})();
+</script><script data-game="cat" data-asc="0" data-unit="рыб">/* Таблица лидеров ИИгр: общий ник для всех игр и чата, результаты — на сервере в Yandex Cloud */
+(function(){
+  const me=document.currentScript,G=me.dataset.game,ASC=me.dataset.asc==="1",UNIT=me.dataset.unit||"",
+    API="https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av",K="iigry-nick",t0=Date.now();
+  const S=(v,n)=>String(v==null?"":v).slice(0,n);
+  const getNick=()=>{try{return S(localStorage.getItem(K),30)}catch(_){return ""}},setNick=v=>{try{localStorage.setItem(K,v)}catch(_){}};
+  let aid="";try{aid=localStorage.getItem("aid")||""}catch(_){}
+  const css=document.createElement("style");css.textContent=`.lb{width:min(560px,100%);margin-top:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:14px 16px;display:grid;gap:10px;font-family:inherit;color:inherit}
+.lb h2{margin:0;font:800 1.05rem/1.2 Rubik,"Golos Text",system-ui,sans-serif}.lb ol{margin:0;padding-left:1.6em;display:grid;gap:4px}
+.lb li{font-variant-numeric:tabular-nums}.lb li b{float:right;color:#E7BD52}.lb li.me{color:#E7BD52}.lb .mu{opacity:.7;font-size:.9rem;margin:0}
+.lb form{display:flex;gap:8px;flex-wrap:wrap}.lb input{flex:1 1 160px;min-width:0;padding:9px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.2);background:rgba(0,0,0,.25);color:inherit;font:inherit}
+.lb button{padding:9px 14px;border-radius:10px;border:0;background:#E7BD52;color:#1A1306;font-weight:800;cursor:pointer}.lb button:focus-visible,.lb input:focus-visible{outline:2px solid #E7BD52;outline-offset:2px}`;
+  document.head.appendChild(css);
+  const box=document.createElement("section");box.className="lb";box.setAttribute("aria-live","polite");
+  box.innerHTML='<h2>Таблица лидеров</h2><ol></ol><p class="mu" id="lbMsg"></p><form hidden><input maxlength="30" placeholder="Ваш ник" autocomplete="nickname" aria-label="Ваш ник"><button type="submit">В таблицу</button></form><p class="mu">Ник запоминается для всех игр и чата ИИгр.</p>';
+  (document.querySelector(".game")||document.body).appendChild(box);
+  const ol=box.querySelector("ol"),msg=box.querySelector("#lbMsg"),form=box.querySelector("form"),inp=form.querySelector("input");
+  let pending=null;
+  const say=t=>{msg.textContent=t};
+  async function top(){try{const r=await fetch(API+"?a=top&game="+G,{cache:"no-store"}),j=await r.json();ol.textContent="";
+      const items=Array.isArray(j.items)?j.items.slice(0,10):[],nick=getNick().toLowerCase();
+      if(!items.length){const li=document.createElement("li");li.className="mu";li.textContent="Пока пусто. Станьте первым!";ol.appendChild(li);return}
+      items.forEach(x=>{const li=document.createElement("li");li.textContent=S(x.n,30);const b=document.createElement("b");b.textContent=Math.round(+x.v||0)+" "+UNIT;li.appendChild(b);if(S(x.n,30).toLowerCase()===nick)li.className="me";ol.appendChild(li)})}
+    catch(_){ol.textContent="";say("Таблица временно недоступна.")}}
+  async function send(v,n,again){say("Отправляем результат…");
+    try{const P=window.IIGRY_PASS,r=await fetch(API+"?a=score",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({game:G,v,n,aid,ms:Date.now()-t0,pass:P?P.get():""})}),j=await r.json();
+      if(r.status===401&&j.need==="captcha"&&P&&!again){P.clear();await P.need();return send(v,n,true)}
+      if(!r.ok)throw new Error(j.error||"Не удалось сохранить");
+      say(j.improved?"Новый личный рекорд: "+j.best+" "+UNIT+"!":"Ваш рекорд — "+j.best+" "+UNIT+". Этот результат не лучше, но вы близко.");form.hidden=true;top()}
+    catch(e){say(S(e.message,200))}}
+  window.IIGRY_SCORE=v=>{v=Math.round(+v||0);if(!v)return;const n=getNick();
+    if(n){send(v,n)}else{pending=v;say("Ваш результат: "+v+" "+UNIT+". Впишите ник, чтобы попасть в таблицу.");form.hidden=false;try{inp.focus({preventScroll:true})}catch(_){}}};
+  form.addEventListener("submit",e=>{e.preventDefault();const n=S(inp.value,30).trim().replace(/^@/,"");if(!n){say("Впишите ник.");return}setNick(n);if(pending){send(pending,n);pending=null}});
+  top();setInterval(()=>{if(!document.hidden)top()},30000);
+})();
+</script>
+</body></html>

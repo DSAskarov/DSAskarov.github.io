@@ -1,0 +1,102 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; font-src https://fonts.gstatic.com; img-src 'self' data: https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; connect-src https://functions.yandexcloud.net https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; frame-src https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; object-src 'none'; base-uri 'none'; form-action 'none'"><meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="description" content="Игра площадки «ИИгры онлайн»"><meta property="og:title" content="Оригами-блоки — ИИгры онлайн"><meta property="og:description" content="Игра площадки «ИИгры онлайн»"><meta name="theme-color" content="#0B0A0E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23B3141F'/%3E%3Ctext x='32' y='44' font-size='30' font-family='Arial' font-weight='700' text-anchor='middle' fill='%23F6DE8D'%3EИИ%3C/text%3E%3C/svg%3E">
+<style>*{box-sizing:border-box}html,body{margin:0}[hidden]{display:none!important}</style></head><body>
+<title>Оригами-блоки</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@700;800;900&family=Golos+Text:wght@400;600&display=swap">
+<style>
+/* Layout: заголовок, счёт уровня и таймер, поле-лист, лоток с фигурами, кнопки. Бумага на тёмном столе. */
+:root{--bg:#0B0A0E;--panel:#16141B;--fg:#F4F4F6;--muted:#B9B6C2;--red:#E8333F;--gold:#E7BD52;--line:rgba(255,255,255,.12);color-scheme:dark;
+  --f-d:"Rubik","Golos Text",system-ui,sans-serif;--f-b:"Golos Text",system-ui,sans-serif}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{margin:0;background:radial-gradient(60vmax 50vmax at 50% 0%,rgba(231,189,82,.12),transparent 60%),var(--bg);color:var(--fg);font-family:var(--f-b);display:grid;place-items:center;padding:16px max(16px,env(safe-area-inset-right,0px)) 16px max(16px,env(safe-area-inset-left,0px))}
+.game{width:min(560px,100%);display:grid;gap:12px}
+h1{font:800 clamp(1.4rem,5vw,2rem)/1.1 var(--f-d);margin:0}
+h1 b{color:var(--gold)}
+.sub{color:var(--muted);margin:0;font-size:.95rem}
+.hud{display:flex;gap:8px;flex-wrap:wrap}
+.hud div{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px 12px;font-variant-numeric:tabular-nums}
+.hud b{font:800 1.05rem var(--f-d)}
+.board{display:grid;gap:3px;background:#24222A;padding:8px;border-radius:14px;border:1px solid var(--line);touch-action:manipulation;margin-inline:auto;width:100%}
+.cell{aspect-ratio:1;border-radius:4px;background:#2E2B36;border:0;padding:0;cursor:pointer}
+.cell.ghost{outline:2px dashed var(--gold);outline-offset:-3px}
+.cell.bad{outline:2px dashed var(--red);outline-offset:-3px}
+.cell.fill{box-shadow:inset 0 -3px 0 rgba(0,0,0,.25),inset 3px 3px 0 rgba(255,255,255,.18)}
+.cell:focus-visible{outline:2px solid #fff}
+.tray{display:flex;flex-wrap:wrap;gap:10px;min-height:70px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px;align-items:center}
+.pc{display:grid;gap:2px;padding:6px;border-radius:10px;border:1px solid transparent;background:transparent;cursor:pointer}
+.pc i{width:14px;height:14px;border-radius:2px;display:block}
+.pc[aria-pressed=true]{border-color:var(--gold);background:#2A2412}
+.pc:focus-visible{outline:2px solid var(--gold)}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.b{border:1px solid var(--line);border-radius:10px;padding:10px 14px;font:700 .95rem var(--f-b);background:var(--panel);color:var(--fg);cursor:pointer}
+.b.main{border:0;background:linear-gradient(135deg,#FF4A55,#A3101C);color:#fff}
+.b:disabled{opacity:.45;cursor:not-allowed}
+.msg{min-height:1.4em;margin:0;color:var(--gold);font-weight:600}
+.credit{font-size:.8rem;color:var(--muted);margin:0}
+</style>
+<div class="game">
+  <h1>Оригами-<b>блоки</b></h1>
+  <p class="sub">Сложите все бумажные фигуры на лист без пустот. Выберите фигуру в лотке, поверните её и нажмите на клетку поля — туда встанет верхняя левая клетка фигуры. Нажатие на уложенную фигуру возвращает её в лоток.</p>
+  <div class="hud"><div>Лист: <b id="lvn">1</b>/8</div><div>Время: <b id="tm">0:00</b></div><div>Лучшее: <b id="bt">—</b></div></div>
+  <div class="board" id="board" aria-label="Поле"></div>
+  <div class="tray" id="tray" aria-label="Лоток с фигурами"></div>
+  <div class="row"><button class="b" id="rot" type="button">Повернуть (R)</button><button class="b" id="flip" type="button">Отразить (F)</button><button class="b" id="reset" type="button">Собрать заново</button><button class="b main" id="next" type="button" hidden>Следующий лист</button></div>
+  <p class="msg" id="msg" aria-live="polite"></p>
+  <p class="credit">Пример игры на площадке «ИИгры онлайн». Медитация с таймером: торопиться не обязательно, но таймер всё видит.</p>
+</div>
+<script>
+const $=id=>document.getElementById(id),SZ=[[3,3,3],[4,4,4],[4,5,4],[5,5,4],[5,6,5],[6,6,5],[6,7,5],[7,7,5]];
+const COL=["#E8333F","#E7BD52","#F4F4F6","#9A96A6","#B3141F","#F6DE8D","#C4C1CC","#D9A93A","#7A2E35","#FF8A91","#8E8A9C","#FFF0BF","#5A0E16","#E0C27A"];
+const store={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:v}catch(e){return d}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+let L=Math.min(7,+store.get("origami-lv",0)||0),R,C,grid,pieces,sel=-1,t0=0,tim=0,done=false,hover=null;
+const norm=cs=>{const mr=Math.min(...cs.map(c=>c[0])),mc=Math.min(...cs.map(c=>c[1]));return cs.map(([r,c])=>[r-mr,c-mc]).sort((a,b)=>a[0]-b[0]||a[1]-b[1])};
+const rot=cs=>norm(cs.map(([r,c])=>[c,-r])),flip=cs=>norm(cs.map(([r,c])=>[r,-c]));
+function gen(){const[r,c,mx]=SZ[L];for(let tries=0;tries<500;tries++){const id=Array.from({length:r},()=>Array(c).fill(-1));const ps=[];let ok=true;
+  for(let i=0;i<r;i++)for(let j=0;j<c;j++){if(id[i][j]>=0)continue;const want=2+Math.floor(Math.random()*(mx-1)),cells=[[i,j]];id[i][j]=ps.length;
+    while(cells.length<want){const fr=[];cells.forEach(([a,b])=>[[1,0],[-1,0],[0,1],[0,-1]].forEach(([da,db])=>{const x=a+da,y=b+db;if(x>=0&&y>=0&&x<r&&y<c&&id[x][y]<0)fr.push([x,y])}));if(!fr.length)break;const n=fr[Math.floor(Math.random()*fr.length)];id[n[0]][n[1]]=ps.length;cells.push(n)}
+    if(cells.length<2){ok=false;break}ps.push(cells)}
+  if(ok&&ps.length>=SZ[L][0]-0)return{r,c,ps}}
+  return null}
+function start(){const g=gen();R=g.r;C=g.c;grid=Array.from({length:R},()=>Array(C).fill(-1));
+  pieces=g.ps.map((cs,i)=>{let s=norm(cs);for(let k=Math.floor(Math.random()*4);k--;)s=rot(s);if(Math.random()<.5)s=flip(s);return{s,col:COL[i%COL.length],at:null}});
+  pieces.sort(()=>Math.random()-.5);sel=0;done=false;t0=Date.now();$("next").hidden=true;$("msg").textContent="Фигур: "+pieces.length+". Поле "+R+"×"+C+".";
+  const b=$("board");b.style.gridTemplateColumns="repeat("+C+",1fr)";b.style.maxWidth=Math.min(560,C*64)+"px";draw()}
+const cellsAt=(p,r,c)=>p.s.map(([a,b])=>[a+r,b+c]);
+const fits=(p,r,c)=>cellsAt(p,r,c).every(([a,b])=>a>=0&&b>=0&&a<R&&b<C&&grid[a][b]<0);
+function place(r,c){if(done)return;const g=grid[r][c];
+  if(g>=0){const p=pieces[g];p.at=null;for(let i=0;i<R;i++)for(let j=0;j<C;j++)if(grid[i][j]===g)grid[i][j]=-1;sel=g;draw();return}
+  if(sel<0)return;const p=pieces[sel];if(!fits(p,r,c)){$("msg").textContent="Сюда не помещается: фигура вылезает за лист или на другую.";flash(r,c);return}
+  cellsAt(p,r,c).forEach(([a,b])=>grid[a][b]=sel);p.at=[r,c];sel=pieces.findIndex(q=>!q.at);
+  if(sel<0)win();draw()}
+function flash(r,c){hover=[r,c,"bad"];paint();setTimeout(()=>{hover=null;paint()},450)}
+let cellEls=[];
+function paint(){const gh=new Set();let cls="ghost";if(hover&&sel>=0&&!done){const[r,c,k]=hover;cls=k||(fits(pieces[sel],r,c)?"ghost":"bad");cellsAt(pieces[sel],r,c).forEach(([a,x])=>gh.add(a+","+x))}
+  cellEls.forEach(e=>{e.classList.remove("ghost","bad");if(gh.has(e.dataset.k))e.classList.add(cls)})}
+function win(){done=true;const s=Math.round((Date.now()-t0)/1000),k="origami-t"+L,b=+store.get(k,0)||0;if(!b||s<b)store.set(k,s);
+  if(L<7){store.set("origami-lv",Math.max(+store.get("origami-lv",0)||0,L+1));$("next").hidden=false}
+  $("msg").textContent=(L<7?"Лист сложен за "+fmt(s)+"! Бумага довольна.":"Все 8 листов сложены за "+fmt(s)+" на последнем. Вы мастер оригами!")}
+const fmt=s=>Math.floor(s/60)+":"+String(s%60).padStart(2,"0");
+function draw(){const b=$("board");b.innerHTML="";cellEls=[];
+  for(let i=0;i<R;i++)for(let j=0;j<C;j++){const e=document.createElement("button");e.type="button";e.className="cell";const g=grid[i][j];
+    if(g>=0){e.classList.add("fill");e.style.background=pieces[g].col}e.dataset.k=i+","+j;cellEls.push(e);
+    e.setAttribute("aria-label","Клетка "+(i+1)+"-"+(j+1)+(g>=0?", занята":""));e.onclick=()=>place(i,j);e.onpointerenter=()=>{hover=[i,j];paint()};b.append(e)}
+  b.onpointerleave=()=>{hover=null;paint()};paint();
+  const t=$("tray");t.innerHTML="";pieces.forEach((p,i)=>{if(p.at)return;const w=Math.max(...p.s.map(c=>c[1]))+1,h=Math.max(...p.s.map(c=>c[0]))+1;
+    const e=document.createElement("button");e.type="button";e.className="pc";e.setAttribute("aria-pressed",i===sel);e.setAttribute("aria-label","Фигура из "+p.s.length+" клеток");
+    e.style.gridTemplateColumns="repeat("+w+",14px)";const on=new Set(p.s.map(c=>c[0]+","+c[1]));
+    for(let r=0;r<h;r++)for(let c=0;c<w;c++){const q=document.createElement("i");if(on.has(r+","+c))q.style.background=p.col;e.append(q)}
+    e.onclick=()=>{if(sel===i){p.s=rot(p.s)}else sel=i;draw()};t.append(e)});
+  if(!t.children.length&&!done)t.textContent="";
+  $("lvn").textContent=L+1;const bt=+store.get("origami-t"+L,0)||0;$("bt").textContent=bt?fmt(bt):"—";$("rot").disabled=$("flip").disabled=sel<0||done}
+$("rot").onclick=()=>{if(sel>=0){pieces[sel].s=rot(pieces[sel].s);draw()}};
+$("flip").onclick=()=>{if(sel>=0){pieces[sel].s=flip(pieces[sel].s);draw()}};
+$("reset").onclick=start;$("next").onclick=()=>{L=Math.min(7,L+1);start()};
+addEventListener("keydown",e=>{if(e.key==="r"||e.key==="к")$("rot").click();if(e.key==="f"||e.key==="а")$("flip").click()});
+tim=setInterval(()=>{if(!done&&t0)$("tm").textContent=fmt(Math.round((Date.now()-t0)/1000))},500);
+start();
+</script>
+
+</body></html>

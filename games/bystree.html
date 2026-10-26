@@ -18,6 +18,13 @@ h1 b{color:var(--gold)}
 .sub{color:var(--muted);margin:0}
 #pad{border:0;border-radius:18px;min-height:260px;font:800 clamp(1.2rem,5vw,1.7rem)/1.3 var(--f-d);color:#fff;background:#24222A;cursor:pointer;padding:24px;touch-action:manipulation;transition:background .08s}
 #pad.wait{background:var(--red)}#pad.go{background:var(--gold);color:#1A1306}
+.modes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.modes button{border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:10px;padding:8px 6px;font:600 .82rem/1.25 var(--f-b);cursor:pointer;text-align:left}
+.modes button b{display:block;font:800 .95rem var(--f-d)}
+.modes button[aria-pressed=true]{border-color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold)}
+.modes button:disabled{opacity:.5}
+#pad.trap{background:#2F6B4B}
+.rank{font:800 1rem var(--f-d);color:var(--gold);margin:0;min-height:1.3em}
 #pad small{display:block;font:500 1rem var(--f-b);margin-top:8px;opacity:.85}
 #pad:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
 .hud{display:flex;gap:10px;flex-wrap:wrap}
@@ -29,26 +36,39 @@ h1 b{color:var(--gold)}
 <div class="game">
   <h1>Быстрее <b>нейросети</b></h1>
   <p class="sub">Жмите, как только поле станет золотым. Нейросеть отвечает за доли секунды — посмотрим, кто кого.</p>
+  <div class="modes" id="modes" role="group" aria-label="Режим"></div>
   <button id="pad" type="button">Нажмите, чтобы начать<small>Красное — ждать. Золотое — жать!</small></button>
-  <div class="hud"><div>Попытка: <b id="n">0</b>/5</div><div>Лучшее: <b id="best">—</b></div><div>Среднее: <b id="avg">—</b></div></div>
-  <p class="note">Демо: 5 попыток подряд. Полная версия — история результатов и режим «дуэль» на одном экране — 1 ₽, появится вместе с оплатой на площадке.</p>
+  <div class="hud"><div>Попытка: <b id="n">0</b>/<span id="of">5</span></div><div>Лучшее: <b id="best">—</b></div><div>Среднее: <b id="avg">—</b></div></div>
+  <p class="rank" id="rank" aria-live="polite"></p>
+  <p class="note">Классика идёт в таблицу лидеров. «Ловушки»: иногда поле становится зелёным — это обманка, не жмите. «Серия»: 10 попыток, ждать меньше, считается лучший результат. Полная версия — история результатов и режим «дуэль» на одном экране — 1 ₽, появится вместе с оплатой на площадке.</p>
   <p class="credit">Игра DSAskarov для площадки «ИИгры онлайн». Поддержать автора: <a href="https://boosty.to/dsaskarov" target="_blank" rel="noopener">Boosty</a> · Telegram @dsaskarov</p>
 </div>
 <script>
-const pad=document.getElementById("pad");let st="idle",t0=0,tm=0,res=[];
-const say=(a,b)=>{pad.innerHTML=a+(b?`<small>${b}</small>`:"")};
+const pad=document.getElementById("pad"),$=id=>document.getElementById(id);let st="idle",t0=0,tm=0,res=[],mode=0,fouls=0;
+const M=[{n:"Классика",d:"5 попыток",k:5,min:1200,rng:2300},{n:"Ловушки",d:"зелёное — не жать",k:8,min:1000,rng:2200,trap:.35},{n:"Серия",d:"10 быстрых",k:10,min:600,rng:1400}];
+const say=(a,b)=>{pad.innerHTML="";pad.append(a);if(b){const s=document.createElement("small");s.textContent=b;pad.append(s)}};
 const verdict=ms=>ms<200?"Нейросеть нервно перезагружается":ms<260?"Почти машина. Почти":ms<350?"Человеческая классика":"Нейросеть успела бы написать поэму";
-function start(){st="wait";pad.className="wait";say("Ждите золота…","Не нажимайте раньше времени");tm=setTimeout(()=>{st="go";pad.className="go";say("ЖМИТЕ!");t0=performance.now()},1200+Math.random()*2300)}
-function tap(){
-  if(st==="idle"||st==="done"){if(res.length>=5){res=[];upd()}start();return}
-  if(st==="wait"){clearTimeout(tm);st="idle";pad.className="";say("Рано! Фальстарт","Нажмите, чтобы попробовать снова");return}
+const rank=ms=>ms<220?"Звание: Нейросеть. Вы точно человек?":ms<280?"Звание: Киборг":ms<380?"Звание: Человек разумный":"Звание: Калькулятор на батарейках";
+const avg=()=>Math.round(res.reduce((a,b)=>a+b,0)/res.length);
+function modes(){const box=$("modes");box.innerHTML="";M.forEach((m,i)=>{const b=document.createElement("button");b.type="button";b.setAttribute("aria-pressed",i===mode);b.disabled=st==="wait"||st==="go"||st==="trap";
+  b.innerHTML="<b></b><span></span>";b.firstChild.textContent=m.n;b.lastChild.textContent=m.d;b.onclick=()=>{mode=i;res=[];fouls=0;st="idle";upd();$("rank").textContent="";say("Нажмите, чтобы начать",i===1?"Золотое — жать. Зелёное — обманка!":"Красное — ждать. Золотое — жать!");modes()};box.append(b)})}
+function go(){st="go";pad.className="go";say("ЖМИТЕ!");t0=performance.now()}
+function start(){const m=M[mode];st="wait";pad.className="wait";say("Ждите золота…","Не нажимайте раньше времени");modes();
+  tm=setTimeout(()=>{if(m.trap&&Math.random()<m.trap){st="trap";pad.className="trap";say("Зелёное…","Это обманка");tm=setTimeout(()=>{st="wait";pad.className="wait";say("Ждите золота…");tm=setTimeout(go,500+Math.random()*1200)},900)}else go()},m.min+Math.random()*m.rng)}
+function end(){st="done";modes();const m=M[mode];
+  if(mode===0){window.IIGRY_SCORE&&IIGRY_SCORE(avg());say("Готово: "+avg()+" мс в среднем","Нажмите, чтобы сыграть ещё");$("rank").textContent=rank(avg())}
+  else if(mode===1){say("Ловушки: "+avg()+" мс, обманок поймано: "+fouls,"Нажмите, чтобы сыграть ещё");$("rank").textContent=fouls?"Нейросеть такие обманки щёлкает. Тренируйтесь!":"Ни одной обманки — железная выдержка!"}
+  else{const b=Math.min(...res);say("Серия: лучший "+b+" мс","Нажмите, чтобы сыграть ещё");$("rank").textContent=rank(b)}}
+function tap(){const m=M[mode];
+  if(st==="idle"||st==="done"){if(res.length>=m.k){res=[];fouls=0;upd();$("rank").textContent=""}start();return}
+  if(st==="wait"){clearTimeout(tm);st="idle";pad.className="";say("Рано! Фальстарт","Нажмите, чтобы попробовать снова");modes();return}
+  if(st==="trap"){clearTimeout(tm);st="idle";pad.className="";fouls++;say("Попались на обманку!","Зелёное — не золото. Нажмите, чтобы продолжить");modes();return}
   if(st==="go"){const ms=Math.round(performance.now()-t0);res.push(ms);upd();pad.className="";
-    if(res.length>=5){st="done";window.IIGRY_SCORE&&IIGRY_SCORE(Math.round(res.reduce((a,b)=>a+b,0)/res.length));say("Демо пройдено: "+Math.round(res.reduce((a,b)=>a+b,0)/res.length)+" мс в среднем","Нажмите, чтобы сыграть ещё")}
-    else{st="idle";say(ms+" мс",verdict(ms)+". Нажмите для следующей попытки")}}}
-function upd(){document.getElementById("n").textContent=res.length;document.getElementById("best").textContent=res.length?Math.min(...res)+" мс":"—";
-  document.getElementById("avg").textContent=res.length?Math.round(res.reduce((a,b)=>a+b,0)/res.length)+" мс":"—"}
+    if(res.length>=m.k)end();else{st="idle";modes();say(ms+" мс",verdict(ms)+". Нажмите для следующей попытки")}}}
+function upd(){$("n").textContent=res.length;$("of").textContent=M[mode].k;$("best").textContent=res.length?Math.min(...res)+" мс":"—";$("avg").textContent=res.length?avg()+" мс":"—"}
 pad.addEventListener("pointerdown",e=>{e.preventDefault();tap()});
 pad.addEventListener("keydown",e=>{if(e.code==="Space"||e.code==="Enter"){e.preventDefault();tap()}});
+modes();
 </script>
 <script>/* Проверка «не робот» Yandex SmartCaptcha: один раз на 12 часов для всего сайта и игр */
 (function(){
