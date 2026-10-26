@@ -1,0 +1,116 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; font-src https://fonts.gstatic.com; img-src 'self' data: https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; connect-src https://functions.yandexcloud.net https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; frame-src https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; object-src 'none'; base-uri 'none'; form-action 'none'"><meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="description" content="Кабинет автора «ИИгры онлайн»: проекты, статусы и статистика игроков."><meta property="og:title" content="Личный кабинет — ИИгры онлайн"><meta property="og:description" content="Кабинет автора «ИИгры онлайн»: проекты, статусы и статистика игроков."><meta name="theme-color" content="#0B0A0E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23B3141F'/%3E%3Ctext x='32' y='44' font-size='30' font-family='Arial' font-weight='700' text-anchor='middle' fill='%23F6DE8D'%3EИИ%3C/text%3E%3C/svg%3E">
+<style>*{box-sizing:border-box}html,body{margin:0}[hidden]{display:none!important}</style></head><body>
+<script>/* Вход авторов «ИИгр» через Telegram-бота, без паролей. Ключ входа хранится только в этом браузере и действует 30 дней. */
+window.IIGRY_ACC=(function(){
+  const API="https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av",K="iigry-sess";
+  const tok=()=>{try{return localStorage.getItem(K)||""}catch(_){return ""}};
+  const set=t=>{try{t?localStorage.setItem(K,t):localStorage.removeItem(K)}catch(_){}};
+  async function call(op,x){const t=tok();if(!t)return{need:"login"};
+    try{const r=await fetch(API+"?a=u",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(Object.assign({op,token:t},x||{}))}),j=await r.json();
+      if(r.status===401){set("");return{need:"login"}}return r.ok?j:{error:j.error||"Ошибка сервера"}}catch(_){return{error:"Нет связи с сервером — попробуйте ещё раз"}}}
+  const mk=(t,x,c)=>{const e=document.createElement(t);if(x!=null)e.textContent=x;if(c)e.className=c;return e};
+  // Блок входа: кнопка ведёт в бота, бот спрашивает «Это вы?», сайт сам замечает подтверждение
+  function login(done){const box=mk("div",null,"acc-login");box.style.cssText="display:grid;gap:8px";
+    const p=mk("p","Вход и регистрация — одной кнопкой через Telegram-бота @iigry_bot. Пароль не нужен: бот спросит «Это вы?», вы нажмёте «Да» — и сайт сам вас впустит.");p.style.margin="0";
+    const a=mk("a","Войти через Telegram","btn");a.target="_blank";a.rel="noopener";a.style.justifySelf="start";a.setAttribute("aria-disabled","true");
+    const st=mk("p","Готовим ссылку для входа…","muted");st.setAttribute("aria-live","polite");st.style.margin="0";
+    box.append(p,a,st);let ses=null,timer=null,t0=0;
+    async function fresh(){clearInterval(timer);timer=null;a.removeAttribute("href");a.setAttribute("aria-disabled","true");
+      try{const r=await fetch(API+"?a=ulogin",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"}),j=await r.json();
+        if(!r.ok||!/^https:\/\/t\.me\/iigry_bot\?start=in_[0-9a-f]{24}$/.test(j.link||""))throw new Error(j.error||"");
+        ses=j;a.href=j.link;a.removeAttribute("aria-disabled");st.textContent="Нажмите кнопку — откроется Telegram. Ссылка действует 10 минут."}
+      catch(e){st.textContent=(e.message||"Нет связи с сервером.")+" Обновите страницу через минуту."}}
+    async function check(){if(!ses)return;if(Date.now()-t0>10*60e3){fresh();return}
+      try{const r=await fetch(API+"?a=ucheck",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code:ses.code,poll:ses.poll})}),j=await r.json();
+        if(j.st==="ok"&&/^[A-Za-z0-9_-]{43}$/.test(j.token||"")){clearInterval(timer);set(j.token);st.textContent="✅ Вы вошли!";done&&done()}
+        else if(j.st==="no"){st.textContent="Вход отменён в боте. Можно попробовать снова.";fresh()}
+        else if(j.st==="gone"){st.textContent="Ссылка устарела — сделали новую.";fresh()}}catch(_){}}
+    a.onclick=e=>{if(!ses){e.preventDefault();return}st.textContent="Ждём подтверждения в Telegram: нажмите в боте «Да, это я»…";t0=Date.now();if(!timer)timer=setInterval(check,2500)};
+    document.addEventListener("visibilitychange",()=>{if(timer&&!document.hidden)check()});
+    fresh();return box}
+  return{tok,call,login,out:async()=>{await call("out");set("")},drop:()=>set("")}})();
+</script><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@700;800;900&family=Golos+Text:wght@400;600&display=swap">
+<style>
+:root{--bg:#0B0A0E;--panel:#16141B;--fg:#F4F4F6;--muted:#B9B6C2;--red:#E8333F;--gold:#E7BD52;--green:#4ADE95;--line:rgba(255,255,255,.12);color-scheme:dark}
+body{background:radial-gradient(60vmax 50vmax at 85% 0%,rgba(231,189,82,.12),transparent 60%),var(--bg);color:var(--fg);font:400 16px/1.55 "Golos Text",system-ui,sans-serif;padding:16px}
+main{max-width:760px;margin:0 auto;display:grid;gap:14px}a{color:var(--gold)}
+h1{font:900 clamp(1.5rem,6vw,2.2rem)/1.1 Rubik,sans-serif;margin:6px 0 0}h1 b{color:var(--red)}h2{font:800 1.2rem Rubik,sans-serif;margin:0}
+.lead,.muted{color:var(--muted);margin:0}.muted{font-size:.88rem}
+.bar{height:10px;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),#F6DE8D);transition:width .3s}
+.nav{display:flex;gap:6px;flex-wrap:wrap}.nav span{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:4px 10px;font:600 .8rem "Golos Text";color:var(--muted)}
+.nav span.cur{border-color:var(--gold);color:var(--gold)}.nav span.ok{border-color:rgba(74,222,149,.6);color:var(--fg)}.nav span.ok::before{content:"✓ ";color:var(--green)}
+.step{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;display:grid;gap:12px}
+label.f{display:grid;gap:4px;font-weight:600;font-size:.92rem}
+input,select,textarea{background:#0F0E13;color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:10px;font:400 1rem "Golos Text";width:100%}
+textarea{min-height:90px;resize:vertical}
+.ck{display:flex;gap:10px;align-items:flex-start;font-size:.92rem}.ck input{width:20px;height:20px;flex:none;accent-color:#E7BD52;margin-top:2px}
+.checks{display:grid;gap:4px;background:#0F0E13;border:1px solid var(--line);border-radius:10px;padding:10px;font-size:.9rem}
+.checks div::before{display:inline-block;width:1.4em}.checks .y::before{content:"✅"}.checks .n::before{content:"❌"}.checks .w::before{content:"⏳"}.checks .i::before{content:"ℹ️"}
+.btn{border:0;border-radius:10px;padding:11px 16px;font:700 .95rem "Golos Text";background:linear-gradient(135deg,#FF4A55,#A3101C);color:#fff;cursor:pointer;text-decoration:none;display:inline-block}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--fg)}.btn.gold{background:var(--gold);color:#1A1306}.btn:disabled{opacity:.4;cursor:not-allowed}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.big{font:900 1.6rem Rubik;color:var(--gold);letter-spacing:1px}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+[hidden]{display:none!important}
+</style><style>.proj{background:#0F0E13;border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:6px}.proj h3{margin:0;font:800 1.05rem Rubik,sans-serif}
+.tag{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:2px 9px;font-size:.8rem;color:var(--muted)}.tag.ok{border-color:rgba(74,222,149,.6);color:var(--green)}.tag.bad{border-color:var(--red);color:#FF7A82}
+.spark{display:flex;align-items:flex-end;gap:2px;height:44px}.spark i{flex:1;background:var(--gold);border-radius:4px 4px 0 0;min-height:2px}
+.nums{display:flex;gap:16px;flex-wrap:wrap;font-size:.9rem}.nums b{font:800 1.2rem Rubik;color:var(--fg)}</style>
+<main>
+<p style="margin:0"><a href="./">← ИИгры онлайн</a> · <a href="kak-opublikovat.html">Опубликовать проект</a> · <a href="otvet.html">Ответы на обращения</a></p>
+<h1>Личный <b>кабинет</b></h1>
+<p class="lead">Ваши проекты, их статус и статистика игроков. Ответы модераторов и та же статистика приходят в Telegram-бот @iigry_bot (команда /my).</p>
+<section class="step" id="box" aria-live="polite"><p class="muted">Загрузка…</p></section>
+</main>
+<script>
+const $=id=>document.getElementById(id),el=(t,x,c)=>{const e=document.createElement(t);if(x!=null)e.textContent=x;if(c)e.className=c;return e};
+const ru=n=>new Intl.NumberFormat("ru-RU").format(n);
+async function show(){const b=$("box");
+  if(!IIGRY_ACC.tok()){b.innerHTML="";b.append(el("h2","Вход для авторов"),IIGRY_ACC.login(show),el("p","Публиковать проекты на сайте могут только зарегистрированные авторы. Входя, вы соглашаетесь с условиями и обработкой данных: мы храним номер вашего чата с ботом и выбранный ник.","muted"));return}
+  const j=await IIGRY_ACC.call("me");if(j.need){show();return}
+  b.innerHTML="";if(j.error){b.append(el("p",j.error));const r=el("button","Повторить","btn");r.type="button";r.onclick=show;b.append(r);return}
+  const u=j.user;b.append(el("h2","Здравствуйте, "+u.nick+"!"),el("p","Аккаунт с "+new Date(u.since).toLocaleDateString("ru-RU"),"muted"));
+  const i=el("input");i.maxLength=30;i.value=u.named?u.nick:"";i.placeholder="Ваш ник, например PixelFox";const sv=el("button","Сохранить ник","btn gold");sv.type="button";const m=el("p","","muted");
+  sv.onclick=async()=>{sv.disabled=true;const r=await IIGRY_ACC.call("nick",{nick:i.value});sv.disabled=false;if(r.nick)show();else m.textContent=r.error||"Не получилось"};
+  const l=el("label",null,"f");l.append(u.named?"Ник на сайте":"Выберите постоянный ник — без него публиковать нельзя",i);const row=el("div",null,"row");row.append(sv);b.append(l,row,m);
+  b.append(el("h2","Мои проекты"));
+  if(!j.projects.length){b.append(el("p","Пока нет проектов.","muted"))}
+  j.projects.forEach(p=>{const c=el("div",null,"proj");c.append(el("h3",p.title));const t=el("div",null,"row");
+    t.append(el("span",p.st||"на проверке","tag"+(/опубликован|принято/i.test(p.st)?" ok":/отклон/i.test(p.st)?" bad":"")));
+    if(p.check)t.append(el("span",{ok:"✅ Автопроверка пройдена",warn:"⚠️ Автопроверка: замечания",bad:"⛔ Автопроверка: найдены риски"}[p.check]||p.check,"tag"+(p.check==="ok"?" ok":p.check==="bad"?" bad":"")));
+    c.append(t);
+    if(p.stat){const d=p.stat.days,w=d.slice(-7),mx=Math.max(1,...d.map(x=>x.u)),n=el("div",null,"nums");
+      [["Игроков за 7 дней",w.reduce((a,x)=>a+x.u,0)],["Запусков за 7 дней",w.reduce((a,x)=>a+x.v,0)],["Игроков сегодня",d[d.length-1].u],["За 14 дней",p.stat.u]].forEach(([k,v])=>{const s=el("span",k+": ");s.append(el("b",ru(v)));n.append(s)});
+      const sp=el("div",null,"spark");sp.setAttribute("role","img");sp.setAttribute("aria-label","Игроки по дням за 14 дней: "+d.map(x=>x.u).join(", "));
+      d.forEach(x=>{const i=el("i");i.style.height=Math.round(x.u/mx*100)+"%";i.title=x.day.split("-").reverse().slice(0,2).join(".")+": "+x.u+" игроков, "+x.v+" запусков";sp.append(i)});
+      c.append(n,sp,el("p","Игроки — разные устройства за день, запуски — все открытия. Команда сайта не считается.","muted"))}
+    else c.append(el("p","Статистика начнёт копиться, когда проект появится в каталоге.","muted"));
+    if(!/^g:/.test(p.id)){const a=el("a","Статус и ответы →");a.href="otvet.html#"+p.id;c.append(a)}
+    b.append(c)});
+  const r2=el("div",null,"row"),np=el("a","Опубликовать новый проект","btn");np.href="kak-opublikovat.html";
+  const out=el("button","Выйти","btn ghost");out.type="button";out.onclick=async()=>{await IIGRY_ACC.out();show()};
+  const del=el("button","Удалить аккаунт","btn ghost");del.type="button";del.onclick=async()=>{if(!confirm("Удалить аккаунт? Ник и привязка к Telegram будут стёрты. Уже опубликованные проекты останутся в каталоге под прежним ником."))return;const r=await IIGRY_ACC.call("delete");if(r.ok){IIGRY_ACC.drop();show()}else alert(r.error||"Не получилось")};
+  r2.append(np,out,del);b.append(el("h2","Выплаты"),el("p","Деньги за продажи получают только зарегистрированные авторы. Реквизиты для выплат запросим отдельно, когда появятся первые продажи.","muted"),r2)}
+show();
+</script><script>/* Счётчик посещений «ИИгр»: случайный номер устройства хранится только в этом браузере; без cookie и слежки на других сайтах. Команда сайта не считается. */
+(function(){try{if(navigator.webdriver||localStorage.getItem("iigry-mod"))return;let d=localStorage.getItem("iigry-did");
+ if(!/^[0-9a-f]{32}$/.test(d||"")){const a=new Uint8Array(16);crypto.getRandomValues(a);d=[...a].map(x=>x.toString(16).padStart(2,"0")).join("");localStorage.setItem("iigry-did",d)}
+ const go=()=>{if(document.visibilityState!=="visible")return;document.removeEventListener("visibilitychange",go);fetch("https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av?a=hit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({d,p:location.pathname}),keepalive:true}).catch(()=>{})};
+ setTimeout(()=>{document.visibilityState==="visible"?go():document.addEventListener("visibilitychange",go)},2500)}catch(_){}})();
+/* Технические работы: пока сайт обновляется, показываем понятное предупреждение и сами обновляем страницу, когда всё готово */
+(function(){const API="https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av?a=status";let shown=null,was=false;
+ function show(j){if(shown)return;const d=document.createElement("div");d.setAttribute("role","alertdialog");d.setAttribute("aria-live","assertive");
+  d.style.cssText="position:fixed;inset:0;z-index:2147483000;background:rgba(11,10,14,.88);display:grid;place-items:center;padding:16px;font-family:Golos Text,system-ui,sans-serif";
+  const c=document.createElement("div");c.style.cssText="max-width:440px;background:#16141B;border:1px solid #E7BD52;border-radius:16px;padding:22px;color:#F4F4F6;text-align:center;display:grid;gap:10px";
+  const h=document.createElement("b");h.style.cssText="font:800 1.3rem Rubik,system-ui,sans-serif;color:#E7BD52";h.textContent="🛠 Идут технические работы";
+  const p=document.createElement("p");p.style.margin="0";const left=Math.max(1,Math.round((j.until-Date.now())/60000));p.textContent=(j.text||"Сайт обновляется — добавляем новое.")+" Обычно это пара минут (не дольше "+left+" мин). Страница обновится сама, когда всё будет готово.";
+  const b=document.createElement("button");b.type="button";b.textContent="Понятно, подожду";b.style.cssText="border:0;border-radius:10px;padding:10px 16px;font:700 1rem inherit;background:linear-gradient(135deg,#FF4A55,#A3101C);color:#fff;cursor:pointer;justify-self:center";
+  b.onclick=()=>{d.remove();shown=null;bar()};c.append(h,p,b);d.append(c);document.body.append(d);shown=d}
+ function bar(){if(document.getElementById("iigry-maint-bar"))return;const s=document.createElement("div");s.id="iigry-maint-bar";s.textContent="🛠 Идут технические работы — возможны недолгие сбои";s.style.cssText="position:fixed;left:0;right:0;bottom:0;z-index:2147482999;background:#E7BD52;color:#1A1306;font:700 .9rem Golos Text,system-ui,sans-serif;text-align:center;padding:6px";document.body.append(s)}
+ async function check(){try{const j=await (await fetch(API,{cache:"no-store"})).json();
+   if(j.maint){was=true;if(!document.getElementById("iigry-maint-bar"))show(j)}else if(was){location.reload()}}catch(_){} }
+ check();setInterval(check,20000)})();
+</script>
+</body></html>

@@ -75,6 +75,9 @@ async function loadScores(){const box=$("scores");box.textContent="Загруз�
 async function loadQ(){const box=$("queue");box.textContent="Загрузка…";let j;try{j=await call({op:"queue",kind:$("qkind").value,st:$("qst").value})}catch(e){box.textContent=e.message;return}box.innerHTML="";
   (j.items||[]).forEach(x=>{const it=el("div",null,"it"),tx=el("div",null,"tx");tx.append(el("b",(x.subj||"Без темы")+" "),el("small",T(x.ts)+" · "+x.stT+(x.who?" · "+x.who:"")),el("div",x.text));
     if(x.contact)tx.append(el("small","Контакт: "+x.contact));if(x.note)tx.append(el("div","Комментарий: "+x.note,"muted"));
+    if(x.acc){tx.append(el("div","👤 Аккаунт автора: "+x.acc.nick+" — ответы и смена статуса придут ему в Telegram сами.","muted"));const pr=el("div",null,"row"),pi=el("input");pi.placeholder="ID карточки в каталоге (для статистики автора)";pi.maxLength=40;pi.value=x.acc.pid||"";
+      pr.append(pi,btn(x.acc.pid?"Перепривязать":"Привязать к карточке","",async()=>{try{await call({op:"setpid",id:x.id,pid:pi.value.trim()});loadQ();loadLog()}catch(e){alert(e.message)}}));pr.style.marginTop="6px";tx.append(pr)}
+    else if($("qkind").value==="publish")tx.append(el("div","Заявка без аккаунта (отправлена до регистрации авторов) — свяжитесь по контакту.","muted"));
     const note=el("input");note.placeholder="Комментарий к решению";note.maxLength=500;note.style.width="100%";note.style.marginTop="6px";tx.append(note);
     const row=el("div",null,"row");row.style.marginTop="6px";[["work","В работу",""],["ok","Принять","main"],["no","Отклонить","red"]].forEach(([st,t,c])=>row.append(btn(t,c,async()=>{await call({op:"qset",id:x.id,st,note:note.value.trim()});loadQ();loadLog()})));tx.append(row);
     it.append(tx);box.append(it)});if(!box.children.length)box.textContent="Заявок нет."}
