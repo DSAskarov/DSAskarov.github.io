@@ -77,6 +77,8 @@ async function db(ctx) {
           .withColumn(new Column("contact", Types.optional(Types.UTF8))).withColumn(new Column("st", Types.optional(Types.UTF8)))
           .withColumn(new Column("who", Types.optional(Types.UTF8))).withColumn(new Column("note", Types.optional(Types.UTF8)))
           .withColumn(new Column("ts", Types.optional(Types.UINT64))).withPrimaryKeys("id"));
+        await ensure("statsub", new TableDescription()
+          .withColumn(new Column("name", Types.optional(Types.UTF8))).withColumn(new Column("parts", Types.optional(Types.UTF8))).withPrimaryKeys("name"));
         await ensure("cfg", new TableDescription()
           .withColumn(new Column("k", Types.optional(Types.UTF8))).withColumn(new Column("v", Types.optional(Types.UTF8)))
           .withPrimaryKeys("k"));
@@ -307,15 +309,22 @@ exports.handler = async (event, ctx) => {
     const bans = await q(`DECLARE $t AS Uint64; SELECT ip FROM bans WHERE until > $t;`, { $t: TypedValues.uint64(now) });
     const team = await q(`SELECT name FROM team;`);
     const h = new Date(now + 3 * 3600e3).getUTCHours(), hi = h < 12 ? "Доброе утро" : h < 18 ? "Добрый день" : "Добрый вечер";
-    const L = ["<b>" + hi + "! Сводка «ИИгр онлайн»</b>", "",
-      "💰 Продажи за сутки: <b>" + pd.length + "</b> на " + sum(pd) + " ₽ · всего: " + paid.length + " на " + sum(paid) + " ₽",
-      "🧾 Чеки: " + (noRc ? "⚠️ не пробито " + noRc : "все пробиты ✅"),
-      "💬 Сообщений в чате и обсуждениях за 12 ч: " + msgs.length,
-      "🏆 Новых рекордов за сутки: " + sc.length,
-      "📥 Новые заявки: " + (Object.keys(nw).length ? Object.entries(nw).map(([k, n]) => KINDS[k].toLowerCase() + " — " + n).join(", ") : "нет"),
-      "🚫 Активных банов: " + bans.length + " · 👥 в команде: " + team.length, "", "Разобрать заявки: dsaskarov.github.io/mod.html"];
-    if (!(await cfgGet("mig_stat"))) { for (const r of await q(`SELECT chat, cats FROM tg WHERE role = "admin";`)) { const c = String(r.cats || "").split(",").filter(Boolean); if (!c.includes("stat")) await q(`DECLARE $c AS Utf8; DECLARE $k AS Utf8; UPDATE tg SET cats=$k WHERE chat=$c;`, { $c: TypedValues.utf8(r.chat), $k: TypedValues.utf8(c.concat("stat").join(",")) }) } await cfgSet("mig_stat", "1") }
-    await notify("stat", L.join("\n").replace(/^📊 /, ""));
+    const P = {
+      sales: "💰 Продажи за сутки: <b>" + pd.length + "</b> на " + sum(pd) + " ₽ · всего: " + paid.length + " на " + sum(paid) + " ₽",
+      rc: "🧾 Чеки: " + (noRc ? "⚠️ не пробито " + noRc : "все пробиты ✅"),
+      chat: "💬 Сообщений в чате и обсуждениях за 12 ч: " + msgs.length,
+      scores: "🏆 Новых рекордов за сутки: " + sc.length,
+      inbox: "📥 Новые заявки: " + (Object.keys(nw).length ? Object.entries(nw).filter(([k]) => k !== "resume").map(([k, n]) => KINDS[k].toLowerCase() + " — " + n).join(", ") || "нет" : "нет"),
+      bans: "🚫 Активных банов: " + bans.length + " · 👥 в команде: " + team.length };
+    const head = "<b>" + hi + "! Сводка «ИИгр онлайн»</b>\n\n", tail = "\n\nПодробности: dsaskarov.github.io/mod.html";
+    const adminP = Object.assign({}, P, { inbox: "📥 Новые заявки: " + (Object.keys(nw).length ? Object.entries(nw).map(([k, n]) => KINDS[k].toLowerCase() + " — " + n).join(", ") : "нет") });
+    await notify("stat", head + Object.values(adminP).join("\n") + tail);
+    // Части сводки для модераторов — по выбору админа
+    const subs = await q(`SELECT name, parts FROM statsub;`);
+    if (subs.length) { const chats = await q(`SELECT chat, name, role FROM tg;`);
+      for (const sb of subs) { const parts = String(sb.parts || "").split(",").filter(k => P[k]); if (!parts.length) continue;
+        for (const c of chats.filter(c => c.name === sb.name && c.role !== "admin"))
+          await tgApi("sendMessage", { chat_id: c.chat, text: "📊 " + head + parts.map(k => P[k]).join("\n") + tail, parse_mode: "HTML", disable_web_page_preview: true }) } }
     return { statusCode: 200, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ok: true }) };
   }
   // Ретранслятор (GitHub Actions): отдаёт очередь исходящих и принимает входящие обновления бота
@@ -468,7 +477,13 @@ exports.handler = async (event, ctx) => {
       await q(`DECLARE $id AS Utf8; DECLARE $st AS Utf8; DECLARE $w AS Utf8; DECLARE $n AS Utf8; UPDATE inbox SET st=$st, who=$w, note=$n WHERE id=$id;`, { $id: TypedValues.utf8(id), $st: TypedValues.utf8(st), $w: TypedValues.utf8(me.name), $n: TypedValues.utf8(note) });
       await mlog(who, "заявка «" + QST[st] + "»", KINDS[r[0].kind] + ": " + (r[0].subj || id) + (note ? " — " + note : "")); return reply(200, { ok: true }, origin) }
     if (op === "log") { const r = await q(`SELECT ts, who, act, what FROM modlog ORDER BY ts DESC LIMIT 60;`); return reply(200, { items: r.map(x => ({ ts: num(x.ts), who: x.who, act: x.act, what: x.what })) }, origin) }
-    if (op === "mods") { if (!can("mods")) return NO; const r = await q(`SELECT name, role, ts FROM team;`); return reply(200, { items: r.map(x => ({ name: x.name, role: x.role, title: (ROLES[x.role] || {}).t || x.role, ts: num(x.ts) })) }, origin) }
+    if (op === "mods") { if (!can("mods")) return NO; const r = await q(`SELECT name, role, ts FROM team;`), ss = await q(`SELECT name, parts FROM statsub;`), sm = Object.fromEntries(ss.map(x => [x.name, x.parts]));
+      const tgs = await q(`SELECT name FROM tg;`), tn = new Set(tgs.map(x => x.name));
+      return reply(200, { items: r.map(x => ({ name: x.name, role: x.role, title: (ROLES[x.role] || {}).t || x.role, ts: num(x.ts), parts: can("team") ? String(sm[x.name] || "").split(",").filter(Boolean) : [], tg: tn.has(x.name) })) }, origin) }
+    if (op === "statset") { if (!can("team")) return NO; const name = clean(b.name, 30), OK = ["sales", "rc", "chat", "scores", "inbox", "bans"];
+      const parts = (Array.isArray(b.parts) ? b.parts : []).map(String).filter(p => OK.includes(p));
+      await q(`DECLARE $n AS Utf8; DECLARE $p AS Utf8; UPSERT INTO statsub (name, parts) VALUES ($n, $p);`, { $n: TypedValues.utf8(name), $p: TypedValues.utf8(parts.join(",")) });
+      await mlog(who, "настроил сводку", name + ": " + (parts.join(", ") || "отключена")); return reply(200, { ok: true }, origin) }
     if (op === "unban") { if (!can("unban")) return NO; await q(`DELETE FROM bans;`); await mlog(who, "снял все баны", "-"); return reply(200, { ok: true }, origin) }
     if (!can("team")) return reply(403, { error: "Это может только админ." }, origin);
     if (op === "add") { const role = String(b.role || ""); if (!ROLES[role] || role === "admin") return reply(400, { error: "Выберите уровень доступа." }, origin); const name = clean(b.name, 30); if (name.length < 2 || BAD.test(name) || LINK.test(name)) return reply(400, { error: "Имя модератора: 2–30 символов, без ссылок." }, origin);
