@@ -581,10 +581,10 @@ html.tilt .card:hover{transform:perspective(900px) rotateX(var(--rx,0deg)) rotat
     <div class="two">
       <div class="box">
         <h3>Как опубликовать</h3>
-        <p style="margin:0">Опубликуйте сами: после проверки, что вы не робот, проект сразу появится в каталоге.</p>
+        <p style="margin:0">Шесть шагов: выбрать тип, указать основу (если это доработка), описать проект, дать ссылку на демо, назначить цену и отправить на проверку. Модератор ответит обычно в течение дня.</p><p style="margin:0"><a class="btn ghost sm" href="kak-opublikovat.html">Пошаговая инструкция с чек-листом →</a></p>
         <div><button class="btn" id="pubBtn" type="button">Опубликовать проект</button></div>
         <p style="margin:0">Или пришлите ссылку либо файл на почту:</p>
-        <div class="copyrow"><code id="mail">dsaskarov.dmitry@gmail.com</code><button class="btn sm ghost" data-copy="mail">Скопировать</button></div>
+        <div class="copyrow"><code id="mail">askarov.dmitry@yandex.ru</code><button class="btn sm ghost" data-copy="mail">Скопировать</button></div>
         <p class="hint">Или в Telegram: <a href="https://t.me/dsaskarov" target="_blank" rel="noopener">@dsaskarov</a>. Первые 20 авторов попадут в стартовую подборку.</p>
       </div>
       <div class="box">
@@ -907,15 +907,25 @@ html.tilt .card:hover{transform:perspective(900px) rotateX(var(--rx,0deg)) rotat
 
 <dialog id="pub"><form class="dlg" id="pubForm" novalidate>
   <h2>Опубликовать проект</h2>
-  <p class="hint">Проект появится в каталоге сразу после проверки, что вы не робот, и автоматического фильтра. Реклама и посторонний контент не пропускаются.</p>
-  <label class="field">Название<input id="pT" maxlength="80"></label>
-  <label class="field">Ссылка на проект или файл<input id="pL" maxlength="300" type="url" placeholder="https://"></label>
-  <label class="field">Пара слов о проекте<textarea id="pD" rows="3" maxlength="400"></textarea></label>
-  <label class="field">Это доработка чужого проекта?<select id="pPar"><option value="">Нет, это оригинал</option></select></label>
-  <label class="field" id="pChgL" hidden>Что вы изменили (коротко)<input id="pChg" maxlength="140" placeholder="Например: новый режим на двоих"></label>
-  <label class="check"><input type="checkbox" id="pRobot"> Я не робот <span class="hint">— здесь будет проверка Google</span></label>
-  <label class="check"><input type="checkbox" id="pRules"> <span>Принимаю <a href="#terms">условия публикации</a></span></label>
-  <div class="actions"><button class="btn" type="submit">Опубликовать</button><button class="btn ghost" type="button" id="pClose">Отмена</button></div>
+  <p class="hint">Заявку проверит модератор — обычно в течение дня. Номер заявки придёт сразу, ответ — на странице <a href="otvet.html" target="_blank">«Ответы на обращения»</a>. Подробно по шагам: <a href="kak-opublikovat.html" target="_blank">инструкция для авторов</a>.</p>
+  <label class="field">1. Что публикуете<select id="pCat"><option value="game">ИИгра</option><option value="app">ПрИИложение</option><option value="mod">МодИИфикация</option><option value="server">Онлайн-сервер или сборка</option></select></label>
+  <label class="field" id="pForL" hidden>Для какой игры (например, Minecraft)<input id="pFor" maxlength="60"></label>
+  <label class="field">2. Это доработка чужого проекта?<select id="pPar"><option value="">Нет, это мой оригинал</option></select></label>
+  <label class="field" id="pChgL" hidden>Что вы изменили (коротко, до 140 знаков)<input id="pChg" maxlength="140" placeholder="Например: новый режим на двоих"></label>
+  <label class="field">3. Название<input id="pT" maxlength="80"></label>
+  <label class="field">Жанр или назначение<input id="pG" maxlength="40" placeholder="Аркада, головоломка, для бизнеса…"></label>
+  <label class="field">Пара слов о проекте<textarea id="pD" rows="3" maxlength="400" placeholder="Что это, чем интересно, сколько уровней…"></textarea></label>
+  <label class="field">4. Ссылка на демо — чтобы поиграть в браузере<input id="pL" maxlength="300" type="url" placeholder="https://"></label>
+  <label class="field">Ссылка на полную версию или файл (если есть)<input id="pFull" maxlength="300" type="url" placeholder="https://"></label>
+  <label class="field">5. Цена, ₽ (0 — бесплатно)<input id="pP" type="number" min="0" max="100000" step="1" value="0"></label>
+  <label class="field" id="pBuyL" hidden>Ссылка на вашу страницу оплаты (Boosty, ЮMoney и т. п.) — деньги идут вам напрямую<input id="pBuy" maxlength="300" type="url" placeholder="https://"></label>
+  <label class="check"><input type="checkbox" id="pOpen"> <span>Код открыт: другие могут делать доработки</span></label>
+  <label class="field">6. Ваш ник на сайте (будет виден всем)<input id="pNick" maxlength="30"></label>
+  <label class="field">Как с вами связаться — почта или Telegram (видит только админ)<input id="pCon" maxlength="120"></label>
+  <label class="check"><input type="checkbox" id="pOwn"> <span>Проект мой или у меня есть права на него; если это доработка — автор оригинала указан</span></label>
+  <label class="check"><input type="checkbox" id="pPub"> <span>Согласен, что ник, название и описание будут опубликованы на сайте</span></label>
+  <label class="check"><input type="checkbox" id="pRules"> <span>Принимаю <a href="#terms" target="_blank">условия публикации</a></span></label>
+  <div class="actions"><button class="btn" type="submit">Отправить на проверку</button><button class="btn ghost" type="button" id="pClose">Отмена</button></div>
 </form></dialog>
 
 <dialog id="helpDlg"><form class="dlg" id="helpForm" novalidate>
@@ -1181,7 +1191,7 @@ function dlBtn(g){const u=safe(g.dlUrl);return u?`<a class="btn green" href="${e
 function tipBtn(x){const u=safe(x.tipUrl);return u?`<a class="btn gold sm" href="${esc(u)}" target="_blank" rel="noopener">Чаевые</a>`:`<button class="btn gold sm" data-tip="${esc(x.a)}">Чаевые</button>`}
 const msgBtn=n=>`<button class="btn ghost sm" data-msg="${esc(n)}">Написать</button>`;
 const dlg=$("dlg"),body=$("dlgBody");
-function openGame(id){
+function openGame(id){window.__gid=id;
   const g=byId[id];if(!g)return;const ch=chainOf(g),co=coOf(g);
   body.innerHTML=`${COV[g.id]?`<img class="dimg" src="${COV[g.id]}" alt="Обложка игры «${esc(g.t)}»">`:""}<h2>${esc(g.t)}</h2><div class="author">${hl(ONE[g.c]||"")} · ${gl(g)} · ${priceLabel(g)}</div><p style="margin:0">${esc(g.d)}</p>
   ${g.soon?`<div class="links"><span class="hint">Автор: @${esc(g.a)}</span>${msgBtn(g.a)}</div>`:`<div><strong>Авторы</strong><ol class="chain">${ch.map((x,i)=>`<li><button class="whoa" data-go="${esc(x.id)}" ${x.id===g.id?'aria-current="true"':''}>@${esc(x.a)}</button><small>${i===0?'оригинал':'доработка '+i}${x.id===g.id?' · вы здесь':''}</small>${tipBtn(x)}${msgBtn(x.a)}<button class="x" data-rep="user|${esc(x.a)}" title="Пожаловаться на автора" aria-label="Пожаловаться на автора">⚑</button></li>`).join("")}</ol>${ch.length>1?'<p class="hint">Нажмите на автора, чтобы открыть его версию.</p>':''}</div>`}
@@ -1195,7 +1205,7 @@ function openGame(id){
 }
 ["grid","topGrid"].forEach(id=>$(id).onclick=e=>{const c=e.target.closest(".card");if(c)openGame(c.dataset.id)});
 const MSG={demo:"Здесь запустится демо. Пока запускается только воображение.",buy:"Оплата появится вместе с платной частью сайта.",dl:"Здесь будет скачивание.",remix:"Здесь откроется копия проекта для доработки."};
-body.onclick=e=>{
+body.onclick=e=>{ {const rb=e.target.closest('[data-a="remix"]');if(rb){const id=window.__gid;dlg.close();openPub(id);return}}
   {const t=e.target.closest("[data-a],[data-demo],[data-tip],[data-msg]");if(t){const k=t.dataset.a||(t.hasAttribute("data-demo")?"demo":t.hasAttribute("data-tip")?"tip":"msg");if(k!=="close")track("ev",k)}}
   const qb=e.target.closest("[data-q]");if(qb){Q=qb.dataset.q;store.set("q",Q);body.querySelectorAll("[data-q]").forEach(b=>b.setAttribute("aria-pressed",b===qb));const d=body.querySelector("[data-demo]");if(d)d.href=qUrl(d.dataset.base);return}
   const fv=e.target.closest("[data-fav]");if(fv){toggleFav(fv.dataset.fav).then(()=>{if(dlg.open)openGame(fv.dataset.fav)});return}
@@ -1249,16 +1259,21 @@ $("authForm").onsubmit=e=>{e.preventDefault();
 setMode("in");
 
 /* Публикация — образец */
-$("pubBtn").onclick=()=>{$("pPar").innerHTML='<option value="">Нет, это оригинал</option>'+G.filter(g=>!g.soon).map(g=>`<option value="${esc(g.id)}">${esc(g.t)} · @${esc(g.a)}</option>`).join("");$("pChgL").hidden=true;$("pub").showModal()};
-$("pPar").onchange=()=>{$("pChgL").hidden=!$("pPar").value};
+const openPub=par=>{$("pPar").innerHTML='<option value="">Нет, это мой оригинал</option>'+G.filter(g=>!g.soon).map(g=>`<option value="${esc(g.id)}">${esc(g.t)} · @${esc(g.a)}</option>`).join("");
+  $("pPar").value=par&&byId[par]?par:"";$("pChgL").hidden=!$("pPar").value;if($("pPar").value){const p=byId[par];$("pCat").value=p.c||"game";$("pOpen").checked=true}$("pForL").hidden=!/mod|server/.test($("pCat").value);
+  try{$("pNick").value=$("pNick").value||localStorage.getItem("iigry-nick")||""}catch(_){}$("pub").showModal()};
+$("pubBtn").onclick=()=>openPub("");
+$("pPar").onchange=()=>{$("pChgL").hidden=!$("pPar").value};$("pCat").onchange=()=>{$("pForL").hidden=!/mod|server/.test($("pCat").value)};
+$("pP").oninput=()=>{$("pBuyL").hidden=!(+$("pP").value>0)};
 $("pClose").onclick=()=>$("pub").close();
-$("pubForm").onsubmit=e=>{e.preventDefault();
-  if(!$("pT").value.trim()){toast("Укажите название проекта.");return}
-  if(!$("pRobot").checked){toast("Подтвердите, что вы не робот. Мы верим, но проверяем.");return}
-  if(!$("pRules").checked){toast("Примите условия публикации.");return}
-  if($("pPar").value&&!$("pChg").value.trim()){toast("Опишите коротко, что вы изменили.");return}
-  $("pub").close();MAILTO("новый проект",["Название: "+$("pT").value.trim(),"Ссылка: "+$("pL").value.trim(),"Описание: "+$("pD").value.trim(),$("pPar").value?"Доработка проекта: "+((byId[$("pPar").value]||{}).t||"")+" — что изменено: "+$("pChg").value.trim():"Оригинал"])};
-
+$("pubForm").onsubmit=e=>{e.preventDefault();const v=id=>$(id).value.trim(),par=byId[$("pPar").value],price=Math.max(0,Math.round(+$("pP").value||0));
+  const need=[[!v("pT"),"Укажите название проекта."],[v("pL")&&!/^https:\/\//.test(v("pL")),"Ссылка на демо должна начинаться с https://"],[!v("pL"),"Добавьте ссылку на демо: без него проект не опубликуем."],
+    [par&&!v("pChg"),"Опишите коротко, что вы изменили."],[par&&price<(+par.p||0),"Цена доработки не может быть ниже цены основы ("+(+par.p||0)+" ₽)."],[price>0&&!/^https:\/\//.test(v("pBuy")),"Для платного проекта добавьте ссылку на вашу страницу оплаты."],
+    [!v("pNick"),"Укажите ник."],[!v("pCon"),"Оставьте почту или Telegram, чтобы модератор мог задать вопрос."],[!$("pOwn").checked,"Подтвердите права на проект."],[!$("pPub").checked,"Без согласия на публикацию ника проект не сможет появиться в каталоге."],[!$("pRules").checked,"Примите условия публикации."]];
+  const bad=need.find(x=>x[0]);if(bad){toast(bad[1]);return}
+  try{localStorage.setItem("iigry-nick",v("pNick"))}catch(_){}
+  $("pub").close();MAILTO("новый проект: "+v("pT"),["Категория: "+$("pCat").selectedOptions[0].text+(v("pFor")?" для «"+v("pFor")+"»":""),"Название: "+v("pT"),"Жанр: "+v("pG"),"Описание: "+v("pD"),"Демо: "+v("pL"),v("pFull")?"Полная версия: "+v("pFull"):"",
+    "Цена: "+(price?price+" ₽ · оплата: "+v("pBuy"):"бесплатно"),"Открытый код: "+($("pOpen").checked?"да":"нет"),par?"Доработка проекта «"+par.t+"» (@"+par.a+", "+par.id+") — что изменено: "+v("pChg"):"Оригинал","Ник автора: "+v("pNick"),"Контакт: "+v("pCon"),"Права подтверждены, согласие на публикацию ника дано"],"publish")};
 document.querySelectorAll("[data-copy]").forEach(b=>b.onclick=async()=>{const el=$(b.dataset.copy);
   try{await navigator.clipboard.writeText(el.textContent);toast("Скопировано")}
   catch(e){const r=document.createRange();r.selectNodeContents(el);const s=getSelection();s.removeAllRanges();s.addRange(r);toast("Выделено — скопируйте вручную")}});
@@ -1726,7 +1741,7 @@ if(getNick()){if(!$("lcName").value)$("lcName").value=getNick();if(!$("talkN").v
 document.querySelectorAll('input[type=checkbox][id$="Robot"]').forEach(c=>{c.checked=true;const l=c.closest("label");if(l)l.hidden=true});
 document.addEventListener("submit",async e=>{const f=e.target;if(!f.querySelector('input[id$="Robot"]')||IIGRY_PASS.get())return;
   e.preventDefault();e.stopImmediatePropagation();try{await IIGRY_PASS.need();f.requestSubmit()}catch(err){toast(err.message)}},true);
-route();render();renderNews();renderTalk();
+route();render();renderNews();renderTalk();setTimeout(()=>{const h=location.hash;if(h==="#publish")openPub("");const m=/^#remix=([\w-]{1,20})$/.exec(h);if(m)openPub(m[1])},400);
 (async()=>{
   db=window.claude&&window.claude.use?await window.claude.use("db"):null;
   if(!db){loaded=newsLoaded=true;dbFail=false;setData(STATIC_P);N=STATIC_N;renderNews();return}

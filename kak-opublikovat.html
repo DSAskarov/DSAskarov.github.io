@@ -1,0 +1,86 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://functions.yandexcloud.net; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="description" content="Как опубликовать игру, приложение, мод или сервер на «ИИгры онлайн» — пошаговый чек-лист для авторов.">
+<title>Как опубликовать проект — ИИгры онлайн</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@700;800;900&family=Golos+Text:wght@400;600&display=swap">
+<style>
+:root{--bg:#0B0A0E;--panel:#16141B;--fg:#F4F4F6;--muted:#B9B6C2;--red:#E8333F;--gold:#E7BD52;--green:#4ADE95;--line:rgba(255,255,255,.12);color-scheme:dark}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(60vmax 50vmax at 85% 0%,rgba(231,189,82,.12),transparent 60%),var(--bg);color:var(--fg);font:400 16px/1.55 "Golos Text",system-ui,sans-serif;padding:16px}
+main{max-width:820px;margin:0 auto;display:grid;gap:16px}a{color:var(--gold)}
+h1{font:900 clamp(1.6rem,6vw,2.4rem)/1.1 Rubik,sans-serif;margin:8px 0 0}h1 b{color:var(--red)}h2{font:800 1.25rem Rubik,sans-serif;margin:0}
+.lead{color:var(--muted);margin:0}.bar{height:10px;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),#F6DE8D);transition:width .3s}
+.nav{display:flex;gap:6px;flex-wrap:wrap}.nav button{border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:999px;padding:6px 12px;font:600 .85rem "Golos Text";cursor:pointer}
+.nav button[aria-current=true]{border-color:var(--gold);color:var(--gold)}.nav button.done{border-color:rgba(74,222,149,.6)}.nav button.done::before{content:"✓ ";color:var(--green)}
+.step{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;display:grid;gap:12px}
+.step .n{font:800 .8rem Rubik;letter-spacing:2px;color:var(--gold);text-transform:uppercase}
+.ck{display:flex;gap:10px;align-items:flex-start;padding:10px;border-radius:10px;background:#0F0E13;border:1px solid var(--line);cursor:pointer}
+.ck input{width:20px;height:20px;margin-top:2px;accent-color:#E7BD52;flex:none}.ck small{display:block;color:var(--muted)}
+.btn{display:inline-block;border:0;border-radius:10px;padding:11px 16px;font:700 .95rem "Golos Text";background:linear-gradient(135deg,#FF4A55,#A3101C);color:#fff;text-decoration:none;cursor:pointer}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--fg)}.btn.gold{background:var(--gold);color:#1A1306}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.tip{border-left:3px solid var(--gold);padding:6px 12px;color:var(--muted);font-size:.92rem}
+.done-msg{color:var(--green);font-weight:600;min-height:1.4em;margin:0}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+</style></head><body><main>
+<p style="margin:0"><a href="./">← ИИгры онлайн</a></p>
+<h1>Как опубликовать <b>проект</b></h1>
+<p class="lead">Игра, приложение, мод или сервер — путь один. Идите по шагам и отмечайте галочки: прогресс сохранится в этом браузере, можно вернуться позже.</p>
+<div class="bar" aria-hidden="true"><i id="bar"></i></div>
+<div class="nav" id="nav" role="tablist" aria-label="Шаги"></div>
+<section class="step" id="step"></section>
+<div class="row"><button class="btn ghost" id="prev" type="button">← Назад</button><button class="btn" id="next" type="button">Дальше →</button><span class="done-msg" id="dm" aria-live="polite"></span></div>
+<p class="lead" style="font-size:.85rem">Вопросы — в <a href="./#talk">обсуждениях на сайте</a> или в Telegram <a href="https://t.me/dsaskarov" target="_blank" rel="noopener">@dsaskarov</a>.</p>
+</main>
+<script>
+const S=[
+ {t:"Подготовка",h:"Шаг 1. Проверьте, что проект готов",p:"Модератор пропустит проект, если всё ниже — правда.",c:[
+   ["Проект запускается","Демо открывается и в него можно поиграть или попробовать без установки."],
+   ["Без рекламы и запрещёнки","Нет рекламы, ставок, алкоголя, оскорблений и чужих персональных данных."],
+   ["Права в порядке","Проект ваш, или вы дорабатываете чужой с открытым кодом и указываете автора."],
+   ["Сделан с ИИ","Площадка — для проектов, созданных вместе с нейросетями. Как именно — неважно."]]},
+ {t:"Демо",h:"Шаг 2. Разместите демо в интернете",p:"Нужна ссылка https://, по которой проект открывается в браузере. Подойдёт любой из вариантов:",c:[
+   ["Выбрал, где разместить","GitHub Pages, itch.io, ссылка «Поделиться» из Claude, Яндекс Игры, свой сайт — любая открытая ссылка."],
+   ["Проверил ссылку в другом браузере","Откройте её в режиме инкогнито: если работает там — работает у всех."]],
+  x:'<p class="tip">Для модов и серверов демо — это страница с описанием, скриншотами или видео и адресом сервера.</p>'},
+ {t:"Оригинал или доработка",h:"Шаг 3. Оригинал или доработка?",p:"Если вы улучшили чужой проект — это доработка. Автор оригинала всегда указан и получает долю с продаж.",c:[
+   ["Определился","Оригинал — сразу к шагу 4. Доработка — откройте проект в каталоге и нажмите «Доработать»: форма заполнится сама."],
+   ["Для доработки: цена не ниже основы","Бесплатная основа — любая цена. Платная — не дешевле её."]],
+  x:'<div class="row"><a class="btn ghost" href="./#catalog" target="_blank">Открыть каталог →</a><a class="btn ghost" href="./#remix" target="_blank">Как работают доработки</a></div>'},
+ {t:"Форма",h:"Шаг 4. Заполните форму",p:"Кнопка ниже откроет форму. В ней шесть коротких пунктов:",c:[
+   ["Тип и основа","Игра, приложение, мод или сервер; для мода или сервера — для какой игры. Если доработка — что изменили."],
+   ["Название, жанр, описание","Пара честных и живых предложений — лучше, чем длинный текст."],
+   ["Ссылки","Демо — обязательно. Полная версия или файл — если есть."],
+   ["Цена","0 — бесплатно. Для платного проекта — ссылка на вашу страницу оплаты (Boosty, ЮMoney и т. п.): деньги идут вам напрямую."],
+   ["Ник и контакт","Ник увидят все. Почту или Telegram видит только админ — чтобы задать вопрос по заявке."]],
+  x:'<div class="row"><a class="btn" href="./#publish" target="_blank">Открыть форму публикации →</a></div><p class="tip">Перед отправкой сайт попросит подтвердить, что вы не робот.</p>'},
+ {t:"Проверка",h:"Шаг 5. Проверка модератором",p:"После отправки вы получите номер заявки. Модератор проверит проект, обычно в течение дня.",c:[
+   ["Сохранил номер заявки","Он также сохранился в браузере — ответ подставится сам."],
+   ["Знаю, где смотреть ответ","На странице «Ответы на обращения». Если модератор задаст вопрос — ответьте на почту или в Telegram."]],
+  x:'<div class="row"><a class="btn ghost" href="otvet.html" target="_blank">Ответы на обращения →</a></div><p class="tip">Что проверяют: демо открывается, описание честное, нет запрещённого, у доработки указана основа и цена не ниже.</p>'},
+ {t:"Публикация",h:"Шаг 6. Проект в каталоге — что дальше",p:"После одобрения проект появится в каталоге с вашим ником.",c:[
+   ["Рассказал о проекте","Поделитесь ссылкой в соцсетях и обсуждениях — первые игроки приходят от автора."],
+   ["Знаю, как выпустить обновление","Новая версия — новая заявка с пометкой «обновление»: старую ссылку заменим."],
+   ["Понимаю про деньги","Сейчас платные проекты продаются через вашу ссылку оплаты. Продажа через площадку с автоматическим делением по цепочке доработок откроется позже — выплаты будут только официально оформленным авторам (самозанятым, ИП, юрлицам)."]],
+  x:'<div class="row"><a class="btn gold" href="./#publish" target="_blank">Опубликовать ещё один</a><a class="btn ghost" href="./#talk" target="_blank">Обсуждения</a></div>'}];
+const $=id=>document.getElementById(id),K="iigry-pubguide";let st={i:0,c:{}};try{st=Object.assign(st,JSON.parse(localStorage.getItem(K)||"{}"))}catch(_){}
+const save=()=>{try{localStorage.setItem(K,JSON.stringify(st))}catch(_){}};
+const doneStep=i=>S[i].c.every((_,j)=>st.c[i+"_"+j]);
+function draw(){const s=S[st.i],box=$("step");box.innerHTML="";
+  const n=document.createElement("div");n.className="n";n.textContent="Шаг "+(st.i+1)+" из "+S.length;const h=document.createElement("h2");h.textContent=s.h;const p=document.createElement("p");p.className="lead";p.textContent=s.p;box.append(n,h,p);
+  s.c.forEach(([t,d],j)=>{const l=document.createElement("label");l.className="ck";const c=document.createElement("input");c.type="checkbox";c.checked=!!st.c[st.i+"_"+j];
+    c.onchange=()=>{st.c[st.i+"_"+j]=c.checked;save();prog()};const tx=document.createElement("span");const b=document.createElement("b");b.textContent=t;const sm=document.createElement("small");sm.textContent=d;tx.append(b,sm);l.append(c,tx);box.append(l)});
+  if(s.x){const x=document.createElement("div");x.innerHTML=s.x;box.append(x)}
+  $("prev").disabled=st.i===0;$("next").textContent=st.i===S.length-1?"Готово ✓":"Дальше →";prog();
+  $("nav").innerHTML="";S.forEach((x,i)=>{const b=document.createElement("button");b.type="button";b.textContent=(i+1)+". "+x.t;b.setAttribute("aria-current",i===st.i);if(doneStep(i))b.className="done";b.onclick=()=>{st.i=i;save();draw()};$("nav").append(b)})}
+function prog(){const all=S.reduce((a,s)=>a+s.c.length,0),d=Object.values(st.c).filter(Boolean).length;$("bar").style.width=Math.round(d/all*100)+"%";
+  $("dm").textContent=d===all?"Все шаги пройдены — удачи с проектом!":"";[...$("nav").children].forEach((b,i)=>b.className=doneStep(i)?"done":"")}
+$("prev").onclick=()=>{if(st.i>0){st.i--;save();draw();scrollTo({top:0,behavior:"smooth"})}};
+$("next").onclick=()=>{if(st.i<S.length-1){st.i++;save();draw();scrollTo({top:0,behavior:"smooth"})}else $("dm").textContent=doneStep(S.length-1)?"Все шаги пройдены — удачи с проектом!":"Отметьте галочки последнего шага."};
+draw();
+</script>
+<script>/* Счётчик посещений «ИИгр»: случайный номер устройства хранится только в этом браузере; без cookie и слежки на других сайтах. Команда сайта не считается. */
+(function(){try{if(navigator.webdriver||localStorage.getItem("iigry-mod"))return;let d=localStorage.getItem("iigry-did");
+ if(!/^[0-9a-f]{32}$/.test(d||"")){const a=new Uint8Array(16);crypto.getRandomValues(a);d=[...a].map(x=>x.toString(16).padStart(2,"0")).join("");localStorage.setItem("iigry-did",d)}
+ const go=()=>{if(document.visibilityState!=="visible")return;document.removeEventListener("visibilitychange",go);fetch("https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av?a=hit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({d}),keepalive:true}).catch(()=>{})};
+ setTimeout(()=>{document.visibilityState==="visible"?go():document.addEventListener("visibilitychange",go)},2500)}catch(_){}})();
+</script>
+</body></html>
