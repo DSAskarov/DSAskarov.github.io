@@ -83,6 +83,8 @@ jobs:
             ALLOW_ORIGIN=https://dsaskarov.github.io
             CAPTCHA_SITEKEY=${{ steps.cap.outputs.key || '-' }}
             CAPTCHA_SECRET=${{ steps.cap.outputs.sec || '-' }}
+            YK_SHOP=1507601
+            YK_SECRET=${{ secrets.YK_SECRET || '-' }}
       - name: Открыть функцию для сайта и проверить
         env: { IAM: "${{ steps.tok.outputs.iam }}", FID: "${{ steps.fn.outputs.function-id }}" }
         run: |
@@ -103,3 +105,6 @@ jobs:
           echo "Настройки:"; curl -sS -H "$O" "$U?a=cfg"; echo
           echo "Проверка подделки:"; curl -sS -X POST -H "$O" -H "Content-Type: application/json" "$U?a=score" -d '{"game":"bugs","n":"читер","v":250,"ms":100}'; echo
           curl -sS -H "$O" "$U?a=top&game=test"; echo
+          echo "Проверка оплаты (чужой товар):"; curl -sS -X POST -H "$O" -H "Content-Type: application/json" "$U?a=buy" -d '{"prod":"free-money"}'; echo
+          echo "Проверка поддельного уведомления ЮKassa:"; curl -sS -X POST -H "Content-Type: application/json" "$U?a=yk" -d '{"event":"payment.succeeded","object":{"id":"fake-payment-000"}}'; echo
+          echo "Проверка поддельной лицензии:"; curl -sS -X POST -H "$O" -H "Content-Type: application/json" "$U?a=lic" -d '{"id":"000000000000000000000000","prod":"post-full","lic":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"}'; echo

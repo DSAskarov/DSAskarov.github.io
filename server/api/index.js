@@ -43,6 +43,10 @@ async function db(ctx) {
           .withColumn(new Column("game", Types.optional(Types.UTF8))).withColumn(new Column("nk", Types.optional(Types.UTF8)))
           .withColumn(new Column("n", Types.optional(Types.UTF8))).withColumn(new Column("v", Types.optional(Types.UINT64)))
           .withColumn(new Column("ts", Types.optional(Types.UINT64))).withPrimaryKeys("game", "nk"));
+        await ensure("orders", new TableDescription()
+          .withColumn(new Column("id", Types.optional(Types.UTF8))).withColumn(new Column("prod", Types.optional(Types.UTF8)))
+          .withColumn(new Column("pid", Types.optional(Types.UTF8))).withColumn(new Column("st", Types.optional(Types.UTF8)))
+          .withColumn(new Column("ts", Types.optional(Types.UINT64))).withPrimaryKeys("id"));
         await ensure("cfg", new TableDescription()
           .withColumn(new Column("k", Types.optional(Types.UTF8))).withColumn(new Column("v", Types.optional(Types.UTF8)))
           .withPrimaryKeys("k"));
@@ -89,6 +93,28 @@ async function captchaOk(token, ipRaw) {
       body: new URLSearchParams({ secret: CAP_SECRET, token: String(token || ""), ip: ipRaw }) });
     if (!r.ok) return true; const j = await r.json(); return j.status === "ok" } catch (_) { return true } }
 const rawIp = (event, hd) => (event.requestContext && event.requestContext.identity && event.requestContext.identity.sourceIp) || String(hd["X-Forwarded-For"] || hd["x-forwarded-for"] || "").split(",")[0] || "0";
+// Оплата через ЮKassa (API). Цены — только на сервере, клиенту не доверяем. Ключ — в переменной окружения из GitHub Secrets.
+const SITE = "https://dsaskarov.github.io";
+const PRODUCTS = {
+  "post-full":  { price: "49.00", game: "pochtalyon", title: "Полная версия игры «Звёздный почтальон»" },
+  "react-full": { price: "1.00",  game: "bystree",    title: "Полная версия игры «Быстрее нейросети»" }
+};
+const YK_SHOP = env("YK_SHOP"), YK_SECRET = env("YK_SECRET");
+const yk = async (path, opt = {}) => {
+  const r = await fetch("https://api.yookassa.ru/v3/" + path, Object.assign({}, opt, { headers: Object.assign({
+    Authorization: "Basic " + Buffer.from(YK_SHOP + ":" + YK_SECRET).toString("base64"), "Content-Type": "application/json" }, opt.headers || {}) }));
+  const j = await r.json().catch(() => ({})); if (!r.ok) console.error("yookassa", r.status, j && (j.code + " " + j.description)); return r.ok ? j : null };
+const licOf = (id, prod) => crypto.createHmac("sha256", salt).update("lic|" + id + "|" + prod).digest("base64url").slice(0, 32);
+const ORDER_ID = /^[0-9a-f]{24}$/;
+async function getOrder(id) { const r = await q(`DECLARE $id AS Utf8; SELECT prod, pid, st FROM orders WHERE id=$id;`, { $id: TypedValues.utf8(id) }); return r[0] || null }
+async function setSt(id, st) { await q(`DECLARE $id AS Utf8; DECLARE $st AS Utf8; UPDATE orders SET st=$st WHERE id=$id;`, { $id: TypedValues.utf8(id), $st: TypedValues.utf8(st) }) }
+// Статус берём только из ЮKassa по id платежа — так поддельное уведомление ничего не даст
+async function syncOrder(id, o) {
+  if (!o || !o.pid || o.st === "succeeded" || o.st === "canceled" || !YK_SECRET) return o;
+  const p = await yk("payments/" + encodeURIComponent(o.pid)); if (!p || !p.metadata || p.metadata.order !== id) return o;
+  const P = PRODUCTS[o.prod]; if (p.status === "succeeded" && !(p.amount && p.amount.value === P.price && p.amount.currency === "RUB")) return o;
+  if (p.status !== o.st && (p.status === "succeeded" || p.status === "canceled")) { await setSt(id, p.status); o.st = p.status }
+  return o }
 const NEED = { error: "Подтвердите, что вы не робот.", need: "captcha" };
 const parse = event => { try { return JSON.parse(event.isBase64Encoded ? Buffer.from(event.body || "", "base64").toString() : event.body || "{}") || {} } catch (_) { return null } };
 
@@ -96,6 +122,13 @@ exports.handler = async (event, ctx) => {
   const hd = event.headers || {}, origin = hd.Origin || hd.origin || "";
   const method = event.httpMethod || "GET", qs = event.queryStringParameters || {}, a = qs.a || "";
   if (method === "OPTIONS") return reply(204, null, origin);
+  // Уведомления ЮKassa приходят без Origin: проверяем платёж повторным запросом в ЮKassa
+  if (a === "yk" && method === "POST") {
+    try { await db(ctx); const b = parse(event) || {}, pid = String((b.object && b.object.id) || "").slice(0, 64);
+      if (/^[\w-]{10,64}$/.test(pid) && YK_SECRET) { const p = await yk("payments/" + encodeURIComponent(pid)), id = p && p.metadata && String(p.metadata.order || "");
+        if (id && ORDER_ID.test(id)) { const o = await getOrder(id); if (o && o.pid === pid) await syncOrder(id, o) } } } catch (e) { console.error("yk hook", e && e.message) }
+    return { statusCode: 200, headers: { "Content-Type": "text/plain" }, body: "ok" };
+  }
   if (a === "ping") return reply(200, { ok: true, ts: Date.now() }, origin);
   if (!ORIGINS.includes(origin)) return reply(403, { error: "Запрос с чужого сайта" }, origin);
   try { try { await db(ctx) } catch (_) { await new Promise(r => setTimeout(r, 700)); await db(ctx) } } catch (e) { console.error("db", e && e.message); return reply(503, { error: "Сервер просыпается, попробуйте через минуту", detail: process.env.DEBUG === "1" ? String(e && e.message).slice(0, 300) : undefined, tok: process.env.DEBUG === "1" ? !!(ctx && ctx.token) : undefined }, origin) }
@@ -159,6 +192,34 @@ exports.handler = async (event, ctx) => {
       Object.assign({ $g: TypedValues.utf8(b.game), $k: TypedValues.utf8(nk), $n: TypedValues.utf8(n), $v: TypedValues.uint64(v) }, P));
     else await q(`DECLARE $ip AS Utf8; DECLARE $ts AS Uint64; DECLARE $c AS Uint64; UPSERT INTO rl (ip, ts, cnt) VALUES ($ip, $ts, $c);`, P);
     return reply(200, { ok: true, best: better ? v : prev, improved: better, n }, origin);
+  }
+  if (a === "buy" && method === "POST") {
+    const b = parse(event); if (!b) return reply(400, { error: "Неверный запрос" }, origin);
+    const P = PRODUCTS[b.prod]; if (!P) return reply(400, { error: "Нет такого товара" }, origin);
+    if (!YK_SECRET || !YK_SHOP) return reply(503, { error: "Оплата скоро заработает — ключи ещё настраиваются." }, origin);
+    const now = Date.now(), ip = ipOf(event, hd);
+    const lim = await limit("b:" + ip, now, 4000, 20); if (lim.err) return reply(429, { error: lim.err }, origin);
+    const id = crypto.randomBytes(12).toString("hex");
+    const p = await yk("payments", { method: "POST", headers: { "Idempotence-Key": id }, body: JSON.stringify({
+      amount: { value: P.price, currency: "RUB" }, capture: true, description: P.title,
+      confirmation: { type: "redirect", return_url: SITE + "/games/" + P.game + ".html?order=" + id },
+      metadata: { order: id, prod: b.prod } }) });
+    if (!p || !p.id || !p.confirmation || !/^https:\/\/[\w.-]*(yoomoney|yookassa)\.ru\//.test(p.confirmation.confirmation_url || "")) return reply(502, { error: "ЮKassa не ответила. Попробуйте через минуту." }, origin);
+    await q(`DECLARE $id AS Utf8; DECLARE $p AS Utf8; DECLARE $pid AS Utf8; DECLARE $st AS Utf8; DECLARE $ts AS Uint64; DECLARE $ip AS Utf8; DECLARE $c AS Uint64;
+      UPSERT INTO orders (id, prod, pid, st, ts) VALUES ($id, $p, $pid, $st, $ts); UPSERT INTO rl (ip, ts, cnt) VALUES ($ip, $ts, $c);`,
+      { $id: TypedValues.utf8(id), $p: TypedValues.utf8(b.prod), $pid: TypedValues.utf8(p.id), $st: TypedValues.utf8(p.status || "pending"), $ts: TypedValues.uint64(now),
+        $ip: TypedValues.utf8("b:" + ip), $c: TypedValues.uint64(lim.cnt + 1) });
+    return reply(200, { url: p.confirmation.confirmation_url, order: id }, origin);
+  }
+  if (a === "order" && method === "GET") {
+    const id = String(qs.id || ""); if (!ORDER_ID.test(id)) return reply(400, { error: "Неверный номер заказа" }, origin);
+    const o = await syncOrder(id, await getOrder(id)); if (!o) return reply(404, { error: "Заказ не найден" }, origin);
+    return reply(200, o.st === "succeeded" ? { st: o.st, prod: o.prod, lic: licOf(id, o.prod) } : { st: o.st, prod: o.prod }, origin);
+  }
+  if (a === "lic" && method === "POST") {
+    const b = parse(event) || {}, id = String(b.id || ""), prod = String(b.prod || ""), lic = String(b.lic || "");
+    const ok = ORDER_ID.test(id) && !!PRODUCTS[prod] && lic.length === 32 && crypto.timingSafeEqual(Buffer.from(licOf(id, prod)), Buffer.from(lic.padEnd(32).slice(0, 32)));
+    return reply(200, { ok }, origin);
   }
   return reply(404, { error: "Нет такого действия" }, origin);
 };

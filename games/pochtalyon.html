@@ -27,31 +27,33 @@ canvas{width:100%;aspect-ratio:9/14;max-width:100%;max-height:70vh;object-fit:co
 <div class="game">
   <h1>Звёздный <b>почтальон</b></h1>
   <p class="sub">Вы облетаете планету с письмом. Нажмите — и полетите по касательной. Попадите на следующую планету, иначе письмо улетит в спам вселенной.</p>
-  <div class="hud"><div>Доставлено: <b id="sc">0</b></div><div>Сектор: <b id="sec">1</b>/3</div><div>Марки: <b id="st">0</b></div><div>Щит: <b id="sh">—</b></div><div>Рекорд: <b id="best">0</b></div></div>
+  <div class="hud"><div>Доставлено: <b id="sc">0</b></div><div>Сектор: <b id="sec">1</b>/<span id="secT">3</span></div><div>Марки: <b id="st">0</b></div><div>Щит: <b id="sh">—</b></div><div>Рекорд: <b id="best">0</b></div></div>
   <canvas id="cv" width="450" height="700" aria-label="Игровое поле. Нажмите, чтобы прыгнуть"></canvas>
-  <p class="note" id="demoNote">Золотые марки собирайте в полёте: каждые 5 марок дают щит, а щит один раз спасает письмо от спама. Демо — 3 сектора, 15 планет: Пригород, Пояс астероидов (планеты плывут) и Туманность. Полная версия — бесконечный космос — 49 ₽, появится вместе с оплатой на площадке.</p>
+  <p class="note" id="demoNote">Золотые марки собирайте в полёте: каждые 5 марок дают щит, а щит один раз спасает письмо от спама. Демо — 3 сектора, 15 планет: Пригород, Пояс астероидов (планеты плывут) и Туманность. Полная версия — бесконечный космос и ещё три сектора — 49 ₽.</p>
+  <div id="buyBox" data-prod="post-full" data-price="49"><p class="note">Купить полную версию можно на сайте площадки: dsaskarov.github.io → «Звёздный почтальон».</p></div>
   <p class="credit">Игра DSAskarov для площадки «ИИгры онлайн». Поддержать автора: <a href="https://boosty.to/dsaskarov" target="_blank" rel="noopener">Boosty</a> · связь: Telegram @dsaskarov</p>
 </div>
 <script>
-const cv=document.getElementById("cv"),cx=cv.getContext("2d"),W=cv.width,H=cv.height,DEMO=15,SEC=["Пригород","Пояс астероидов","Туманность"];
+const cv=document.getElementById("cv"),cx=cv.getContext("2d"),W=cv.width,H=cv.height,SEC=["Пригород","Пояс астероидов","Туманность","Глубокий космос","Окраина галактики","Край вселенной"];
+const FULL=()=>!!(window.IIGRY_FULL&&IIGRY_FULL("post-full"));let DEMO=15;
 let P=[],I=[],cur=0,ang=0,dir=1,ship={x:0,y:0,vx:0,vy:0},fly=false,cam=0,score=0,best=0,state="ready",last=0,trail=[],stamps=0,shield=0,banner=0,clock=0;
 try{best=+localStorage.getItem("post-best")||0}catch(e){}
 const stars=[...Array(90)].map(()=>({x:Math.random()*W,y:Math.random()*H*3,r:Math.random()*1.4+.3}));
 const rnd=(a,b)=>a+Math.random()*(b-a);
-const secOf=i=>Math.min(2,Math.floor((i-1)/5));
+const secOf=i=>Math.min(DEMO>15?5:2,Math.floor((i-1)/5));
 function planet(i){const s=i?secOf(i):0,r=rnd(22,34)-s*2,bx=rnd(90,W-90);
   const p={x:bx,bx,y:-i*230,r,hue:i%3,amp:s>=1&&i?rnd(30,70):0,w:rnd(.6,1.1)+s*.2,ph:rnd(0,6)};
   if(i>0){const q=P[i-1]||{x:W/2,y:-(i-1)*230};if(Math.random()<.7)I.push({k:"st",x:(q.x+bx)/2+rnd(-30,30),y:(q.y+p.y)/2,got:false});
     if(i%5===2&&s>=1)I.push({k:"sh",x:rnd(70,W-70),y:p.y+115,got:false})}
   return p}
-function reset(){P=[];I=[];for(let i=0;i<20;i++)P.push(planet(i));P[0].x=P[0].bx=W/2;cur=0;ang=-Math.PI/2;dir=1;fly=false;cam=0;score=0;trail=[];state="ready";stamps=0;shield=0;banner=0}
+function reset(){DEMO=FULL()?1e9:15;P=[];I=[];for(let i=0;i<20;i++)P.push(planet(i));P[0].x=P[0].bx=W/2;cur=0;ang=-Math.PI/2;dir=1;fly=false;cam=0;score=0;trail=[];state="ready";stamps=0;shield=0;banner=0}
 reset();
-const ORB=k=>P[k].r+26,SPD=()=>2.2+Math.min(score,20)*.06;
+const ORB=k=>P[k].r+26,SPD=()=>2.2+Math.min(score,40)*.05;
 function pos(){const p=P[cur];return{x:p.x+Math.cos(ang)*ORB(cur),y:p.y+Math.sin(ang)*ORB(cur)}}
-function jump(){if(state==="ready"){state="play";return}if(state==="over"||state==="win"){reset();state="play";return}
+function jump(){if(state==="ready"){if(FULL()&&DEMO===15)reset();state="play";return}if(state==="over"||state==="win"){reset();state="play";return}
   if(fly)return;const s=pos(),v=SPD()*2.6;ship={x:s.x,y:s.y,vx:-Math.sin(ang)*v*dir,vy:Math.cos(ang)*v*dir};fly=true}
 cv.addEventListener("pointerdown",jump);
-function hud(){document.getElementById("sec").textContent=Math.min(3,secOf(Math.max(1,score+1))+1);document.getElementById("st").textContent=stamps;document.getElementById("sh").textContent=shield?"есть":"—"}
+function hud(){document.getElementById("sec").textContent=secOf(Math.max(1,score+1))+1;document.getElementById("secT").textContent=DEMO>15?"∞":"3";document.getElementById("st").textContent=stamps;document.getElementById("sh").textContent=shield?"есть":"—"}
 addEventListener("keydown",e=>{if(e.code==="Space"||e.code==="Enter"){e.preventDefault();jump()}});
 function frame(t){const dt=Math.min(.05,(t-last)/1000||0);last=t;
   clock+=dt;P.forEach(p=>{if(p.amp)p.x=Math.max(p.r+10,Math.min(W-p.r-10,p.bx+Math.sin(clock*p.w+p.ph)*p.amp))});
@@ -91,7 +93,40 @@ function frame(t){const dt=Math.min(.05,(t-last)/1000||0);last=t;
   requestAnimationFrame(frame)}
 requestAnimationFrame(frame);
 </script>
-<script>/* Проверка «не робот» Yandex SmartCaptcha: один раз на 12 часов для всего сайта и игр */
+<script>/* Покупка полной версии через ЮKassa: кнопка, возврат после оплаты, хранение лицензии в браузере */
+(function(){
+  const API="https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av",K="iigry-lic-",OK=/^https:\/\/[\w.-]*(yoomoney|yookassa)\.ru\//;
+  const get=p=>{try{return JSON.parse(localStorage.getItem(K+p)||"null")}catch(_){return null}};
+  const put=(p,v)=>{try{v?localStorage.setItem(K+p,JSON.stringify(v)):localStorage.removeItem(K+p)}catch(_){}};
+  window.IIGRY_FULL=p=>{const l=get(p);return !!(l&&l.lic)};
+  const box=document.getElementById("buyBox");if(!box)return;
+  const prod=box.dataset.prod,price=box.dataset.price;
+  const say=(t,c)=>{let m=box.querySelector(".pmsg");if(!m){m=document.createElement("p");m.className="pmsg";box.append(m)}m.textContent=t;m.style.color=c||""};
+  function draw(){box.innerHTML="";
+    if(IIGRY_FULL(prod)){const p=document.createElement("p");p.className="pok";p.textContent="✓ Полная версия открыта. Спасибо, что поддержали автора!";box.append(p);return}
+    const b=document.createElement("button");b.type="button";b.className="pbuy";b.textContent="Купить полную версию — "+price+" ₽";b.onclick=()=>buy(b);
+    const s=document.createElement("p");s.className="pnote";s.append("Оплата картой или СБП через ЮKassa. Нажимая кнопку, вы принимаете ");
+    const a=document.createElement("a");a.href="../#t-money";a.target="_blank";a.rel="noopener";a.textContent="условия покупки";s.append(a,". Полная версия откроется в этом браузере.");
+    box.append(b,s)}
+  async function buy(b){b.disabled=true;b.textContent="Открываем оплату…";
+    try{const r=await fetch(API+"?a=buy",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prod})}),j=await r.json();
+      if(j.url&&OK.test(j.url)){location.href=j.url;return}say(j.error||"Не получилось открыть оплату.","#E8333F")}
+    catch(_){say("Нет связи с сервером. Попробуйте ещё раз.","#E8333F")}
+    b.disabled=false;b.textContent="Купить полную версию — "+price+" ₽"}
+  async function back(id){say("Проверяем оплату…");
+    for(let i=0;i<40;i++){try{const r=await fetch(API+"?a=order&id="+id),j=await r.json();
+        if(j.st==="succeeded"&&j.lic&&j.prod===prod){put(prod,{id,lic:j.lic,ts:Date.now()});history.replaceState(null,"",location.pathname);draw();say("Оплата прошла! Полная версия открыта — начните игру заново.","#4ADE95");return}
+        if(j.st==="canceled"){history.replaceState(null,"",location.pathname);draw();say("Платёж отменён — деньги не списаны. Можно попробовать ещё раз.","#E8333F");return}
+        if(r.status===400||r.status===404){draw();say(j.error||"Заказ не найден.","#E8333F");return}}catch(_){}
+      await new Promise(r=>setTimeout(r,3000))}
+    draw();say("Оплата ещё обрабатывается. Обновите страницу через минуту — номер заказа: "+id)}
+  async function verify(){const l=get(prod);if(!l||!l.lic||Date.now()-(l.chk||0)<864e5)return;
+    try{const r=await fetch(API+"?a=lic",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:l.id,prod,lic:l.lic})}),j=await r.json();
+      if(j.ok===false){put(prod,null);draw()}else{l.chk=Date.now();put(prod,l)}}catch(_){}}
+  const st=document.createElement("style");st.textContent="#buyBox .pbuy{border:0;border-radius:10px;padding:12px 18px;font:700 1rem Golos Text,system-ui,sans-serif;background:linear-gradient(135deg,#F6DE8D,#C9952A);color:#1A1306;cursor:pointer}#buyBox .pbuy:disabled{opacity:.6}#buyBox .pbuy:focus-visible{outline:2px solid #fff;outline-offset:2px}#buyBox .pnote,#buyBox .pmsg{font-size:.8rem;color:#B9B6C2;margin:6px 0 0}#buyBox .pnote a{color:#E7BD52}#buyBox .pok{color:#4ADE95;font-weight:600;margin:0}";document.head.append(st);
+  draw();const id=new URLSearchParams(location.search).get("order");if(id&&/^[0-9a-f]{24}$/.test(id))back(id);else verify();
+})();
+</script><script>/* Проверка «не робот» Yandex SmartCaptcha: один раз на 12 часов для всего сайта и игр */
 (function(){
   const API="https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av",PK="iigry-pass";
   const get=()=>{try{const o=JSON.parse(localStorage.getItem(PK)||"null");return o&&o.exp>Date.now()+60e3?o.v:""}catch(_){return ""}};

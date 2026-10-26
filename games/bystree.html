@@ -18,7 +18,10 @@ h1 b{color:var(--gold)}
 .sub{color:var(--muted);margin:0}
 #pad{border:0;border-radius:18px;min-height:260px;font:800 clamp(1.2rem,5vw,1.7rem)/1.3 var(--f-d);color:#fff;background:#24222A;cursor:pointer;padding:24px;touch-action:manipulation;transition:background .08s}
 #pad.wait{background:var(--red)}#pad.go{background:var(--gold);color:#1A1306}
-.modes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.modes{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+@media (max-width:480px){.modes{grid-template-columns:repeat(2,1fr)}}
+.hist{margin:0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:6px}.hist li{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:.85rem;font-variant-numeric:tabular-nums}
+h2{font:800 1rem var(--f-d);margin:4px 0 0}
 .modes button{border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:10px;padding:8px 6px;font:600 .82rem/1.25 var(--f-b);cursor:pointer;text-align:left}
 .modes button b{display:block;font:800 .95rem var(--f-d)}
 .modes button[aria-pressed=true]{border-color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold)}
@@ -40,37 +43,83 @@ h1 b{color:var(--gold)}
   <button id="pad" type="button">Нажмите, чтобы начать<small>Красное — ждать. Золотое — жать!</small></button>
   <div class="hud"><div>Попытка: <b id="n">0</b>/<span id="of">5</span></div><div>Лучшее: <b id="best">—</b></div><div>Среднее: <b id="avg">—</b></div></div>
   <p class="rank" id="rank" aria-live="polite"></p>
-  <p class="note">Классика идёт в таблицу лидеров. «Ловушки»: иногда поле становится зелёным — это обманка, не жмите. «Серия»: 10 попыток, ждать меньше, считается лучший результат. Полная версия — история результатов и режим «дуэль» на одном экране — 1 ₽, появится вместе с оплатой на площадке.</p>
+  <p class="note">Классика идёт в таблицу лидеров. «Ловушки»: иногда поле становится зелёным — это обманка, не жмите. «Серия»: 10 попыток, ждать меньше, считается лучший результат. Полная версия — история результатов и режим «Дуэль» для двоих на одном экране — 1 ₽.</p>
+  <h2>История классики</h2><ul class="hist" id="hist"><li>Откроется в полной версии</li></ul>
+  <div id="buyBox" data-prod="react-full" data-price="1"><p class="note">Купить полную версию можно на сайте площадки: dsaskarov.github.io → «Быстрее нейросети».</p></div>
   <p class="credit">Игра DSAskarov для площадки «ИИгры онлайн». Поддержать автора: <a href="https://boosty.to/dsaskarov" target="_blank" rel="noopener">Boosty</a> · Telegram @dsaskarov</p>
 </div>
 <script>
 const pad=document.getElementById("pad"),$=id=>document.getElementById(id);let st="idle",t0=0,tm=0,res=[],mode=0,fouls=0;
-const M=[{n:"Классика",d:"5 попыток",k:5,min:1200,rng:2300},{n:"Ловушки",d:"зелёное — не жать",k:8,min:1000,rng:2200,trap:.35},{n:"Серия",d:"10 быстрых",k:10,min:600,rng:1400}];
+const M=[{n:"Классика",d:"5 попыток",k:5,min:1200,rng:2300},{n:"Ловушки",d:"зелёное — не жать",k:8,min:1000,rng:2200,trap:.35},{n:"Серия",d:"10 быстрых",k:10,min:600,rng:1400},{n:"Дуэль",d:"двое: A и L",k:5,min:1200,rng:2300,duel:true}];
+const FULL=()=>!!(window.IIGRY_FULL&&IIGRY_FULL("react-full"));let wins=[0,0];
+const H={get(){try{return JSON.parse(localStorage.getItem("react-hist")||"[]")}catch(_){return[]}},add(v){const h=[{v,d:Date.now()},...H.get()].slice(0,20);try{localStorage.setItem("react-hist",JSON.stringify(h))}catch(_){}}};
+function hist(){const u=$("hist");if(!FULL())return;u.innerHTML="";const h=H.get();if(!h.length){u.innerHTML="<li>Пока пусто — сыграйте классику</li>";return}
+  const best=Math.min(...h.map(x=>x.v));h.forEach(x=>{const li=document.createElement("li");li.textContent=new Date(x.d).toLocaleDateString("ru-RU",{day:"numeric",month:"short"})+": "+x.v+" мс"+(x.v===best?" ★":"");u.append(li)})}
 const say=(a,b)=>{pad.innerHTML="";pad.append(a);if(b){const s=document.createElement("small");s.textContent=b;pad.append(s)}};
 const verdict=ms=>ms<200?"Нейросеть нервно перезагружается":ms<260?"Почти машина. Почти":ms<350?"Человеческая классика":"Нейросеть успела бы написать поэму";
 const rank=ms=>ms<220?"Звание: Нейросеть. Вы точно человек?":ms<280?"Звание: Киборг":ms<380?"Звание: Человек разумный":"Звание: Калькулятор на батарейках";
 const avg=()=>Math.round(res.reduce((a,b)=>a+b,0)/res.length);
 function modes(){const box=$("modes");box.innerHTML="";M.forEach((m,i)=>{const b=document.createElement("button");b.type="button";b.setAttribute("aria-pressed",i===mode);b.disabled=st==="wait"||st==="go"||st==="trap";
-  b.innerHTML="<b></b><span></span>";b.firstChild.textContent=m.n;b.lastChild.textContent=m.d;b.onclick=()=>{mode=i;res=[];fouls=0;st="idle";upd();$("rank").textContent="";say("Нажмите, чтобы начать",i===1?"Золотое — жать. Зелёное — обманка!":"Красное — ждать. Золотое — жать!");modes()};box.append(b)})}
-function go(){st="go";pad.className="go";say("ЖМИТЕ!");t0=performance.now()}
+  b.innerHTML="<b></b><span></span>";b.firstChild.textContent=m.n+(m.duel&&!FULL()?" 🔒":"");b.lastChild.textContent=m.duel&&!FULL()?"в полной версии":m.d;
+  if(m.duel&&!FULL()){b.onclick=()=>{const x=$("buyBox");x&&x.scrollIntoView({behavior:"smooth",block:"center"})};box.append(b);return}
+  b.onclick=()=>{wins=[0,0];mode=i;res=[];fouls=0;st="idle";upd();$("rank").textContent="";say("Нажмите, чтобы начать",i===1?"Золотое — жать. Зелёное — обманка!":"Красное — ждать. Золотое — жать!");modes()};box.append(b)})}
+function go(){st="go";pad.className="go";say(M[mode].duel?"ЖМИТЕ! A или L":"ЖМИТЕ!");t0=performance.now()}
 function start(){const m=M[mode];st="wait";pad.className="wait";say("Ждите золота…","Не нажимайте раньше времени");modes();
   tm=setTimeout(()=>{if(m.trap&&Math.random()<m.trap){st="trap";pad.className="trap";say("Зелёное…","Это обманка");tm=setTimeout(()=>{st="wait";pad.className="wait";say("Ждите золота…");tm=setTimeout(go,500+Math.random()*1200)},900)}else go()},m.min+Math.random()*m.rng)}
 function end(){st="done";modes();const m=M[mode];
-  if(mode===0){window.IIGRY_SCORE&&IIGRY_SCORE(avg());say("Готово: "+avg()+" мс в среднем","Нажмите, чтобы сыграть ещё");$("rank").textContent=rank(avg())}
+  if(m.duel){const w=wins[0]===wins[1]?"Ничья!":"Победил игрок "+(wins[0]>wins[1]?"1 (A, слева)":"2 (L, справа)")+"!";say(w+" Счёт "+wins[0]+":"+wins[1],"Нажмите, чтобы сыграть ещё");$("rank").textContent=w;return}
+  if(mode===0){window.IIGRY_SCORE&&IIGRY_SCORE(avg());if(FULL()){H.add(avg());hist()}say("Готово: "+avg()+" мс в среднем","Нажмите, чтобы сыграть ещё");$("rank").textContent=rank(avg())}
   else if(mode===1){say("Ловушки: "+avg()+" мс, обманок поймано: "+fouls,"Нажмите, чтобы сыграть ещё");$("rank").textContent=fouls?"Нейросеть такие обманки щёлкает. Тренируйтесь!":"Ни одной обманки — железная выдержка!"}
   else{const b=Math.min(...res);say("Серия: лучший "+b+" мс","Нажмите, чтобы сыграть ещё");$("rank").textContent=rank(b)}}
-function tap(){const m=M[mode];
-  if(st==="idle"||st==="done"){if(res.length>=m.k){res=[];fouls=0;upd();$("rank").textContent=""}start();return}
+function tap(side){const m=M[mode];
+  if(st==="idle"||st==="done"){if(res.length>=m.k){res=[];fouls=0;wins=[0,0];upd();$("rank").textContent=""}start();return}
+  if(m.duel&&(st==="wait"||st==="go")&&(side===0||side===1)){clearTimeout(tm);const ms=Math.round(performance.now()-t0),w=st==="go"?side:1-side;wins[w]++;res.push(st==="go"?ms:9999);pad.className="";
+    const t=st==="go"?"Игрок "+(w+1)+" быстрее: "+ms+" мс":"Фальстарт игрока "+(side+1)+" — очко игроку "+(w+1);upd();
+    if(res.length>=m.k){end()}else{st="idle";modes();say(t,"Счёт "+wins[0]+":"+wins[1]+". Нажмите для следующего раунда")}return}
   if(st==="wait"){clearTimeout(tm);st="idle";pad.className="";say("Рано! Фальстарт","Нажмите, чтобы попробовать снова");modes();return}
   if(st==="trap"){clearTimeout(tm);st="idle";pad.className="";fouls++;say("Попались на обманку!","Зелёное — не золото. Нажмите, чтобы продолжить");modes();return}
   if(st==="go"){const ms=Math.round(performance.now()-t0);res.push(ms);upd();pad.className="";
     if(res.length>=m.k)end();else{st="idle";modes();say(ms+" мс",verdict(ms)+". Нажмите для следующей попытки")}}}
-function upd(){$("n").textContent=res.length;$("of").textContent=M[mode].k;$("best").textContent=res.length?Math.min(...res)+" мс":"—";$("avg").textContent=res.length?avg()+" мс":"—"}
-pad.addEventListener("pointerdown",e=>{e.preventDefault();tap()});
+function upd(){if(M[mode].duel){$("n").textContent=res.length;$("of").textContent=M[mode].k;$("best").textContent="И1: "+wins[0];$("avg").textContent="И2: "+wins[1];return}$("n").textContent=res.length;$("of").textContent=M[mode].k;$("best").textContent=res.length?Math.min(...res)+" мс":"—";$("avg").textContent=res.length?avg()+" мс":"—"}
+pad.addEventListener("pointerdown",e=>{e.preventDefault();const r=pad.getBoundingClientRect();tap(M[mode].duel&&(st==="wait"||st==="go")?(e.clientX<r.left+r.width/2?0:1):undefined)});
 pad.addEventListener("keydown",e=>{if(e.code==="Space"||e.code==="Enter"){e.preventDefault();tap()}});
-modes();
+addEventListener("keydown",e=>{if(!M[mode].duel||!(st==="wait"||st==="go"))return;if(e.code==="KeyA"){e.preventDefault();tap(0)}if(e.code==="KeyL"){e.preventDefault();tap(1)}});
+modes();setTimeout(()=>{modes();hist()},300);
 </script>
-<script>/* Проверка «не робот» Yandex SmartCaptcha: один раз на 12 часов для всего сайта и игр */
+<script>/* Покупка полной версии через ЮKassa: кнопка, возврат после оплаты, хранение лицензии в браузере */
+(function(){
+  const API="https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av",K="iigry-lic-",OK=/^https:\/\/[\w.-]*(yoomoney|yookassa)\.ru\//;
+  const get=p=>{try{return JSON.parse(localStorage.getItem(K+p)||"null")}catch(_){return null}};
+  const put=(p,v)=>{try{v?localStorage.setItem(K+p,JSON.stringify(v)):localStorage.removeItem(K+p)}catch(_){}};
+  window.IIGRY_FULL=p=>{const l=get(p);return !!(l&&l.lic)};
+  const box=document.getElementById("buyBox");if(!box)return;
+  const prod=box.dataset.prod,price=box.dataset.price;
+  const say=(t,c)=>{let m=box.querySelector(".pmsg");if(!m){m=document.createElement("p");m.className="pmsg";box.append(m)}m.textContent=t;m.style.color=c||""};
+  function draw(){box.innerHTML="";
+    if(IIGRY_FULL(prod)){const p=document.createElement("p");p.className="pok";p.textContent="✓ Полная версия открыта. Спасибо, что поддержали автора!";box.append(p);return}
+    const b=document.createElement("button");b.type="button";b.className="pbuy";b.textContent="Купить полную версию — "+price+" ₽";b.onclick=()=>buy(b);
+    const s=document.createElement("p");s.className="pnote";s.append("Оплата картой или СБП через ЮKassa. Нажимая кнопку, вы принимаете ");
+    const a=document.createElement("a");a.href="../#t-money";a.target="_blank";a.rel="noopener";a.textContent="условия покупки";s.append(a,". Полная версия откроется в этом браузере.");
+    box.append(b,s)}
+  async function buy(b){b.disabled=true;b.textContent="Открываем оплату…";
+    try{const r=await fetch(API+"?a=buy",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prod})}),j=await r.json();
+      if(j.url&&OK.test(j.url)){location.href=j.url;return}say(j.error||"Не получилось открыть оплату.","#E8333F")}
+    catch(_){say("Нет связи с сервером. Попробуйте ещё раз.","#E8333F")}
+    b.disabled=false;b.textContent="Купить полную версию — "+price+" ₽"}
+  async function back(id){say("Проверяем оплату…");
+    for(let i=0;i<40;i++){try{const r=await fetch(API+"?a=order&id="+id),j=await r.json();
+        if(j.st==="succeeded"&&j.lic&&j.prod===prod){put(prod,{id,lic:j.lic,ts:Date.now()});history.replaceState(null,"",location.pathname);draw();say("Оплата прошла! Полная версия открыта — начните игру заново.","#4ADE95");return}
+        if(j.st==="canceled"){history.replaceState(null,"",location.pathname);draw();say("Платёж отменён — деньги не списаны. Можно попробовать ещё раз.","#E8333F");return}
+        if(r.status===400||r.status===404){draw();say(j.error||"Заказ не найден.","#E8333F");return}}catch(_){}
+      await new Promise(r=>setTimeout(r,3000))}
+    draw();say("Оплата ещё обрабатывается. Обновите страницу через минуту — номер заказа: "+id)}
+  async function verify(){const l=get(prod);if(!l||!l.lic||Date.now()-(l.chk||0)<864e5)return;
+    try{const r=await fetch(API+"?a=lic",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:l.id,prod,lic:l.lic})}),j=await r.json();
+      if(j.ok===false){put(prod,null);draw()}else{l.chk=Date.now();put(prod,l)}}catch(_){}}
+  const st=document.createElement("style");st.textContent="#buyBox .pbuy{border:0;border-radius:10px;padding:12px 18px;font:700 1rem Golos Text,system-ui,sans-serif;background:linear-gradient(135deg,#F6DE8D,#C9952A);color:#1A1306;cursor:pointer}#buyBox .pbuy:disabled{opacity:.6}#buyBox .pbuy:focus-visible{outline:2px solid #fff;outline-offset:2px}#buyBox .pnote,#buyBox .pmsg{font-size:.8rem;color:#B9B6C2;margin:6px 0 0}#buyBox .pnote a{color:#E7BD52}#buyBox .pok{color:#4ADE95;font-weight:600;margin:0}";document.head.append(st);
+  draw();const id=new URLSearchParams(location.search).get("order");if(id&&/^[0-9a-f]{24}$/.test(id))back(id);else verify();
+})();
+</script><script>/* Проверка «не робот» Yandex SmartCaptcha: один раз на 12 часов для всего сайта и игр */
 (function(){
   const API="https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av",PK="iigry-pass";
   const get=()=>{try{const o=JSON.parse(localStorage.getItem(PK)||"null");return o&&o.exp>Date.now()+60e3?o.v:""}catch(_){return ""}};
