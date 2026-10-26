@@ -85,6 +85,8 @@ function itemView(x,open){const it=el("div",null,"it"+(x.urgent?" urg":""));it.i
   const bd=el("span",x.kindT,"badge");bd.style.background="#24222A";bd.style.color="#fff";tx.append(pb,bd,el("b",(x.subj||"Без темы")+" "),el("small",T(x.ts)+" · "+x.stT+(x.who?" · "+x.who:"")),el("div",x.text));
   if(x.contact){tx.append(el("small","Контакт: "+x.contact));if(/@/.test(x.contact)){const m=el("a"," · написать на почту");m.href="mailto:"+x.contact.split(/[ ,]/).find(c=>c.includes("@"))+"?subject="+encodeURIComponent("ИИгры онлайн: ответ на обращение");m.style.color="#E7BD52";tx.append(m)}}
   (x.replies||[]).forEach(r=>tx.append(el("div","↳ "+r.by+", "+T(r.ts)+": "+r.text,"muted")));
+  if(x.kind==="publish"){const c=x.check,cb=el("div",null,"muted");cb.style.cssText="margin-top:6px;padding:8px;border-radius:8px;background:#0F0E13;white-space:pre-line";
+    cb.textContent=c?({ok:"✅ Автопроверка пройдена",warn:"⚠️ Автопроверка: есть замечания",bad:"⛔ Автопроверка: опасно, не публиковать"}[c.verdict]+"\n"+(c.lines||[]).join("\n")):"🤖 Автопроверка ещё идёт (до часа). Можно уже открыть ссылки из заявки и опробовать.";tx.append(cb)}
   const ta=document.createElement("textarea");ta.placeholder=x.kind==="call"?"Ответ появится в чате от имени команды":"Ответ автору обращения";ta.maxLength=1500;ta.style.marginTop="6px";tx.append(ta);
   const row=el("div",null,"row");row.style.marginTop="6px";let asSel=null;
   if(AS.length>1){asSel=document.createElement("select");AS.forEach(a=>{const o=el("option","От имени: "+a);o.value=a;asSel.append(o)});row.append(asSel)}
