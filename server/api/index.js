@@ -237,6 +237,13 @@ exports.handler = async (event, ctx) => {
       const rc = await npdReceipt(r.id, r.prod, p ? Date.parse(p.captured_at || p.created_at) : num(r.ts)); rc ? made++ : fail++ }
     return { statusCode: fail ? 500 : 200, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ checked: rows.length, made, fail }) };
   }
+  // Диагностика связи сервера с Telegram (ключ выводится из токена бота)
+  if (a === "tgdiag" && method === "POST") {
+    const got = String(hd["X-Cron-Key"] || hd["x-cron-key"] || "");
+    if (!TG_SECRET || !same(got.padEnd(48).slice(0, 48), TG_SECRET)) return { statusCode: 403, body: "no" };
+    const t0 = Date.now(), r = await tgApi("getMe", {});
+    return { statusCode: 200, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ok: !!(r && r.ok), ms: Date.now() - t0, err: r ? r.description || null : "нет связи" }) };
+  }
   // Telegram присылает обновления бота сюда; проверяем секрет из заголовка
   if (a === "tg" && method === "POST") {
     const sec = String(hd["X-Telegram-Bot-Api-Secret-Token"] || hd["x-telegram-bot-api-secret-token"] || "");

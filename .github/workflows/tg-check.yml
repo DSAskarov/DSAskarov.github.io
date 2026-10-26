@@ -10,3 +10,6 @@ jobs:
         env: { TG: "${{ secrets.TG_BOT_TOKEN }}" }
         run: |
           curl -sS "https://api.telegram.org/bot$TG/getWebhookInfo" | jq -c '.result|{url,pending_update_count,last_error_date,last_error_message,ip_address}'
+          S=$(printf '%s' "$TG|iigry-tg" | sha256sum | cut -c1-48); echo "::add-mask::$S"
+          echo "Связь сервера с Telegram:"; curl -sS -m 30 -X POST -H "X-Cron-Key: $S" "https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av?a=tgdiag"; echo
+          echo "Скорость ответа сервера на вебхук:"; curl -sS -m 30 -o /dev/null -w "%{http_code} %{time_total}s\n" -X POST -H "X-Telegram-Bot-Api-Secret-Token: $S" -H "Content-Type: application/json" "https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av?a=tg" -d '{}'
