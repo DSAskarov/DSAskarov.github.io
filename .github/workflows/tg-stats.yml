@@ -1,0 +1,16 @@
+# Сводка в Telegram-бот: каждый день в 8:45 и 19:45 по Москве
+name: Сводка в бот
+on:
+  schedule: [{ cron: "45 5 * * *" }, { cron: "45 16 * * *" }]
+  workflow_dispatch:
+permissions: { contents: read }
+jobs:
+  stats:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Собрать и отправить сводку
+        env: { TG: "${{ secrets.TG_BOT_TOKEN }}" }
+        run: |
+          if [ -z "$TG" ]; then echo "Токен бота не добавлен"; exit 0; fi
+          S=$(printf '%s' "$TG|iigry-tg" | sha256sum | cut -c1-48); echo "::add-mask::$S"
+          curl -sS --fail-with-body -m 60 -X POST -H "X-Cron-Key: $S" "https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av?a=stats"; echo

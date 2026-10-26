@@ -247,8 +247,8 @@ async function tgUpdate(u) {
 // Telegram-бот: уведомления команде по категориям. Токен — в GitHub Secrets (TG_BOT_TOKEN).
 const TG = env("TG_BOT_TOKEN"), TG_SECRET = TG ? crypto.createHash("sha256").update(TG + "|iigry-tg").digest("hex").slice(0, 48) : "";
 const CATS = { buy: "💰 Покупки и чеки", err: "⚠️ Ошибки и сбои", mod: "🛡 Действия команды", chat: "💬 Новые сообщения в чате", ban: "🚫 Баны",
-  pub: "🎮 Заявки на публикацию", rep: "🚩 Жалобы", idea: "💡 Предложения и обращения", job: "📄 Резюме в команду" };
-const CAT_PERM = { buy: "team", err: "team", mod: "mods", chat: "del", ban: "ban", pub: "q:publish", rep: "q:complaint", idea: "q:idea", job: "q:resume" };
+  pub: "🎮 Заявки на публикацию", rep: "🚩 Жалобы", idea: "💡 Предложения и обращения", job: "📄 Резюме в команду", stat: "📊 Сводка утром и вечером" };
+const CAT_PERM = { stat: "team", buy: "team", err: "team", mod: "mods", chat: "del", ban: "ban", pub: "q:publish", rep: "q:complaint", idea: "q:idea", job: "q:resume" };
 const CAT_ROLES = Object.fromEntries(Object.entries(CAT_PERM).map(([c, p]) => [c, Object.keys(ROLES).filter(r => ROLES[r].p.includes(p))]));
 const DEF_CATS = Object.fromEntries(Object.keys(ROLES).map(r => [r, Object.keys(CATS).filter(c => c !== "chat" && CAT_ROLES[c].includes(r)).join(",")]));
 // Telegram недоступен из российских дата-центров напрямую, поэтому сообщения кладём в очередь,
@@ -292,6 +292,31 @@ exports.handler = async (event, ctx) => {
     if (!TG_SECRET || !same(got.padEnd(48).slice(0, 48), TG_SECRET)) return { statusCode: 403, body: "no" };
     const t0 = Date.now(), r = await tgDirect("getMe", {});
     return { statusCode: 200, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ok: !!(r && r.ok), ms: Date.now() - t0, err: r ? r.description || null : "нет связи" }) };
+  }
+  // Сводка для бота (утром и вечером по расписанию GitHub Actions)
+  if (a === "stats" && method === "POST") {
+    const got = String(hd["X-Cron-Key"] || hd["x-cron-key"] || "");
+    if (!TG_SECRET || !same(got.padEnd(48).slice(0, 48), TG_SECRET)) return { statusCode: 403, body: "no" };
+    await db(ctx); const now = Date.now(), d1 = now - 864e5, h12 = now - 12 * 3600e3;
+    const ord = await q(`SELECT o.prod AS prod, o.st AS st, o.ts AS ts, r.st AS rst FROM orders AS o LEFT JOIN receipts AS r ON o.id = r.id;`);
+    const paid = ord.filter(o => o.st === "succeeded"), sum = a => a.reduce((x, o) => x + Number((PRODUCTS[o.prod] || {}).price || 0), 0);
+    const pd = paid.filter(o => num(o.ts) > d1), noRc = paid.filter(o => o.rst !== "ok").length;
+    const msgs = await q(`DECLARE $t AS Uint64; SELECT room FROM msgs WHERE ts > $t;`, { $t: TypedValues.uint64(h12) });
+    const inb = await q(`SELECT kind, st FROM inbox;`), nw = {}; inb.filter(x => x.st === "new").forEach(x => nw[x.kind] = (nw[x.kind] || 0) + 1);
+    const sc = await q(`DECLARE $t AS Uint64; SELECT game FROM scores WHERE ts > $t;`, { $t: TypedValues.uint64(d1) });
+    const bans = await q(`DECLARE $t AS Uint64; SELECT ip FROM bans WHERE until > $t;`, { $t: TypedValues.uint64(now) });
+    const team = await q(`SELECT name FROM team;`);
+    const h = new Date(now + 3 * 3600e3).getUTCHours(), hi = h < 12 ? "Доброе утро" : h < 18 ? "Добрый день" : "Добрый вечер";
+    const L = ["<b>" + hi + "! Сводка «ИИгр онлайн»</b>", "",
+      "💰 Продажи за сутки: <b>" + pd.length + "</b> на " + sum(pd) + " ₽ · всего: " + paid.length + " на " + sum(paid) + " ₽",
+      "🧾 Чеки: " + (noRc ? "⚠️ не пробито " + noRc : "все пробиты ✅"),
+      "💬 Сообщений в чате и обсуждениях за 12 ч: " + msgs.length,
+      "🏆 Новых рекордов за сутки: " + sc.length,
+      "📥 Новые заявки: " + (Object.keys(nw).length ? Object.entries(nw).map(([k, n]) => KINDS[k].toLowerCase() + " — " + n).join(", ") : "нет"),
+      "🚫 Активных банов: " + bans.length + " · 👥 в команде: " + team.length, "", "Разобрать заявки: dsaskarov.github.io/mod.html"];
+    if (!(await cfgGet("mig_stat"))) { for (const r of await q(`SELECT chat, cats FROM tg WHERE role = "admin";`)) { const c = String(r.cats || "").split(",").filter(Boolean); if (!c.includes("stat")) await q(`DECLARE $c AS Utf8; DECLARE $k AS Utf8; UPDATE tg SET cats=$k WHERE chat=$c;`, { $c: TypedValues.utf8(r.chat), $k: TypedValues.utf8(c.concat("stat").join(",")) }) } await cfgSet("mig_stat", "1") }
+    await notify("stat", L.join("\n").replace(/^📊 /, ""));
+    return { statusCode: 200, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ok: true }) };
   }
   // Ретранслятор (GitHub Actions): отдаёт очередь исходящих и принимает входящие обновления бота
   if ((a === "tgpull" || a === "tgpush") && method === "POST") {
