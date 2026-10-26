@@ -68,6 +68,9 @@ async function db(ctx) {
         await ensure("tglink", new TableDescription()
           .withColumn(new Column("code", Types.optional(Types.UTF8))).withColumn(new Column("name", Types.optional(Types.UTF8)))
           .withColumn(new Column("role", Types.optional(Types.UTF8))).withColumn(new Column("exp", Types.optional(Types.UINT64))).withPrimaryKeys("code"));
+        await ensure("tgout", new TableDescription()
+          .withColumn(new Column("id", Types.optional(Types.UTF8))).withColumn(new Column("m", Types.optional(Types.UTF8)))
+          .withColumn(new Column("b", Types.optional(Types.UTF8))).withPrimaryKeys("id"));
         await ensure("cfg", new TableDescription()
           .withColumn(new Column("k", Types.optional(Types.UTF8))).withColumn(new Column("v", Types.optional(Types.UTF8)))
           .withPrimaryKeys("k"));
@@ -204,12 +207,42 @@ async function modAuth(k, ip) {
   const c = fail[0] && Date.now() - num(fail[0].ts) < 3600e3 ? num(fail[0].cnt) : 0;
   await q(`DECLARE $ip AS Utf8; DECLARE $ts AS Uint64; DECLARE $c AS Uint64; UPSERT INTO rl (ip, ts, cnt) VALUES ($ip, $ts, $c);`, { $ip: TypedValues.utf8("mf:" + ip), $ts: TypedValues.uint64(Date.now()), $c: TypedValues.uint64(c + 1) });
   return null }
+async function tgUpdate(u) {
+      if (u.callback_query) { const cq = u.callback_query, chat = String(cq.message && cq.message.chat && cq.message.chat.id || ""), c = String(cq.data || "").slice(2);
+        const r = await q(`DECLARE $c AS Utf8; SELECT role, cats FROM tg WHERE chat=$c;`, { $c: TypedValues.utf8(chat) });
+        if (r[0] && CATS[c] && CAT_ROLES[c].includes(r[0].role)) { let on = String(r[0].cats || "").split(",").filter(Boolean); on = on.includes(c) ? on.filter(x => x !== c) : on.concat(c);
+          await q(`DECLARE $c AS Utf8; DECLARE $k AS Utf8; UPDATE tg SET cats=$k WHERE chat=$c;`, { $c: TypedValues.utf8(chat), $k: TypedValues.utf8(on.join(",")) });
+          await tgApi("editMessageReplyMarkup", { chat_id: chat, message_id: cq.message.message_id, reply_markup: catsKb(r[0].role, on.join(",")) }) }
+        await tgApi("answerCallbackQuery", { callback_query_id: cq.id }); return }
+      const m = u.message; if (!m || !m.chat || m.chat.type !== "private") return;
+      const chat = String(m.chat.id), txt = String(m.text || "").trim();
+      const me = (await q(`DECLARE $c AS Utf8; SELECT name, role, cats FROM tg WHERE chat=$c;`, { $c: TypedValues.utf8(chat) }))[0];
+      const say = (text, kb) => tgApi("sendMessage", Object.assign({ chat_id: chat, text, parse_mode: "HTML" }, kb ? { reply_markup: kb } : {}));
+      const lm = /^\/link\s+(\d{6})$/.exec(txt) || (/^\d{6}$/.test(txt) ? [0, txt] : null);
+      if (lm) { const l = (await q(`DECLARE $c AS Utf8; SELECT name, role, exp FROM tglink WHERE code=$c;`, { $c: TypedValues.utf8(lm[1]) }))[0];
+        if (!l || num(l.exp) < Date.now()) { await say("Код не подошёл или устарел. Получите новый на странице модерации."); return }
+        await q(`DECLARE $c AS Utf8; DELETE FROM tglink WHERE code=$c;`, { $c: TypedValues.utf8(lm[1]) });
+        await q(`DECLARE $c AS Utf8; DECLARE $n AS Utf8; DECLARE $r AS Utf8; DECLARE $k AS Utf8; DECLARE $ts AS Uint64; UPSERT INTO tg (chat, name, role, cats, ts) VALUES ($c, $n, $r, $k, $ts);`,
+          { $c: TypedValues.utf8(chat), $n: TypedValues.utf8(l.name), $r: TypedValues.utf8(l.role), $k: TypedValues.utf8(DEF_CATS[l.role] || ""), $ts: TypedValues.uint64(Date.now()) });
+        await say("Готово, <b>" + esc(l.name) + "</b>! Бот подключён. Выберите, о чём присылать уведомления:", catsKb(l.role, DEF_CATS[l.role]));
+        await mlog(l.name, "подключил Telegram", "уведомления"); return }
+      if (me && /^\/(settings|настройки)/.test(txt)) { await say("О чём присылать уведомления:", catsKb(me.role, me.cats)); return }
+      if (me && /^\/stop/.test(txt)) { await q(`DECLARE $c AS Utf8; DELETE FROM tg WHERE chat=$c;`, { $c: TypedValues.utf8(chat) }); await say("Уведомления отключены. Подключиться снова можно кодом со страницы модерации."); return }
+      await say(me ? "Команды: /settings — выбрать уведомления, /stop — отключить." : "Привет! Это бот площадки «ИИгры онлайн» — dsaskarov.github.io\n\nЕсли вы в команде сайта: откройте страницу модерации, нажмите «Подключить Telegram» и пришлите сюда шестизначный код.");
+}
 // Telegram-бот: уведомления команде по категориям. Токен — в GitHub Secrets (TG_BOT_TOKEN).
 const TG = env("TG_BOT_TOKEN"), TG_SECRET = TG ? crypto.createHash("sha256").update(TG + "|iigry-tg").digest("hex").slice(0, 48) : "";
 const CATS = { buy: "💰 Покупки и чеки", err: "⚠️ Ошибки и сбои", mod: "🛡 Действия модераторов", chat: "💬 Новые сообщения в чате", ban: "🚫 Баны" };
 const CAT_ROLES = { buy: ["admin"], err: ["admin"], mod: ["admin", "senior"], chat: ["admin", "senior", "chat"], ban: ["admin", "senior", "chat"] };
 const DEF_CATS = { admin: "buy,err,mod,ban", senior: "mod,ban,chat", chat: "chat,ban", games: "" };
-async function tgApi(m, body) { if (!TG) return null; try { const r = await fetch("https://api.telegram.org/bot" + TG + "/" + m, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal: AbortSignal.timeout(8000) }); return await r.json() } catch (e) { console.error("tg", e && e.message); return null } }
+// Telegram недоступен из российских дата-центров напрямую, поэтому сообщения кладём в очередь,
+// а пересылает их «ретранслятор» на GitHub Actions (он же забирает новые сообщения боту)
+let tgSeq = 0;
+async function tgApi(m, body) { if (!TG) return null;
+  await q(`DECLARE $id AS Utf8; DECLARE $m AS Utf8; DECLARE $b AS Utf8; UPSERT INTO tgout (id, m, b) VALUES ($id, $m, $b);`,
+    { $id: TypedValues.utf8(String(Date.now()).padStart(15, "0") + "-" + String(tgSeq++).padStart(4, "0") + crypto.randomBytes(2).toString("hex")), $m: TypedValues.utf8(m), $b: TypedValues.utf8(JSON.stringify(body)) });
+  return { ok: true } }
+async function tgDirect(m, body) { if (!TG) return null; try { const r = await fetch("https://api.telegram.org/bot" + TG + "/" + m, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal: AbortSignal.timeout(8000) }); return await r.json() } catch (e) { console.error("tg", e && e.message); return null } }
 const esc = t => String(t).replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]);
 async function notify(cat, text) {
   if (!TG) return; try { const rows = await q(`SELECT chat, role, cats FROM tg;`);
@@ -241,35 +274,27 @@ exports.handler = async (event, ctx) => {
   if (a === "tgdiag" && method === "POST") {
     const got = String(hd["X-Cron-Key"] || hd["x-cron-key"] || "");
     if (!TG_SECRET || !same(got.padEnd(48).slice(0, 48), TG_SECRET)) return { statusCode: 403, body: "no" };
-    const t0 = Date.now(), r = await tgApi("getMe", {});
+    const t0 = Date.now(), r = await tgDirect("getMe", {});
     return { statusCode: 200, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ok: !!(r && r.ok), ms: Date.now() - t0, err: r ? r.description || null : "нет связи" }) };
+  }
+  // Ретранслятор (GitHub Actions): отдаёт очередь исходящих и принимает входящие обновления бота
+  if ((a === "tgpull" || a === "tgpush") && method === "POST") {
+    const got = String(hd["X-Cron-Key"] || hd["x-cron-key"] || "");
+    if (!TG_SECRET || !same(got.padEnd(48).slice(0, 48), TG_SECRET)) return { statusCode: 403, body: "no" };
+    await db(ctx);
+    if (a === "tgpush") { const ups = (parse(event) || {}).updates; let n = 0;
+      for (const u of Array.isArray(ups) ? ups.slice(0, 100) : []) { try { await tgUpdate(u); n++ } catch (e) { console.error("tgpush", e && e.message) } }
+      return { statusCode: 200, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ok: true, n }) } }
+    const rows = await q(`SELECT id, m, b FROM tgout ORDER BY id LIMIT 50;`);
+    for (const r of rows) await q(`DECLARE $id AS Utf8; DELETE FROM tgout WHERE id=$id;`, { $id: TypedValues.utf8(r.id) });
+    return { statusCode: 200, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items: rows.map(r => ({ m: r.m, b: JSON.parse(r.b) })) }) };
   }
   // Telegram присылает обновления бота сюда; проверяем секрет из заголовка
   if (a === "tg" && method === "POST") {
     const sec = String(hd["X-Telegram-Bot-Api-Secret-Token"] || hd["x-telegram-bot-api-secret-token"] || "");
     if (!TG_SECRET || !same(sec.padEnd(48).slice(0, 48), TG_SECRET)) return { statusCode: 403, body: "no" };
     try { await db(ctx); const u = parse(event) || {};
-      if (u.callback_query) { const cq = u.callback_query, chat = String(cq.message && cq.message.chat && cq.message.chat.id || ""), c = String(cq.data || "").slice(2);
-        const r = await q(`DECLARE $c AS Utf8; SELECT role, cats FROM tg WHERE chat=$c;`, { $c: TypedValues.utf8(chat) });
-        if (r[0] && CATS[c] && CAT_ROLES[c].includes(r[0].role)) { let on = String(r[0].cats || "").split(",").filter(Boolean); on = on.includes(c) ? on.filter(x => x !== c) : on.concat(c);
-          await q(`DECLARE $c AS Utf8; DECLARE $k AS Utf8; UPDATE tg SET cats=$k WHERE chat=$c;`, { $c: TypedValues.utf8(chat), $k: TypedValues.utf8(on.join(",")) });
-          await tgApi("editMessageReplyMarkup", { chat_id: chat, message_id: cq.message.message_id, reply_markup: catsKb(r[0].role, on.join(",")) }) }
-        await tgApi("answerCallbackQuery", { callback_query_id: cq.id }); return { statusCode: 200, body: "ok" } }
-      const m = u.message; if (!m || !m.chat || m.chat.type !== "private") return { statusCode: 200, body: "ok" };
-      const chat = String(m.chat.id), txt = String(m.text || "").trim();
-      const me = (await q(`DECLARE $c AS Utf8; SELECT name, role, cats FROM tg WHERE chat=$c;`, { $c: TypedValues.utf8(chat) }))[0];
-      const say = (text, kb) => tgApi("sendMessage", Object.assign({ chat_id: chat, text, parse_mode: "HTML" }, kb ? { reply_markup: kb } : {}));
-      const lm = /^\/link\s+(\d{6})$/.exec(txt) || (/^\d{6}$/.test(txt) ? [0, txt] : null);
-      if (lm) { const l = (await q(`DECLARE $c AS Utf8; SELECT name, role, exp FROM tglink WHERE code=$c;`, { $c: TypedValues.utf8(lm[1]) }))[0];
-        if (!l || num(l.exp) < Date.now()) { await say("Код не подошёл или устарел. Получите новый на странице модерации."); return { statusCode: 200, body: "ok" } }
-        await q(`DECLARE $c AS Utf8; DELETE FROM tglink WHERE code=$c;`, { $c: TypedValues.utf8(lm[1]) });
-        await q(`DECLARE $c AS Utf8; DECLARE $n AS Utf8; DECLARE $r AS Utf8; DECLARE $k AS Utf8; DECLARE $ts AS Uint64; UPSERT INTO tg (chat, name, role, cats, ts) VALUES ($c, $n, $r, $k, $ts);`,
-          { $c: TypedValues.utf8(chat), $n: TypedValues.utf8(l.name), $r: TypedValues.utf8(l.role), $k: TypedValues.utf8(DEF_CATS[l.role] || ""), $ts: TypedValues.uint64(Date.now()) });
-        await say("Готово, <b>" + esc(l.name) + "</b>! Бот подключён. Выберите, о чём присылать уведомления:", catsKb(l.role, DEF_CATS[l.role]));
-        await mlog(l.name, "подключил Telegram", "уведомления"); return { statusCode: 200, body: "ok" } }
-      if (me && /^\/(settings|настройки)/.test(txt)) { await say("О чём присылать уведомления:", catsKb(me.role, me.cats)); return { statusCode: 200, body: "ok" } }
-      if (me && /^\/stop/.test(txt)) { await q(`DECLARE $c AS Utf8; DELETE FROM tg WHERE chat=$c;`, { $c: TypedValues.utf8(chat) }); await say("Уведомления отключены. Подключиться снова можно кодом со страницы модерации."); return { statusCode: 200, body: "ok" } }
-      await say(me ? "Команды: /settings — выбрать уведомления, /stop — отключить." : "Привет! Это бот площадки «ИИгры онлайн» — dsaskarov.github.io\n\nЕсли вы в команде сайта: откройте страницу модерации, нажмите «Подключить Telegram» и пришлите сюда шестизначный код.");
+      await tgUpdate(u);
     } catch (e) { console.error("tg hook", e && e.message) }
     return { statusCode: 200, body: "ok" };
   }

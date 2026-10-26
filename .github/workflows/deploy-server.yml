@@ -119,8 +119,7 @@ jobs:
           if [ -z "$TG" ]; then echo "Токен бота ещё не добавлен — пропускаем"; exit 0; fi
           FID=$(echo '${{ steps.fn.outputs.function-id }}'); [ -n "$FID" ] || FID=d4enbk0c6huhltqsm5av
           S=$(printf '%s' "$TG|iigry-tg" | sha256sum | cut -c1-48); echo "::add-mask::$S"
-          curl -sS -X POST "https://api.telegram.org/bot$TG/setWebhook" -H "Content-Type: application/json" \
-            -d "{\"url\":\"https://functions.yandexcloud.net/$FID?a=tg\",\"secret_token\":\"$S\",\"allowed_updates\":[\"message\",\"callback_query\"],\"drop_pending_updates\":true}" | jq -c '{ok,description}'
+          curl -sS -X POST "https://api.telegram.org/bot$TG/deleteWebhook" | jq -c '{ok}'   # входящие забирает ретранслятор
           curl -sS -X POST "https://api.telegram.org/bot$TG/setMyCommands" -H "Content-Type: application/json" \
             -d '{"commands":[{"command":"settings","description":"Выбрать уведомления"},{"command":"stop","description":"Отключить уведомления"}]}' | jq -c '{ok}'
           curl -sS -X POST "https://api.telegram.org/bot$TG/setMyDescription" -H "Content-Type: application/json" \

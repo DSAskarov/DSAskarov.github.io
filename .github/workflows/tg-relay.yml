@@ -1,0 +1,34 @@
+# Ретранслятор Telegram-бота. Из российских дата-центров Telegram недоступен, а GitHub — за рубежом.
+# Каждые 5 минут запускается на ~5 минут и каждые 10 секунд: забирает сообщения боту → отдаёт серверу, забирает очередь сервера → отправляет в Telegram.
+name: Ретранслятор бота
+on:
+  schedule: [{ cron: "*/5 * * * *" }]
+  workflow_dispatch:
+permissions: { contents: read }
+concurrency: { group: tg-relay, cancel-in-progress: false }
+jobs:
+  relay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - name: Пересылка
+        env: { TG: "${{ secrets.TG_BOT_TOKEN }}" }
+        run: |
+          if [ -z "$TG" ]; then echo "Токен бота не добавлен"; exit 0; fi
+          S=$(printf '%s' "$TG|iigry-tg" | sha256sum | cut -c1-48); echo "::add-mask::$S"
+          U="https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av"; T="https://api.telegram.org/bot$TG"; OFF=0; END=$((SECONDS+290)); IN=0; OUT=0
+          while [ $SECONDS -lt $END ]; do
+            R=$(curl -sS -m 25 "$T/getUpdates?timeout=8&offset=$OFF&allowed_updates=%5B%22message%22%2C%22callback_query%22%5D" || echo '{}')
+            N=$(echo "$R" | jq '.result|length // 0')
+            if [ "${N:-0}" -gt 0 ]; then
+              OFF=$(echo "$R" | jq '.result[-1].update_id+1')
+              echo "$R" | jq -c '{updates:.result}' | curl -sS -m 30 -X POST -H "X-Cron-Key: $S" -H "Content-Type: application/json" "$U?a=tgpush" -d @- >/dev/null; IN=$((IN+N))
+            fi
+            Q=$(curl -sS -m 30 -X POST -H "X-Cron-Key: $S" "$U?a=tgpull" || echo '{}')
+            echo "$Q" | jq -c '.items[]? ' | while read -r it; do
+              m=$(echo "$it" | jq -r .m); echo "$it" | jq -c .b | curl -sS -m 15 -X POST -H "Content-Type: application/json" "$T/$m" -d @- | jq -c '{ok,description}' | grep -v '"ok":true' || true
+            done
+            OUT=$((OUT+$(echo "$Q" | jq '.items|length // 0'))); sleep 2
+          done
+          [ "$OFF" -gt 0 ] && curl -sS -m 10 "$T/getUpdates?offset=$OFF&timeout=0" >/dev/null || true
+          echo "Входящих: $IN, исходящих: $OUT"
