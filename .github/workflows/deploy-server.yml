@@ -87,6 +87,7 @@ jobs:
             YK_SECRET=${{ secrets.YK_SECRET || '-' }}
             NPD_INN=695207648961
             NPD_PASSWORD=${{ secrets.NPD_PASSWORD || '-' }}
+            ADMIN_KEY=${{ secrets.ADMIN_KEY || '-' }}
       - name: Открыть функцию для сайта и проверить
         env: { IAM: "${{ steps.tok.outputs.iam }}", FID: "${{ steps.fn.outputs.function-id }}" }
         run: |
@@ -109,4 +110,5 @@ jobs:
           curl -sS -H "$O" "$U?a=top&game=test"; echo
           echo "Проверка оплаты (чужой товар):"; curl -sS -X POST -H "$O" -H "Content-Type: application/json" "$U?a=buy" -d '{"prod":"free-money"}'; echo
           echo "Проверка поддельного уведомления ЮKassa:"; curl -sS -X POST -H "Content-Type: application/json" "$U?a=yk" -d '{"event":"payment.succeeded","object":{"id":"fake-payment-000"}}'; echo
+          echo "Проверка чужого кода модератора:"; curl -sS -X POST -H "$O" -H "Content-Type: application/json" "$U?a=mod" -d '{"k":"mod-0000000000000000000000","op":"me"}'; echo
           echo "Проверка поддельной лицензии:"; curl -sS -X POST -H "$O" -H "Content-Type: application/json" "$U?a=lic" -d '{"id":"000000000000000000000000","prod":"post-full","lic":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"}'; echo
