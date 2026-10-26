@@ -1,0 +1,18 @@
+# Режим технических работ вручную: Actions → «Техработы» → Run workflow → on/off
+name: Техработы
+on:
+  workflow_dispatch:
+    inputs:
+      mode: { description: "on — включить, off — выключить", required: true, default: "on" }
+      minutes: { description: "Сколько минут показывать (максимум)", required: false, default: "15" }
+      text: { description: "Текст для посетителей", required: false, default: "" }
+permissions: { contents: read }
+jobs:
+  maint:
+    runs-on: ubuntu-latest
+    steps:
+      - env: { TG: "${{ secrets.TG_BOT_TOKEN }}", M: "${{ inputs.mode }}", MIN: "${{ inputs.minutes }}", TX: "${{ inputs.text }}" }
+        run: |
+          S=$(printf '%s' "$TG|iigry-tg" | sha256sum | cut -c1-48); echo "::add-mask::$S"
+          ON=false; [ "$M" = "on" ] && ON=true
+          jq -nc --argjson on $ON --arg min "$MIN" --arg t "$TX" '{on:$on,min:($min|tonumber? // 15),text:$t}' | curl -sS -X POST -H "X-Cron-Key: $S" -H "Content-Type: application/json" "https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av?a=maint" -d @-; echo

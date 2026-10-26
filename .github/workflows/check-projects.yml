@@ -1,0 +1,32 @@
+# Автопроверка заявок на публикацию: каждые 30 минут. Изолированная машина GitHub, всё удаляется после проверки.
+name: Автопроверка проектов
+on:
+  schedule: [{ cron: "*/30 * * * *" }]
+  workflow_dispatch:
+permissions: { contents: read }
+concurrency: { group: check-projects, cancel-in-progress: false }
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Есть ли заявки
+        id: q
+        env: { TG: "${{ secrets.TG_BOT_TOKEN }}" }
+        run: |
+          S=$(printf '%s' "$TG|iigry-tg" | sha256sum | cut -c1-48); echo "::add-mask::$S"; echo "ck=$S" >> "$GITHUB_OUTPUT"
+          N=$(curl -sS -m 30 -X POST -H "X-Cron-Key: $S" "https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av?a=checkq" | jq '.items|length // 0'); echo "Заявок: $N"; echo "n=$N" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-node@v4
+        if: steps.q.outputs.n != '0'
+        with: { node-version: 22 }
+      - name: Антивирус и браузер
+        if: steps.q.outputs.n != '0'
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq clamav >/dev/null && sudo systemctl stop clamav-freshclam || true
+          sudo freshclam --quiet || true
+          cd tools && npm i --silent playwright@1.56.1 && npx playwright install --with-deps chromium >/dev/null
+      - name: Проверка
+        if: steps.q.outputs.n != '0'
+        env: { CK: "${{ steps.q.outputs.ck }}", VT_API_KEY: "${{ secrets.VT_API_KEY }}", RUN_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" }
+        run: cd tools && node check-project.js

@@ -19,6 +19,11 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: Включить технические работы
+        env: { TG: "${{ secrets.TG_BOT_TOKEN }}" }
+        run: |
+          [ -n "$TG" ] || exit 0; S=$(printf '%s' "$TG|iigry-tg" | sha256sum | cut -c1-48); echo "::add-mask::$S"
+          curl -sS -m 20 -X POST -H "X-Cron-Key: $S" -H "Content-Type: application/json" "https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av?a=maint" -d '{"on":true,"min":10,"text":"Обновляем сервер — чат, рейтинги и оплата на пару минут могут не отвечать."}' || true; echo
       - uses: actions/checkout@v4
       - name: Пропуск в Yandex Cloud
         id: tok
@@ -124,3 +129,9 @@ jobs:
             -d '{"commands":[{"command":"settings","description":"Выбрать уведомления"},{"command":"stop","description":"Отключить уведомления"}]}' | jq -c '{ok}'
           curl -sS -X POST "https://api.telegram.org/bot$TG/setMyDescription" -H "Content-Type: application/json" \
             -d '{"description":"Бот площадки «ИИгры онлайн» (dsaskarov.github.io): уведомления для команды о покупках, сообщениях и модерации."}' | jq -c '{ok}'
+      - name: Выключить технические работы
+        if: always()
+        env: { TG: "${{ secrets.TG_BOT_TOKEN }}" }
+        run: |
+          [ -n "$TG" ] || exit 0; S=$(printf '%s' "$TG|iigry-tg" | sha256sum | cut -c1-48); echo "::add-mask::$S"
+          curl -sS -m 30 -X POST -H "X-Cron-Key: $S" -H "Content-Type: application/json" "https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av?a=maint" -d '{"on":false}' || true; echo

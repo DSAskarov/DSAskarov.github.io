@@ -1,0 +1,28 @@
+# При каждом обновлении сайта: включаем «Технические работы», ждём, пока GitHub Pages выложит новую версию, и выключаем.
+name: Обновление сайта
+on:
+  push:
+    branches: [main]
+    paths-ignore: ["server/**", ".github/**", "tools/**"]
+permissions: { contents: read, pages: read }
+concurrency: { group: site-update, cancel-in-progress: false }
+jobs:
+  maint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Включить технические работы
+        env: { TG: "${{ secrets.TG_BOT_TOKEN }}" }
+        run: |
+          S=$(printf '%s' "$TG|iigry-tg" | sha256sum | cut -c1-48); echo "::add-mask::$S"; echo "S=$S" >> "$GITHUB_ENV"
+          curl -sS -X POST -H "X-Cron-Key: $S" -H "Content-Type: application/json" "https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av?a=maint" -d '{"on":true,"min":10,"text":"Сайт обновляется — добавляем новое."}'; echo
+      - name: Ждём выкладку GitHub Pages
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          for i in $(seq 1 60); do
+            B=$(gh api "repos/${{ github.repository }}/pages/builds/latest" --jq '.status+" "+.commit' 2>/dev/null || echo "")
+            echo "$B"; case "$B" in "built ${{ github.sha }}") break;; esac; sleep 10
+          done; sleep 20
+      - name: Выключить технические работы
+        if: always()
+        run: curl -sS -X POST -H "X-Cron-Key: $S" -H "Content-Type: application/json" "https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av?a=maint" -d '{"on":false}'; echo

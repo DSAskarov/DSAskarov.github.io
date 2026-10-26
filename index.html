@@ -1784,5 +1784,18 @@ route();render();renderNews();renderTalk();setTimeout(()=>{const h=location.hash
  if(!/^[0-9a-f]{32}$/.test(d||"")){const a=new Uint8Array(16);crypto.getRandomValues(a);d=[...a].map(x=>x.toString(16).padStart(2,"0")).join("");localStorage.setItem("iigry-did",d)}
  const go=()=>{if(document.visibilityState!=="visible")return;document.removeEventListener("visibilitychange",go);fetch("https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av?a=hit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({d}),keepalive:true}).catch(()=>{})};
  setTimeout(()=>{document.visibilityState==="visible"?go():document.addEventListener("visibilitychange",go)},2500)}catch(_){}})();
+/* Технические работы: пока сайт обновляется, показываем понятное предупреждение и сами обновляем страницу, когда всё готово */
+(function(){const API="https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av?a=status";let shown=null,was=false;
+ function show(j){if(shown)return;const d=document.createElement("div");d.setAttribute("role","alertdialog");d.setAttribute("aria-live","assertive");
+  d.style.cssText="position:fixed;inset:0;z-index:2147483000;background:rgba(11,10,14,.88);display:grid;place-items:center;padding:16px;font-family:Golos Text,system-ui,sans-serif";
+  const c=document.createElement("div");c.style.cssText="max-width:440px;background:#16141B;border:1px solid #E7BD52;border-radius:16px;padding:22px;color:#F4F4F6;text-align:center;display:grid;gap:10px";
+  const h=document.createElement("b");h.style.cssText="font:800 1.3rem Rubik,system-ui,sans-serif;color:#E7BD52";h.textContent="🛠 Идут технические работы";
+  const p=document.createElement("p");p.style.margin="0";const left=Math.max(1,Math.round((j.until-Date.now())/60000));p.textContent=(j.text||"Сайт обновляется — добавляем новое.")+" Обычно это пара минут (не дольше "+left+" мин). Страница обновится сама, когда всё будет готово.";
+  const b=document.createElement("button");b.type="button";b.textContent="Понятно, подожду";b.style.cssText="border:0;border-radius:10px;padding:10px 16px;font:700 1rem inherit;background:linear-gradient(135deg,#FF4A55,#A3101C);color:#fff;cursor:pointer;justify-self:center";
+  b.onclick=()=>{d.remove();shown=null;bar()};c.append(h,p,b);d.append(c);document.body.append(d);shown=d}
+ function bar(){if(document.getElementById("iigry-maint-bar"))return;const s=document.createElement("div");s.id="iigry-maint-bar";s.textContent="🛠 Идут технические работы — возможны недолгие сбои";s.style.cssText="position:fixed;left:0;right:0;bottom:0;z-index:2147482999;background:#E7BD52;color:#1A1306;font:700 .9rem Golos Text,system-ui,sans-serif;text-align:center;padding:6px";document.body.append(s)}
+ async function check(){try{const j=await (await fetch(API,{cache:"no-store"})).json();
+   if(j.maint){was=true;if(!document.getElementById("iigry-maint-bar"))show(j)}else if(was){location.reload()}}catch(_){} }
+ check();setInterval(check,20000)})();
 </script>
 </body></html>

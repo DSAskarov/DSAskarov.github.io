@@ -89,6 +89,9 @@ async function db(ctx) {
           .withColumn(new Column("by", Types.optional(Types.UTF8))).withColumn(new Column("text", Types.optional(Types.UTF8))).withPrimaryKeys("id", "ts"));
         await ensure("prio", new TableDescription()
           .withColumn(new Column("id", Types.optional(Types.UTF8))).withColumn(new Column("p", Types.optional(Types.UINT64))).withPrimaryKeys("id"));
+        await ensure("checks", new TableDescription()
+          .withColumn(new Column("id", Types.optional(Types.UTF8))).withColumn(new Column("verdict", Types.optional(Types.UTF8)))
+          .withColumn(new Column("res", Types.optional(Types.UTF8))).withColumn(new Column("ts", Types.optional(Types.UINT64))).withPrimaryKeys("id"));
         await ensure("cfg", new TableDescription()
           .withColumn(new Column("k", Types.optional(Types.UTF8))).withColumn(new Column("v", Types.optional(Types.UTF8)))
           .withPrimaryKeys("k"));
@@ -373,6 +376,30 @@ exports.handler = async (event, ctx) => {
     for (const r of adm) for (const [t, b] of ex) await tgApi("sendMessage", { chat_id: r.chat, text: t, parse_mode: "HTML", reply_markup: { inline_keyboard: [[{ text: b, url: L }]] } });
     return { statusCode: 200, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ok: true, to: adm.length }) };
   }
+  // Режим технических работ: включается автоматически перед обновлением сайта и выключается после
+  if (a === "maint" && method === "POST") {
+    const got = String(hd["X-Cron-Key"] || hd["x-cron-key"] || "");
+    if (!TG_SECRET || !same(got.padEnd(48).slice(0, 48), TG_SECRET)) return { statusCode: 403, body: "no" };
+    await db(ctx); const b = parse(event) || {}, on = !!b.on, min = Math.min(240, Math.max(1, Math.round(Number(b.min)) || 10));
+    await cfgSet("maint", JSON.stringify(on ? { on: true, until: Date.now() + min * 60e3, text: clean(b.text, 200) } : { on: false }));
+    return { statusCode: 200, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ok: true, on }) };
+  }
+  // Автопроверка заявок на публикацию (GitHub Actions): выдаёт непроверенные заявки и принимает результаты
+  if ((a === "checkq" || a === "checkres") && method === "POST") {
+    const got = String(hd["X-Cron-Key"] || hd["x-cron-key"] || "");
+    if (!TG_SECRET || !same(got.padEnd(48).slice(0, 48), TG_SECRET)) return { statusCode: 403, body: "no" };
+    await db(ctx);
+    if (a === "checkq") { const r = await q(`SELECT i.id AS id, i.subj AS subj, i.text AS text FROM inbox AS i LEFT JOIN checks AS c ON i.id = c.id WHERE i.kind = "publish" AND c.id IS NULL AND (i.st = "new" OR i.st = "work") LIMIT 10;`);
+      return { statusCode: 200, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items: r.map(x => ({ id: x.id, subj: x.subj, urls: (String(x.text).match(/https:\/\/[^\s"'<>]+/g) || []).slice(0, 5) })) }) } }
+    const b = parse(event) || {}, id = clean(b.id, 40), verdict = ["ok", "warn", "bad"].includes(b.verdict) ? b.verdict : "warn", res = String(JSON.stringify(b.res || {})).slice(0, 8000);
+    const it = (await q(`DECLARE $id AS Utf8; SELECT subj FROM inbox WHERE id=$id;`, { $id: TypedValues.utf8(id) }))[0]; if (!it) return { statusCode: 404, body: "no" };
+    await q(`DECLARE $id AS Utf8; DECLARE $v AS Utf8; DECLARE $r AS Utf8; DECLARE $ts AS Uint64; UPSERT INTO checks (id, verdict, res, ts) VALUES ($id, $v, $r, $ts);`,
+      { $id: TypedValues.utf8(id), $v: TypedValues.utf8(verdict), $r: TypedValues.utf8(res), $ts: TypedValues.uint64(Date.now()) });
+    const V = { ok: "✅ Автопроверка пройдена", warn: "⚠️ Автопроверка: есть замечания", bad: "⛔ Автопроверка: опасно, не публиковать" }[verdict];
+    const lines = (Array.isArray(b.res && b.res.lines) ? b.res.lines : []).slice(0, 12).map(x => "• " + esc(String(x).slice(0, 160))).join("\n");
+    if (verdict === "bad") await notifyPrio("publish", 1, "<b>" + esc(it.subj) + "</b>\n" + V + "\n" + lines, id); else await notify("pub", "<b>" + esc(it.subj) + "</b>\n" + V + "\n" + lines, id);
+    return { statusCode: 200, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ok: true }) };
+  }
   // Ретранслятор (GitHub Actions): отдаёт очередь исходящих и принимает входящие обновления бота
   if ((a === "tgpull" || a === "tgpush") && method === "POST") {
     const got = String(hd["X-Cron-Key"] || hd["x-cron-key"] || "");
@@ -408,6 +435,8 @@ exports.handler = async (event, ctx) => {
   if (!ORIGINS.includes(origin)) return reply(403, { error: "Запрос с чужого сайта" }, origin);
   try { try { await db(ctx) } catch (_) { await new Promise(r => setTimeout(r, 700)); await db(ctx) } } catch (e) { console.error("db", e && e.message); return reply(503, { error: "Сервер просыпается, попробуйте через минуту", detail: process.env.DEBUG === "1" ? String(e && e.message).slice(0, 300) : undefined, tok: process.env.DEBUG === "1" ? !!(ctx && ctx.token) : undefined }, origin) }
 
+  if (a === "status" && method === "GET") { let m = {}; try { m = JSON.parse(await cfgGet("maint") || "{}") } catch (_) {}
+    const on = !!(m.on && m.until > Date.now()); return reply(200, { maint: on, until: on ? m.until : 0, text: on ? m.text || "" : "" }, origin) }
   if (a === "cfg" && method === "GET") return reply(200, { captcha: CAP_SECRET ? CAP_KEY : "" }, origin);
   if (a === "pass" && method === "POST") {
     const b = parse(event); if (!b) return reply(400, { error: "Неверный запрос" }, origin);
@@ -511,7 +540,7 @@ exports.handler = async (event, ctx) => {
         $ts: TypedValues.uint64(now), $ip: TypedValues.utf8("q:" + ip), $n: TypedValues.uint64(lim.cnt + 1) });
     const pr = prioOf(kind, subj + " " + text);
     if (pr < 3) await notifyPrio(kind, pr, esc(subj || "без темы") + " — " + esc(text.slice(0, 250)), id); else { await setPrio(id, 3);
-    await notify({ publish: "pub", complaint: "rep", idea: "idea", resume: "job" }[kind], "<b>" + esc(KINDS[kind]) + "</b>: " + esc(subj || "без темы") + " — " + esc(kind === "resume" ? "откройте mod.html" : text.slice(0, 200)), id) }
+    await notify({ publish: "pub", complaint: "rep", idea: "idea", resume: "job" }[kind], "<b>" + esc(KINDS[kind]) + "</b>: " + esc(subj || "без темы") + " — " + esc(kind === "resume" ? "откройте mod.html" : text.slice(0, 200)) + (kind === "publish" ? "\n\n🤖 Автопроверка запущена: демо, вирусы и шпионские программы, поведение страницы. Результат придёт в течение часа — можно уже открыть и опробовать." : ""), id) }
     return reply(200, { ok: true, id }, origin);
   }
   if (a === "mod" && method === "POST") {
@@ -545,7 +574,8 @@ exports.handler = async (event, ctx) => {
       const pm = Object.fromEntries((await q(`SELECT id, p FROM prio;`)).map(y => [y.id, num(y.p)]));
       const items = r.filter(x => ks.includes(x.kind)).map(x => ({ id: x.id, kind: x.kind, kindT: KINDS[x.kind], p: pm[x.id] || prioOf(x.kind, x.subj + " " + x.text), urgent: (pm[x.id] || 3) < 3, subj: x.subj, text: x.text,
         contact: can("contacts") ? x.contact : (x.contact ? "скрыто — видит только админ" : ""), st: x.st, stT: QST[x.st], who: x.who, note: x.note, ts: num(x.ts) }));
-      items.forEach(x => { x.pT = PRIO[x.p]; x.urgent = x.p < 3 }); items.sort((a, b) => (a.p - b.p) || (b.ts - a.ts));
+      const ck = Object.fromEntries((await q(`SELECT id, verdict, res FROM checks;`)).map(y => [y.id, y]));
+      items.forEach(x => { x.pT = PRIO[x.p]; x.urgent = x.p < 3; const c = ck[x.id]; if (c) { let rr = {}; try { rr = JSON.parse(c.res) } catch (_) {} x.check = { verdict: c.verdict, lines: rr.lines || [], run: rr.run || "" } } }); items.sort((a, b) => (a.p - b.p) || (b.ts - a.ts));
       const tm = can("team") ? (await q(`SELECT name FROM team;`)).map(x => x.name) : [];
       return reply(200, { items, as: can("team") ? ["Дмитрий (админ)"].concat(tm) : [me.name] }, origin) }
     if (op === "one") { const id = clean(b.id, 120); const r = await q(`DECLARE $id AS Utf8; SELECT id, kind, subj, text, contact, st, who, note, ts FROM inbox WHERE id=$id;`, { $id: TypedValues.utf8(id) });
