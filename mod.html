@@ -14,7 +14,7 @@ button.main{background:linear-gradient(135deg,#FF4A55,#A3101C);border:0;color:#f
 button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.list{display:grid;gap:6px;margin-top:10px;max-height:460px;overflow:auto}
 .it{display:flex;gap:8px;align-items:flex-start;border-top:1px solid var(--line);padding-top:6px}.it .tx{flex:1;min-width:0;overflow-wrap:anywhere}.it small{color:var(--muted)}
-.urg{border:1px solid rgba(232,51,63,.7)!important;background:rgba(232,51,63,.08);border-radius:10px;padding:8px!important}.hl{outline:2px solid var(--gold);outline-offset:2px;border-radius:10px}
+.urg{border:1px solid rgba(232,51,63,.7);background:rgba(232,51,63,.08);border-radius:10px;padding:8px!important}.hl{outline:2px solid var(--gold);outline-offset:2px;border-radius:10px}
 textarea{background:#0F0E13;color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:9px 10px;font:inherit;width:100%;min-height:70px}
 .badge{display:inline-block;border-radius:999px;padding:1px 8px;font-size:.75rem;font-weight:700;margin-right:6px}
 .msg{min-height:1.3em;color:var(--gold);margin:6px 0 0}.code{font:600 1rem ui-monospace,monospace;background:#0F0E13;border:1px dashed var(--gold);padding:8px;border-radius:8px;overflow-wrap:anywhere}
@@ -80,13 +80,16 @@ async function loadQ(){const box=$("queue");box.textContent="Загрузка…
 $("rq").onclick=loadQ;$("qkind").onchange=loadQ;$("qst").onchange=loadQ;
 let AS=[];
 function itemView(x,open){const it=el("div",null,"it"+(x.urgent?" urg":""));it.id="i_"+x.id;const tx=el("div",null,"tx");
-  const bd=el("span",x.kindT,"badge");bd.style.background=x.urgent?"#E8333F":"#24222A";bd.style.color="#fff";tx.append(bd,el("b",(x.subj||"Без темы")+" "),el("small",T(x.ts)+" · "+x.stT+(x.who?" · "+x.who:"")),el("div",x.text));
+  const pc={1:"#E8333F",2:"#E8892A",3:"#8E8A9C"}[x.p]||"#24222A",pb=el("span",x.pT||"","badge");pb.style.background=pc;pb.style.color="#fff";it.style.borderColor=pc;
+  const bd=el("span",x.kindT,"badge");bd.style.background="#24222A";bd.style.color="#fff";tx.append(pb,bd,el("b",(x.subj||"Без темы")+" "),el("small",T(x.ts)+" · "+x.stT+(x.who?" · "+x.who:"")),el("div",x.text));
   if(x.contact){tx.append(el("small","Контакт: "+x.contact));if(/@/.test(x.contact)){const m=el("a"," · написать на почту");m.href="mailto:"+x.contact.split(/[ ,]/).find(c=>c.includes("@"))+"?subject="+encodeURIComponent("ИИгры онлайн: ответ на обращение");m.style.color="#E7BD52";tx.append(m)}}
   (x.replies||[]).forEach(r=>tx.append(el("div","↳ "+r.by+", "+T(r.ts)+": "+r.text,"muted")));
   const ta=document.createElement("textarea");ta.placeholder=x.kind==="call"?"Ответ появится в чате от имени команды":"Ответ автору обращения";ta.maxLength=1500;ta.style.marginTop="6px";tx.append(ta);
   const row=el("div",null,"row");row.style.marginTop="6px";let asSel=null;
   if(AS.length>1){asSel=document.createElement("select");AS.forEach(a=>{const o=el("option","От имени: "+a);o.value=a;asSel.append(o)});row.append(asSel)}
   const send=st=>async()=>{if(ta.value.trim().length<2){alertBox("Напишите ответ.");return}await call({op:"reply",id:x.id,text:ta.value.trim(),st,as:asSel?asSel.value:""});alertBox("Ответ отправлен.");loadAll();loadLog()};
+  const ps=document.createElement("select");[[1,"🔴 Критично"],[2,"🟠 Важно"],[3,"🟡 Обычно"]].forEach(([v,t])=>{const o=el("option","Приоритет: "+t);o.value=v;if(v===x.p)o.selected=true;ps.append(o)});
+  ps.onchange=async()=>{try{await call({op:"setprio",id:x.id,p:+ps.value});loadAll();loadLog()}catch(e){alertBox(e.message)}};row.append(ps);
   row.append(btn("Ответить","main",send("work")),btn("Ответить и закрыть","",send("ok")),btn("Отклонить без ответа","red",async()=>{await call({op:"qset",id:x.id,st:"no",note:""});loadAll();loadLog()}));tx.append(row);it.append(tx);
   if(open){it.classList.add("hl");setTimeout(()=>{it.scrollIntoView({behavior:"smooth",block:"center"});ta.focus()},300)}return it}
 async function loadAll(){const box=$("all");box.textContent="Загрузка…";let j;try{j=await call({op:"all"})}catch(e){box.textContent=e.message;return}AS=j.as||[];box.innerHTML="";

@@ -87,6 +87,8 @@ async function db(ctx) {
         await ensure("replies", new TableDescription()
           .withColumn(new Column("id", Types.optional(Types.UTF8))).withColumn(new Column("ts", Types.optional(Types.UINT64)))
           .withColumn(new Column("by", Types.optional(Types.UTF8))).withColumn(new Column("text", Types.optional(Types.UTF8))).withPrimaryKeys("id", "ts"));
+        await ensure("prio", new TableDescription()
+          .withColumn(new Column("id", Types.optional(Types.UTF8))).withColumn(new Column("p", Types.optional(Types.UINT64))).withPrimaryKeys("id"));
         await ensure("cfg", new TableDescription()
           .withColumn(new Column("k", Types.optional(Types.UTF8))).withColumn(new Column("v", Types.optional(Types.UTF8)))
           .withPrimaryKeys("k"));
@@ -219,8 +221,12 @@ const ROLES = {
 };
 const KINDS = { publish: "Заявки на публикацию", complaint: "Жалобы", idea: "Предложения и обращения", resume: "Резюме в команду", call: "Вызов команды в чате" };
 const KPERM = { publish: "q:publish", complaint: "q:complaint", idea: "q:idea", resume: "q:resume", call: "del" };
-const URGENT = { complaint: 1, call: 1 };
-const CALL = /(@?модер|@?админ|позовите|помогите|спам|оскорбл|угрож|мошенн|обман|не пришл|не работает оплат|верните деньги)/i;
+// Приоритеты: 1 — критично (деньги, мошенничество, угрозы), 2 — важно (зовут команду, жалобы, спам и оскорбления), 3 — обычно
+const PRIO = { 1: "🔴 Критично", 2: "🟠 Важно", 3: "🟡 Обычно" };
+const P1 = /(мошенн|обман|угрож|верните деньги|не пришл|списал|не работает оплат|возврат денег|суд\b|полици|шантаж)/i;
+const P2 = /(@?модер|@?админ|позовите|помогите|спам|оскорбл|мат\b|травл|ругают|взлом)/i;
+const CALL = new RegExp(P1.source + "|" + P2.source, "i");
+const prioOf = (kind, text) => P1.test(text) ? 1 : (kind === "call" || kind === "complaint") ? 2 : 3;
 const LINK_MOD = id => "https://dsaskarov.github.io/mod.html#i=" + encodeURIComponent(id);
 const QST = { new: "Новая", work: "В работе", ok: "Принято", no: "Отклонено" };
 const kh = k => crypto.createHash("sha256").update(salt + "|mod|" + k).digest("hex");
@@ -261,9 +267,9 @@ async function tgUpdate(u) {
 // Telegram-бот: уведомления команде по категориям. Токен — в GitHub Secrets (TG_BOT_TOKEN).
 const TG = env("TG_BOT_TOKEN"), TG_SECRET = TG ? crypto.createHash("sha256").update(TG + "|iigry-tg").digest("hex").slice(0, 48) : "";
 const CATS = { buy: "💰 Покупки и чеки", err: "⚠️ Ошибки и сбои", mod: "🛡 Действия команды", chat: "💬 Новые сообщения в чате", ban: "🚫 Баны",
-  pub: "🎮 Заявки на публикацию", rep: "🚩 Жалобы", idea: "💡 Предложения и обращения", job: "📄 Резюме в команду", stat: "📊 Сводка утром и вечером" };
-const CAT_PERM = { stat: "team", buy: "team", err: "team", mod: "mods", chat: "del", ban: "ban", pub: "q:publish", rep: "q:complaint", idea: "q:idea", job: "q:resume" };
-const CAT_ROLES = Object.fromEntries(Object.entries(CAT_PERM).map(([c, p]) => [c, Object.keys(ROLES).filter(r => ROLES[r].p.includes(p))]));
+  pub: "🎮 Заявки на публикацию", rep: "🚩 Жалобы", idea: "💡 Предложения и обращения", job: "📄 Резюме в команду", stat: "📊 Сводка утром и вечером", imp: "🟠 Важное: зовут команду, жалобы (критичное приходит всегда)" };
+const CAT_PERM = { imp: "del|q:complaint", stat: "team", buy: "team", err: "team", mod: "mods", chat: "del", ban: "ban", pub: "q:publish", rep: "q:complaint", idea: "q:idea", job: "q:resume" };
+const CAT_ROLES = Object.fromEntries(Object.entries(CAT_PERM).map(([c, p]) => [c, Object.keys(ROLES).filter(r => p.split("|").some(x => ROLES[r].p.includes(x)))]));
 const DEF_CATS = Object.fromEntries(Object.keys(ROLES).map(r => [r, Object.keys(CATS).filter(c => c !== "chat" && CAT_ROLES[c].includes(r)).join(",")]));
 // Telegram недоступен из российских дата-центров напрямую, поэтому сообщения кладём в очередь,
 // а пересылает их «ретранслятор» на GitHub Actions (он же забирает новые сообщения боту)
@@ -275,10 +281,14 @@ async function tgApi(m, body) { if (!TG) return null;
 async function tgDirect(m, body) { if (!TG) return null; try { const r = await fetch("https://api.telegram.org/bot" + TG + "/" + m, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal: AbortSignal.timeout(8000) }); return await r.json() } catch (e) { console.error("tg", e && e.message); return null } }
 const esc = t => String(t).replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]);
 // Срочное (жалобы, вызов команды в чате): приходит всем, кто может ответить, независимо от настроек категорий
-async function notifyUrgent(kind, text, id) {
-  if (!TG) return; try { const perm = KPERM[kind], rows = await q(`SELECT chat, role FROM tg;`);
-    await Promise.all(rows.filter(r => ROLES[r.role] && ROLES[r.role].p.includes(perm)).map(r => tgApi("sendMessage", { chat_id: r.chat, parse_mode: "HTML", disable_web_page_preview: true,
-      text: "🔴 <b>СРОЧНО · " + esc(KINDS[kind]) + "</b>\n" + text, reply_markup: { inline_keyboard: [[{ text: "Ответить →", url: LINK_MOD(id) }]] } }))) } catch (e) { console.error("urgent", e && e.message) } }
+// Критичное приходит всем, кто может ответить, всегда; важное — тем, у кого включено «Важное»; обычное — по категориям
+const setPrio = (id, p) => q(`DECLARE $id AS Utf8; DECLARE $p AS Uint64; UPSERT INTO prio (id, p) VALUES ($id, $p);`, { $id: TypedValues.utf8(id), $p: TypedValues.uint64(p) });
+async function notifyPrio(kind, p, text, id, cat) {
+  await setPrio(id, p); if (!TG) return;
+  if (p === 3) return notify(cat, text, id);
+  try { const perm = KPERM[kind], rows = await q(`SELECT chat, role, cats FROM tg;`);
+    await Promise.all(rows.filter(r => ROLES[r.role] && ROLES[r.role].p.includes(perm) && (p === 1 || String(r.cats || "").split(",").includes("imp"))).map(r => tgApi("sendMessage", { chat_id: r.chat, parse_mode: "HTML", disable_web_page_preview: true,
+      text: (p === 1 ? "🔴 <b>КРИТИЧНО" : "🟠 <b>ВАЖНО") + " · " + esc(KINDS[kind]) + "</b>\n" + text, reply_markup: { inline_keyboard: [[{ text: "Ответить →", url: LINK_MOD(id) }]] } }))) } catch (e) { console.error("prio", e && e.message) } }
 async function notify(cat, text, id) {
   if (!TG) return; try { const rows = await q(`SELECT chat, role, cats FROM tg;`);
     await Promise.all(rows.filter(r => String(r.cats || "").split(",").includes(cat) && (CAT_ROLES[cat] || []).includes(r.role))
@@ -349,6 +359,19 @@ exports.handler = async (event, ctx) => {
         for (const c of chats.filter(c => c.name === sb.name && c.role !== "admin"))
           await tgApi("sendMessage", { chat_id: c.chat, text: "📊 " + head + parts.map(k => P[k]).join("\n") + tail, parse_mode: "HTML", disable_web_page_preview: true }) } }
     return { statusCode: 200, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ok: true }) };
+  }
+  // Пример уведомлений всех уровней — только админу (запускается вручную из GitHub)
+  if (a === "tgdemo" && method === "POST") {
+    const got = String(hd["X-Cron-Key"] || hd["x-cron-key"] || "");
+    if (!TG_SECRET || !same(got.padEnd(48).slice(0, 48), TG_SECRET)) return { statusCode: 403, body: "no" };
+    await db(ctx);
+    if (!(await cfgGet("mig_imp"))) { for (const r of await q(`SELECT chat, cats FROM tg;`)) { const c = String(r.cats || "").split(",").filter(Boolean); if (!c.includes("imp")) await q(`DECLARE $c AS Utf8; DECLARE $k AS Utf8; UPDATE tg SET cats=$k WHERE chat=$c;`, { $c: TypedValues.utf8(r.chat), $k: TypedValues.utf8(c.concat("imp").join(",")) }) } await cfgSet("mig_imp", "1") }
+    const adm = await q(`SELECT chat FROM tg WHERE role = "admin";`), L = "https://dsaskarov.github.io/mod.html";
+    const ex = [["🔴 <b>КРИТИЧНО · Жалобы</b> (пример)\nОплата не прошла — «списали 49 ₽, а полная версия не открылась, верните деньги»", "Ответить →"],
+      ["🟠 <b>ВАЖНО · Вызов команды в чате</b> (пример)\n<b>Вася</b> в «Живой чат»: позовите модератора, тут спамят", "Ответить →"],
+      ["🎮 <b>Заявки на публикацию</b> (пример, обычный приоритет)\n«Кот на орбите: Венера» — доработка с новыми уровнями", "Открыть и ответить →"]];
+    for (const r of adm) for (const [t, b] of ex) await tgApi("sendMessage", { chat_id: r.chat, text: t, parse_mode: "HTML", reply_markup: { inline_keyboard: [[{ text: b, url: L }]] } });
+    return { statusCode: 200, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ok: true, to: adm.length }) };
   }
   // Ретранслятор (GitHub Actions): отдаёт очередь исходящих и принимает входящие обновления бота
   if ((a === "tgpull" || a === "tgpush") && method === "POST") {
@@ -422,11 +445,11 @@ exports.handler = async (event, ctx) => {
       UPSERT INTO rl (ip, ts, cnt) VALUES ($ip, $ts, $c);`,
       { $r: TypedValues.utf8(room), $ts: TypedValues.uint64(now), $id: TypedValues.utf8(id), $n: TypedValues.utf8(n), $t: TypedValues.utf8(t), $ip: TypedValues.utf8(ip), $c: TypedValues.uint64(cnt + 1) });
     const RN = { live: "Живой чат", "talk-site": "Обсуждения: сайт", "talk-industry": "Обсуждения: индустрия", "talk-wishes": "Обсуждения: пожелания" };
-    if (room !== "test" && CALL.test(t)) { const cid = "c~" + room + "~" + now + "~" + id;
+    if (room !== "test" && CALL.test(t)) { const pr = prioOf("call", t); const cid = "c~" + room + "~" + now + "~" + id;
       await q(`DECLARE $id AS Utf8; DECLARE $k AS Utf8; DECLARE $s AS Utf8; DECLARE $t AS Utf8; DECLARE $st AS Utf8; DECLARE $e AS Utf8; DECLARE $ts AS Uint64;
         UPSERT INTO inbox (id, kind, subj, text, contact, st, who, note, ts) VALUES ($id, $k, $s, $t, $e, $st, $e, $e, $ts);`,
         { $id: TypedValues.utf8(cid), $k: TypedValues.utf8("call"), $s: TypedValues.utf8(n + " в «" + RN[room] + "»"), $t: TypedValues.utf8(t), $st: TypedValues.utf8("new"), $e: TypedValues.utf8(""), $ts: TypedValues.uint64(now) });
-      await notifyUrgent("call", "<b>" + esc(n) + "</b> в «" + RN[room] + "»: " + esc(t.slice(0, 300)), cid) }
+      await notifyPrio("call", pr, "<b>" + esc(n) + "</b> в «" + RN[room] + "»: " + esc(t.slice(0, 300)), cid, "chat") }
     if (room !== "test") await notify("chat", "<b>" + esc(n) + "</b> в «" + ({ live: "Живой чат", "talk-site": "Обсуждения: сайт", "talk-industry": "Обсуждения: индустрия", "talk-wishes": "Обсуждения: пожелания" })[room] + "»: " + esc(t.slice(0, 300)));
     return reply(200, { ok: true, item: { ts: now, id, n, t } }, origin);
   }
@@ -486,8 +509,9 @@ exports.handler = async (event, ctx) => {
       UPSERT INTO inbox (id, kind, subj, text, contact, st, who, note, ts) VALUES ($id, $k, $s, $t, $c, $st, $e, $e, $ts); UPSERT INTO rl (ip, ts, cnt) VALUES ($ip, $ts, $n);`,
       { $id: TypedValues.utf8(id), $k: TypedValues.utf8(kind), $s: TypedValues.utf8(subj), $t: TypedValues.utf8(text), $c: TypedValues.utf8(contact), $st: TypedValues.utf8("new"), $e: TypedValues.utf8(""),
         $ts: TypedValues.uint64(now), $ip: TypedValues.utf8("q:" + ip), $n: TypedValues.uint64(lim.cnt + 1) });
-    if (URGENT[kind]) await notifyUrgent(kind, esc(subj || "без темы") + " — " + esc(text.slice(0, 250)), id); else
-    await notify({ publish: "pub", complaint: "rep", idea: "idea", resume: "job" }[kind], "<b>" + esc(KINDS[kind]) + "</b>: " + esc(subj || "без темы") + " — " + esc(kind === "resume" ? "откройте mod.html" : text.slice(0, 200)), id);
+    const pr = prioOf(kind, subj + " " + text);
+    if (pr < 3) await notifyPrio(kind, pr, esc(subj || "без темы") + " — " + esc(text.slice(0, 250)), id); else { await setPrio(id, 3);
+    await notify({ publish: "pub", complaint: "rep", idea: "idea", resume: "job" }[kind], "<b>" + esc(KINDS[kind]) + "</b>: " + esc(subj || "без темы") + " — " + esc(kind === "resume" ? "откройте mod.html" : text.slice(0, 200)), id) }
     return reply(200, { ok: true, id }, origin);
   }
   if (a === "mod" && method === "POST") {
@@ -518,16 +542,21 @@ exports.handler = async (event, ctx) => {
       await mlog(who, "удалил рекорд", g + ": " + nk); return reply(200, { ok: true }, origin) }
     if (op === "all") { const ks = Object.keys(KINDS).filter(k => can(KPERM[k])); if (!ks.length) return NO;
       const r = await q(`SELECT id, kind, subj, text, contact, st, who, note, ts FROM inbox WHERE st = "new" OR st = "work" ORDER BY ts DESC LIMIT 200;`);
-      const items = r.filter(x => ks.includes(x.kind)).map(x => ({ id: x.id, kind: x.kind, kindT: KINDS[x.kind], urgent: !!URGENT[x.kind], subj: x.subj, text: x.text,
+      const pm = Object.fromEntries((await q(`SELECT id, p FROM prio;`)).map(y => [y.id, num(y.p)]));
+      const items = r.filter(x => ks.includes(x.kind)).map(x => ({ id: x.id, kind: x.kind, kindT: KINDS[x.kind], p: pm[x.id] || prioOf(x.kind, x.subj + " " + x.text), urgent: (pm[x.id] || 3) < 3, subj: x.subj, text: x.text,
         contact: can("contacts") ? x.contact : (x.contact ? "скрыто — видит только админ" : ""), st: x.st, stT: QST[x.st], who: x.who, note: x.note, ts: num(x.ts) }));
-      items.sort((a, b) => (b.urgent - a.urgent) || (b.ts - a.ts));
+      items.forEach(x => { x.pT = PRIO[x.p]; x.urgent = x.p < 3 }); items.sort((a, b) => (a.p - b.p) || (b.ts - a.ts));
       const tm = can("team") ? (await q(`SELECT name FROM team;`)).map(x => x.name) : [];
       return reply(200, { items, as: can("team") ? ["Дмитрий (админ)"].concat(tm) : [me.name] }, origin) }
     if (op === "one") { const id = clean(b.id, 120); const r = await q(`DECLARE $id AS Utf8; SELECT id, kind, subj, text, contact, st, who, note, ts FROM inbox WHERE id=$id;`, { $id: TypedValues.utf8(id) });
       if (!r[0] || !can(KPERM[r[0].kind])) return reply(404, { error: "Не найдено или нет доступа" }, origin); const x = r[0];
       const rp = await q(`DECLARE $id AS Utf8; SELECT ts, by, text FROM replies WHERE id=$id ORDER BY ts;`, { $id: TypedValues.utf8(id) });
-      return reply(200, { item: { id: x.id, kind: x.kind, kindT: KINDS[x.kind], urgent: !!URGENT[x.kind], subj: x.subj, text: x.text, contact: can("contacts") ? x.contact : (x.contact ? "скрыто — видит только админ" : ""), st: x.st, stT: QST[x.st], who: x.who, note: x.note, ts: num(x.ts),
+      const pp = (await q(`DECLARE $id AS Utf8; SELECT p FROM prio WHERE id=$id;`, { $id: TypedValues.utf8(id) }))[0], pv = pp ? num(pp.p) : prioOf(x.kind, x.subj + " " + x.text);
+      return reply(200, { item: { id: x.id, kind: x.kind, kindT: KINDS[x.kind], p: pv, pT: PRIO[pv], urgent: pv < 3, subj: x.subj, text: x.text, contact: can("contacts") ? x.contact : (x.contact ? "скрыто — видит только админ" : ""), st: x.st, stT: QST[x.st], who: x.who, note: x.note, ts: num(x.ts),
         replies: rp.map(y => ({ ts: num(y.ts), by: y.by, text: y.text })) } }, origin) }
+    if (op === "setprio") { const id = clean(b.id, 120), p = Math.round(Number(b.p)); if (!PRIO[p]) return reply(400, { error: "Неверный приоритет" }, origin);
+      const r = await q(`DECLARE $id AS Utf8; SELECT kind, subj FROM inbox WHERE id=$id;`, { $id: TypedValues.utf8(id) }); if (!r[0] || !can(KPERM[r[0].kind])) return NO;
+      await setPrio(id, p); await mlog(who, "сменил приоритет на «" + PRIO[p].replace(/^\S+ /, "") + "»", KINDS[r[0].kind] + ": " + (r[0].subj || id)); return reply(200, { ok: true }, origin) }
     if (op === "reply") { const id = clean(b.id, 120), text = clean(b.text, 1500), st = QST[b.st] ? String(b.st) : "work"; if (text.length < 2) return reply(400, { error: "Напишите ответ." }, origin);
       const r = await q(`DECLARE $id AS Utf8; SELECT kind, subj FROM inbox WHERE id=$id;`, { $id: TypedValues.utf8(id) }); if (!r[0] || !can(KPERM[r[0].kind])) return NO;
       let by = me.name; if (can("team") && b.as) { const as = clean(b.as, 40), tm = (await q(`SELECT name FROM team;`)).map(x => x.name); if (as === "Дмитрий (админ)" || tm.includes(as)) by = as }
