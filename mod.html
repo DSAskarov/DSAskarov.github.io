@@ -14,6 +14,9 @@ button.main{background:linear-gradient(135deg,#FF4A55,#A3101C);border:0;color:#f
 button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.list{display:grid;gap:6px;margin-top:10px;max-height:460px;overflow:auto}
 .it{display:flex;gap:8px;align-items:flex-start;border-top:1px solid var(--line);padding-top:6px}.it .tx{flex:1;min-width:0;overflow-wrap:anywhere}.it small{color:var(--muted)}
+.urg{border:1px solid rgba(232,51,63,.7)!important;background:rgba(232,51,63,.08);border-radius:10px;padding:8px!important}.hl{outline:2px solid var(--gold);outline-offset:2px;border-radius:10px}
+textarea{background:#0F0E13;color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:9px 10px;font:inherit;width:100%;min-height:70px}
+.badge{display:inline-block;border-radius:999px;padding:1px 8px;font-size:.75rem;font-weight:700;margin-right:6px}
 .msg{min-height:1.3em;color:var(--gold);margin:6px 0 0}.code{font:600 1rem ui-monospace,monospace;background:#0F0E13;border:1px dashed var(--gold);padding:8px;border-radius:8px;overflow-wrap:anywhere}
 [hidden]{display:none!important}
 </style></head><body><main>
@@ -23,6 +26,8 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 <p class="muted">Код выдаёт админ. Не пересылайте его никому: по нему вас видно в журнале действий. Код хранится только в этом браузере.</p><p class="msg" id="lmsg"></p></section>
 <div id="app" hidden>
 <section class="card"><div class="row" style="justify-content:space-between"><p style="margin:0">Вы вошли как <b id="who"></b></p><button id="out">Выйти</button></div><p class="muted" id="can"></p><div class="row" style="margin-top:8px"><button id="tgb">Подключить Telegram</button><span class="muted" id="tgm"></span></div></section>
+<section class="card" id="secAll" hidden><h2>Входящие — нужен ответ</h2><div class="row"><button id="rall">Обновить</button><span class="muted" id="allSum"></span></div>
+<p class="muted">Здесь всё, что ждёт команду: срочное (жалобы и вызовы в чате) — сверху в красной рамке. Ответ на вызов в чате появится прямо в чате от имени команды; ответ на заявку увидит автор по номеру обращения.</p><div class="list" id="all" style="max-height:none"></div></section>
 <section class="card" id="secT" hidden><h2>Посещаемость за 14 дней</h2><div class="row"><button id="tU" class="main">Уникальные</button><button id="tV">Все просмотры</button><span class="muted" id="tSum"></span></div>
 <div id="tBars" style="display:flex;gap:4px;align-items:flex-end;height:140px;margin-top:12px"></div><div id="tDays" style="display:flex;gap:4px;margin-top:4px"></div>
 <p class="muted">Уникальные — разные устройства (браузеры) за день: номер устройства хранится в браузере, поэтому смена IP или VPN не создаёт нового посетителя. Боты и команда сайта не считаются.</p></section>
@@ -55,6 +60,7 @@ async function login(k){K=k;try{const j=await call({op:"me"});ROLE=j.role;P=j.pe
     [...$("days").options].forEach(o=>{o.hidden=o.disabled=+o.value>j.ban});$("days").hidden=!can("ban");
     const ks=Object.keys(KIND).filter(k=>can("q:"+k));$("secQ").hidden=!ks.length;$("qkind").innerHTML="";ks.forEach(k=>{const o=el("option",KIND[k]);o.value=k;$("qkind").append(o)});if(ks.length)loadQ();
     $("mrole").innerHTML="";$("roleHelp").innerHTML="";Object.entries(j.roles||{}).forEach(([k,t])=>{const o=el("option",t);o.value=k;$("mrole").append(o);const li=el("li");li.append(el("b",t)," — "+(RHELP[k]||""));$("roleHelp").append(li)});{const li=el("li");li.append(el("b","Админ")," — "+RHELP.admin);$("roleHelp").append(li)}
+    $("secAll").hidden=!["del","q:publish","q:complaint","q:idea","q:resume"].some(can);if(!$("secAll").hidden)loadAll();
     $("secT").hidden=!can("mods");if(can("mods"))loadT();
     st.set(K);if(can("del"))loadMsgs();if(can("score"))loadScores();loadLog();if(can("mods"))loadMods()}
   catch(e){$("lmsg").textContent=e.message;st.set("")}}
@@ -72,6 +78,24 @@ async function loadQ(){const box=$("queue");box.textContent="Загрузка…
     const row=el("div",null,"row");row.style.marginTop="6px";[["work","В работу",""],["ok","Принять","main"],["no","Отклонить","red"]].forEach(([st,t,c])=>row.append(btn(t,c,async()=>{await call({op:"qset",id:x.id,st,note:note.value.trim()});loadQ();loadLog()})));tx.append(row);
     it.append(tx);box.append(it)});if(!box.children.length)box.textContent="Заявок нет."}
 $("rq").onclick=loadQ;$("qkind").onchange=loadQ;$("qst").onchange=loadQ;
+let AS=[];
+function itemView(x,open){const it=el("div",null,"it"+(x.urgent?" urg":""));it.id="i_"+x.id;const tx=el("div",null,"tx");
+  const bd=el("span",x.kindT,"badge");bd.style.background=x.urgent?"#E8333F":"#24222A";bd.style.color="#fff";tx.append(bd,el("b",(x.subj||"Без темы")+" "),el("small",T(x.ts)+" · "+x.stT+(x.who?" · "+x.who:"")),el("div",x.text));
+  if(x.contact){tx.append(el("small","Контакт: "+x.contact));if(/@/.test(x.contact)){const m=el("a"," · написать на почту");m.href="mailto:"+x.contact.split(/[ ,]/).find(c=>c.includes("@"))+"?subject="+encodeURIComponent("ИИгры онлайн: ответ на обращение");m.style.color="#E7BD52";tx.append(m)}}
+  (x.replies||[]).forEach(r=>tx.append(el("div","↳ "+r.by+", "+T(r.ts)+": "+r.text,"muted")));
+  const ta=document.createElement("textarea");ta.placeholder=x.kind==="call"?"Ответ появится в чате от имени команды":"Ответ автору обращения";ta.maxLength=1500;ta.style.marginTop="6px";tx.append(ta);
+  const row=el("div",null,"row");row.style.marginTop="6px";let asSel=null;
+  if(AS.length>1){asSel=document.createElement("select");AS.forEach(a=>{const o=el("option","От имени: "+a);o.value=a;asSel.append(o)});row.append(asSel)}
+  const send=st=>async()=>{if(ta.value.trim().length<2){alertBox("Напишите ответ.");return}await call({op:"reply",id:x.id,text:ta.value.trim(),st,as:asSel?asSel.value:""});alertBox("Ответ отправлен.");loadAll();loadLog()};
+  row.append(btn("Ответить","main",send("work")),btn("Ответить и закрыть","",send("ok")),btn("Отклонить без ответа","red",async()=>{await call({op:"qset",id:x.id,st:"no",note:""});loadAll();loadLog()}));tx.append(row);it.append(tx);
+  if(open){it.classList.add("hl");setTimeout(()=>{it.scrollIntoView({behavior:"smooth",block:"center"});ta.focus()},300)}return it}
+async function loadAll(){const box=$("all");box.textContent="Загрузка…";let j;try{j=await call({op:"all"})}catch(e){box.textContent=e.message;return}AS=j.as||[];box.innerHTML="";
+  const want=decodeURIComponent((location.hash.match(/#i=([^&]+)/)||[])[1]||"");let shown=false;
+  (j.items||[]).forEach(x=>{const o=x.id===want;if(o)shown=true;box.append(itemView(x,o))});
+  if(want&&!shown){try{const k=await call({op:"one",id:want});box.prepend(itemView(k.item,true))}catch(e){alertBox(e.message)}}
+  const u=(j.items||[]).filter(x=>x.urgent).length;$("allSum").textContent=(j.items||[]).length?"Ждут ответа: "+(j.items||[]).length+(u?", срочных: "+u:""):"Всё разобрано 👍";
+  if(!box.children.length)box.textContent="Нет обращений, которые ждут ответа."}
+$("rall").onclick=loadAll;addEventListener("hashchange",loadAll);
 let TR=[],TM="uniq";
 async function loadT(){try{TR=(await call({op:"traffic",days:14})).items||[]}catch(_){TR=[]}drawT()}
 function drawT(){const b=$("tBars"),d=$("tDays");b.innerHTML="";d.innerHTML="";const mx=Math.max(1,...TR.map(x=>x[TM]));

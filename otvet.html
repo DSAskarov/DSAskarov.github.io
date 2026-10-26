@@ -1,0 +1,26 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://functions.yandexcloud.net; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'">
+<meta name="robots" content="noindex"><meta name="referrer" content="no-referrer"><title>Ответы на обращения — ИИгры онлайн</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@800&family=Golos+Text:wght@400;600&display=swap">
+<style>:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#0B0A0E;color:#F4F4F6;font:400 15px/1.5 "Golos Text",system-ui,sans-serif;padding:16px}
+main{max-width:720px;margin:0 auto;display:grid;gap:14px}h1{font:800 1.6rem Rubik,sans-serif;margin:0}h1 b{color:#E7BD52}a{color:#E7BD52}
+.card{background:#16141B;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:14px}.muted{color:#B9B6C2;font-size:.85rem}
+input{background:#0F0E13;color:#F4F4F6;border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:9px 10px;font:inherit;flex:1;min-width:0}
+button{border:0;border-radius:10px;padding:9px 14px;font:600 .95rem inherit;background:linear-gradient(135deg,#FF4A55,#A3101C);color:#fff;cursor:pointer}
+.row{display:flex;gap:8px}.rp{border-left:3px solid #E7BD52;padding:4px 10px;margin-top:8px}.st{display:inline-block;border-radius:999px;padding:1px 9px;background:#24222A;font-size:.8rem;font-weight:600}
+</style></head><body><main><h1>Ответы на <b>обращения</b></h1>
+<p class="muted">Здесь видны ответы команды «ИИгр онлайн» на ваши обращения, жалобы и заявки. Обращения, отправленные из этого браузера, подставляются сами.</p>
+<div class="card"><div class="row"><input id="num" placeholder="Номер обращения" maxlength="20"><button id="go">Проверить</button></div></div>
+<div id="list"></div><p class="muted"><a href="./">← На главную ИИгр</a></p></main>
+<script>
+const API="https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av",$=id=>document.getElementById(id),el=(t,x,c)=>{const e=document.createElement(t);if(x!=null)e.textContent=x;if(c)e.className=c;return e};
+const T=ts=>new Date(ts).toLocaleString("ru-RU",{day:"numeric",month:"long",hour:"2-digit",minute:"2-digit"});
+let mine=[];try{mine=JSON.parse(localStorage.getItem("iigry-tickets")||"[]").filter(x=>/^[0-9a-z]{8,20}$/.test(x)).slice(-20)}catch(_){}
+async function show(id){const c=el("div",null,"card");c.append(el("b","Обращение № "+id));$("list").prepend(c);
+  try{const r=await fetch(API+"?a=ticket&id="+encodeURIComponent(id)),j=await r.json();if(!r.ok){c.append(el("p",j.error||"Не найдено","muted"));return}
+    c.append(el("div",j.kind+" · ","muted"));c.lastChild.append(el("span",j.st,"st"));
+    if(!j.replies.length)c.append(el("p","Ответа пока нет — команда обычно отвечает в течение дня.","muted"));
+    j.replies.forEach(x=>{const d=el("div",null,"rp");d.append(el("div",x.by+", "+T(x.ts),"muted"),el("div",x.text));c.append(d)})}catch(_){c.append(el("p","Нет связи с сервером, попробуйте позже.","muted"))}}
+$("go").onclick=()=>{const v=$("num").value.trim().toLowerCase();if(/^[0-9a-z]{8,20}$/.test(v))show(v)};
+const h=(location.hash.match(/^#([0-9a-z]{8,20})$/)||[])[1];new Set([...mine,...(h?[h]:[])]).forEach(show);
+</script></main></body></html>

@@ -17,7 +17,7 @@ const GAMES = {
   cat:   { min: 1,  max: 400,  asc: false, minMs: v => Math.min(110000, v * 350) }, // «Кот на орбите»: рыба за 3 орбиты
   words: { min: 1,  max: 3000, asc: false, minMs: v => Math.min(900000, v * 100) }  // «Ферма слов»: очки за сезон
 };
-const RESV = /dsaskarov|адм[иi]н|admin|модер|moder|иигр|iigr|поддержк|support|claude|anthropic|официал|official/i;
+const RESV = /команд|✓|dsaskarov|адм[иi]н|admin|модер|moder|иигр|iigr|поддержк|support|claude|anthropic|официал|official/i;
 
 let driver = null, token = "", salt = "", ready = null;
 const auth = { getAuthMetadata: async () => new TokenAuthService(token).getAuthMetadata() };
@@ -84,6 +84,9 @@ async function db(ctx) {
           .withColumn(new Column("views", Types.optional(Types.UINT64))).withColumn(new Column("isnew", Types.optional(Types.UINT64))).withPrimaryKeys("day", "dev"));
         await ensure("devs", new TableDescription()
           .withColumn(new Column("dev", Types.optional(Types.UTF8))).withColumn(new Column("first", Types.optional(Types.UTF8))).withPrimaryKeys("dev"));
+        await ensure("replies", new TableDescription()
+          .withColumn(new Column("id", Types.optional(Types.UTF8))).withColumn(new Column("ts", Types.optional(Types.UINT64)))
+          .withColumn(new Column("by", Types.optional(Types.UTF8))).withColumn(new Column("text", Types.optional(Types.UTF8))).withPrimaryKeys("id", "ts"));
         await ensure("cfg", new TableDescription()
           .withColumn(new Column("k", Types.optional(Types.UTF8))).withColumn(new Column("v", Types.optional(Types.UTF8)))
           .withPrimaryKeys("k"));
@@ -214,7 +217,11 @@ const ROLES = {
   senior:    { t: "Главный модератор",        p: ["del", "ban", "score", "unban", "q:publish", "q:complaint", "q:idea", "mods"], ban: 30 },
   admin:     { t: "Админ",                    p: ["del", "ban", "score", "unban", "q:publish", "q:complaint", "q:idea", "q:resume", "contacts", "mods", "team"], ban: 30 }
 };
-const KINDS = { publish: "Заявки на публикацию", complaint: "Жалобы", idea: "Предложения и обращения", resume: "Резюме в команду" };
+const KINDS = { publish: "Заявки на публикацию", complaint: "Жалобы", idea: "Предложения и обращения", resume: "Резюме в команду", call: "Вызов команды в чате" };
+const KPERM = { publish: "q:publish", complaint: "q:complaint", idea: "q:idea", resume: "q:resume", call: "del" };
+const URGENT = { complaint: 1, call: 1 };
+const CALL = /(@?модер|@?админ|позовите|помогите|спам|оскорбл|угрож|мошенн|обман|не пришл|не работает оплат|верните деньги)/i;
+const LINK_MOD = id => "https://dsaskarov.github.io/mod.html#i=" + encodeURIComponent(id);
 const QST = { new: "Новая", work: "В работе", ok: "Принято", no: "Отклонено" };
 const kh = k => crypto.createHash("sha256").update(salt + "|mod|" + k).digest("hex");
 const same = (a, b) => a.length === b.length && crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
@@ -267,10 +274,16 @@ async function tgApi(m, body) { if (!TG) return null;
   return { ok: true } }
 async function tgDirect(m, body) { if (!TG) return null; try { const r = await fetch("https://api.telegram.org/bot" + TG + "/" + m, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal: AbortSignal.timeout(8000) }); return await r.json() } catch (e) { console.error("tg", e && e.message); return null } }
 const esc = t => String(t).replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]);
-async function notify(cat, text) {
+// Срочное (жалобы, вызов команды в чате): приходит всем, кто может ответить, независимо от настроек категорий
+async function notifyUrgent(kind, text, id) {
+  if (!TG) return; try { const perm = KPERM[kind], rows = await q(`SELECT chat, role FROM tg;`);
+    await Promise.all(rows.filter(r => ROLES[r.role] && ROLES[r.role].p.includes(perm)).map(r => tgApi("sendMessage", { chat_id: r.chat, parse_mode: "HTML", disable_web_page_preview: true,
+      text: "🔴 <b>СРОЧНО · " + esc(KINDS[kind]) + "</b>\n" + text, reply_markup: { inline_keyboard: [[{ text: "Ответить →", url: LINK_MOD(id) }]] } }))) } catch (e) { console.error("urgent", e && e.message) } }
+async function notify(cat, text, id) {
   if (!TG) return; try { const rows = await q(`SELECT chat, role, cats FROM tg;`);
     await Promise.all(rows.filter(r => String(r.cats || "").split(",").includes(cat) && (CAT_ROLES[cat] || []).includes(r.role))
-      .map(r => tgApi("sendMessage", { chat_id: r.chat, text: CATS[cat].split(" ")[0] + " " + text, parse_mode: "HTML", disable_web_page_preview: true }))) } catch (e) { console.error("notify", e && e.message) } }
+      .map(r => tgApi("sendMessage", Object.assign({ chat_id: r.chat, text: CATS[cat].split(" ")[0] + " " + text, parse_mode: "HTML", disable_web_page_preview: true },
+        id ? { reply_markup: { inline_keyboard: [[{ text: "Открыть и ответить →", url: LINK_MOD(id) }]] } } : {})))) } catch (e) { console.error("notify", e && e.message) } }
 function catsKb(role, cats) { const on = String(cats || "").split(",");
   return { inline_keyboard: Object.keys(CATS).filter(c => CAT_ROLES[c].includes(role)).map(c => [{ text: (on.includes(c) ? "✅ " : "⬜️ ") + CATS[c].replace(/^\S+ /, ""), callback_data: "t:" + c }]) } }
 const mlog = (who, act, what) => notify(/^бан/.test(act) ? "ban" : "mod", "<b>" + esc(who) + "</b>: " + esc(act) + " — " + esc(String(what).slice(0, 200))).then(() => q(`DECLARE $ts AS Uint64; DECLARE $id AS Utf8; DECLARE $w AS Utf8; DECLARE $a AS Utf8; DECLARE $x AS Utf8; UPSERT INTO modlog (ts, id, who, act, what) VALUES ($ts, $id, $w, $a, $x);`,
@@ -408,6 +421,12 @@ exports.handler = async (event, ctx) => {
       UPSERT INTO msgs (room, ts, id, n, t, ip) VALUES ($r, $ts, $id, $n, $t, $ip);
       UPSERT INTO rl (ip, ts, cnt) VALUES ($ip, $ts, $c);`,
       { $r: TypedValues.utf8(room), $ts: TypedValues.uint64(now), $id: TypedValues.utf8(id), $n: TypedValues.utf8(n), $t: TypedValues.utf8(t), $ip: TypedValues.utf8(ip), $c: TypedValues.uint64(cnt + 1) });
+    const RN = { live: "Живой чат", "talk-site": "Обсуждения: сайт", "talk-industry": "Обсуждения: индустрия", "talk-wishes": "Обсуждения: пожелания" };
+    if (room !== "test" && CALL.test(t)) { const cid = "c~" + room + "~" + now + "~" + id;
+      await q(`DECLARE $id AS Utf8; DECLARE $k AS Utf8; DECLARE $s AS Utf8; DECLARE $t AS Utf8; DECLARE $st AS Utf8; DECLARE $e AS Utf8; DECLARE $ts AS Uint64;
+        UPSERT INTO inbox (id, kind, subj, text, contact, st, who, note, ts) VALUES ($id, $k, $s, $t, $e, $st, $e, $e, $ts);`,
+        { $id: TypedValues.utf8(cid), $k: TypedValues.utf8("call"), $s: TypedValues.utf8(n + " в «" + RN[room] + "»"), $t: TypedValues.utf8(t), $st: TypedValues.utf8("new"), $e: TypedValues.utf8(""), $ts: TypedValues.uint64(now) });
+      await notifyUrgent("call", "<b>" + esc(n) + "</b> в «" + RN[room] + "»: " + esc(t.slice(0, 300)), cid) }
     if (room !== "test") await notify("chat", "<b>" + esc(n) + "</b> в «" + ({ live: "Живой чат", "talk-site": "Обсуждения: сайт", "talk-industry": "Обсуждения: индустрия", "talk-wishes": "Обсуждения: пожелания" })[room] + "»: " + esc(t.slice(0, 300)));
     return reply(200, { ok: true, item: { ts: now, id, n, t } }, origin);
   }
@@ -448,6 +467,12 @@ exports.handler = async (event, ctx) => {
     else await q(`DECLARE $d AS Utf8; DECLARE $v AS Utf8; DECLARE $n AS Uint64; UPSERT INTO hits (day, dev, views, isnew) VALUES ($d, $v, 1u, $n);`, { $d: TypedValues.utf8(day), $v: TypedValues.utf8(dev), $n: TypedValues.uint64(isnew) });
     return reply(200, { ok: true }, origin);
   }
+  if (a === "ticket" && method === "GET") {
+    const id = String(qs.id || ""); if (!/^[0-9a-z]{8,20}$/.test(id)) return reply(400, { error: "Неверный номер обращения" }, origin);
+    const r = await q(`DECLARE $id AS Utf8; SELECT kind, st FROM inbox WHERE id=$id;`, { $id: TypedValues.utf8(id) }); if (!r[0] || r[0].kind === "call") return reply(404, { error: "Обращение не найдено" }, origin);
+    const rp = await q(`DECLARE $id AS Utf8; SELECT ts, by, text FROM replies WHERE id=$id ORDER BY ts;`, { $id: TypedValues.utf8(id) });
+    return reply(200, { kind: KINDS[r[0].kind], st: QST[r[0].st] || r[0].st, replies: rp.map(x => ({ ts: num(x.ts), by: x.by, text: x.text })) }, origin);
+  }
   if (a === "submit" && method === "POST") {
     const b = parse(event); if (!b) return reply(400, { error: "Неверный запрос" }, origin);
     const kind = String(b.kind || ""); if (!KINDS[kind]) return reply(400, { error: "Неизвестный тип обращения" }, origin);
@@ -461,7 +486,8 @@ exports.handler = async (event, ctx) => {
       UPSERT INTO inbox (id, kind, subj, text, contact, st, who, note, ts) VALUES ($id, $k, $s, $t, $c, $st, $e, $e, $ts); UPSERT INTO rl (ip, ts, cnt) VALUES ($ip, $ts, $n);`,
       { $id: TypedValues.utf8(id), $k: TypedValues.utf8(kind), $s: TypedValues.utf8(subj), $t: TypedValues.utf8(text), $c: TypedValues.utf8(contact), $st: TypedValues.utf8("new"), $e: TypedValues.utf8(""),
         $ts: TypedValues.uint64(now), $ip: TypedValues.utf8("q:" + ip), $n: TypedValues.uint64(lim.cnt + 1) });
-    await notify({ publish: "pub", complaint: "rep", idea: "idea", resume: "job" }[kind], "<b>" + esc(KINDS[kind]) + "</b>: " + esc(subj || "без темы") + " — " + esc(kind === "resume" ? "откройте mod.html" : text.slice(0, 200)));
+    if (URGENT[kind]) await notifyUrgent(kind, esc(subj || "без темы") + " — " + esc(text.slice(0, 250)), id); else
+    await notify({ publish: "pub", complaint: "rep", idea: "idea", resume: "job" }[kind], "<b>" + esc(KINDS[kind]) + "</b>: " + esc(subj || "без темы") + " — " + esc(kind === "resume" ? "откройте mod.html" : text.slice(0, 200)), id);
     return reply(200, { ok: true, id }, origin);
   }
   if (a === "mod" && method === "POST") {
@@ -490,13 +516,37 @@ exports.handler = async (event, ctx) => {
     if (op === "score") { if (!can("score")) return NO; const g = String(b.game || ""), nk = clean(b.n, 40).toLowerCase(); if (!GAMES[g]) return reply(400, { error: "Нет такой игры" }, origin);
       await q(`DECLARE $g AS Utf8; DECLARE $k AS Utf8; DELETE FROM scores WHERE game=$g AND nk=$k;`, { $g: TypedValues.utf8(g), $k: TypedValues.utf8(nk) });
       await mlog(who, "удалил рекорд", g + ": " + nk); return reply(200, { ok: true }, origin) }
-    if (op === "queue") { const kind = String(b.kind || ""); if (!KINDS[kind] || !can("q:" + kind)) return NO;
+    if (op === "all") { const ks = Object.keys(KINDS).filter(k => can(KPERM[k])); if (!ks.length) return NO;
+      const r = await q(`SELECT id, kind, subj, text, contact, st, who, note, ts FROM inbox WHERE st = "new" OR st = "work" ORDER BY ts DESC LIMIT 200;`);
+      const items = r.filter(x => ks.includes(x.kind)).map(x => ({ id: x.id, kind: x.kind, kindT: KINDS[x.kind], urgent: !!URGENT[x.kind], subj: x.subj, text: x.text,
+        contact: can("contacts") ? x.contact : (x.contact ? "скрыто — видит только админ" : ""), st: x.st, stT: QST[x.st], who: x.who, note: x.note, ts: num(x.ts) }));
+      items.sort((a, b) => (b.urgent - a.urgent) || (b.ts - a.ts));
+      const tm = can("team") ? (await q(`SELECT name FROM team;`)).map(x => x.name) : [];
+      return reply(200, { items, as: can("team") ? ["Дмитрий (админ)"].concat(tm) : [me.name] }, origin) }
+    if (op === "one") { const id = clean(b.id, 120); const r = await q(`DECLARE $id AS Utf8; SELECT id, kind, subj, text, contact, st, who, note, ts FROM inbox WHERE id=$id;`, { $id: TypedValues.utf8(id) });
+      if (!r[0] || !can(KPERM[r[0].kind])) return reply(404, { error: "Не найдено или нет доступа" }, origin); const x = r[0];
+      const rp = await q(`DECLARE $id AS Utf8; SELECT ts, by, text FROM replies WHERE id=$id ORDER BY ts;`, { $id: TypedValues.utf8(id) });
+      return reply(200, { item: { id: x.id, kind: x.kind, kindT: KINDS[x.kind], urgent: !!URGENT[x.kind], subj: x.subj, text: x.text, contact: can("contacts") ? x.contact : (x.contact ? "скрыто — видит только админ" : ""), st: x.st, stT: QST[x.st], who: x.who, note: x.note, ts: num(x.ts),
+        replies: rp.map(y => ({ ts: num(y.ts), by: y.by, text: y.text })) } }, origin) }
+    if (op === "reply") { const id = clean(b.id, 120), text = clean(b.text, 1500), st = QST[b.st] ? String(b.st) : "work"; if (text.length < 2) return reply(400, { error: "Напишите ответ." }, origin);
+      const r = await q(`DECLARE $id AS Utf8; SELECT kind, subj FROM inbox WHERE id=$id;`, { $id: TypedValues.utf8(id) }); if (!r[0] || !can(KPERM[r[0].kind])) return NO;
+      let by = me.name; if (can("team") && b.as) { const as = clean(b.as, 40), tm = (await q(`SELECT name FROM team;`)).map(x => x.name); if (as === "Дмитрий (админ)" || tm.includes(as)) by = as }
+      const now = Date.now();
+      if (r[0].kind === "call") { const [, room] = id.split("~"); if (!ROOMS[room]) return reply(400, { error: "Комната не найдена" }, origin);
+        const mid = crypto.randomBytes(6).toString("hex"), nn = by.replace(/ \(админ\)$/, "").slice(0, 18) + " ✓ команда";
+        await q(`DECLARE $r AS Utf8; DECLARE $ts AS Uint64; DECLARE $id AS Utf8; DECLARE $n AS Utf8; DECLARE $t AS Utf8; DECLARE $ip AS Utf8; UPSERT INTO msgs (room, ts, id, n, t, ip) VALUES ($r, $ts, $id, $n, $t, $ip);`,
+          { $r: TypedValues.utf8(room), $ts: TypedValues.uint64(now), $id: TypedValues.utf8(mid), $n: TypedValues.utf8(nn), $t: TypedValues.utf8(text), $ip: TypedValues.utf8("team") }) }
+      await q(`DECLARE $id AS Utf8; DECLARE $ts AS Uint64; DECLARE $by AS Utf8; DECLARE $t AS Utf8; DECLARE $st AS Utf8; DECLARE $w AS Utf8;
+        UPSERT INTO replies (id, ts, by, text) VALUES ($id, $ts, $by, $t); UPDATE inbox SET st=$st, who=$w WHERE id=$id;`,
+        { $id: TypedValues.utf8(id), $ts: TypedValues.uint64(now), $by: TypedValues.utf8(by), $t: TypedValues.utf8(text), $st: TypedValues.utf8(st), $w: TypedValues.utf8(me.name) });
+      await mlog(who, "ответил" + (by !== me.name ? " от имени «" + by + "»" : ""), KINDS[r[0].kind] + ": " + (r[0].subj || id) + " — " + text.slice(0, 120)); return reply(200, { ok: true }, origin) }
+    if (op === "queue") { const kind = String(b.kind || ""); if (!KINDS[kind] || !can(KPERM[kind])) return NO;
       const st = QST[b.st] ? String(b.st) : "";
       const r = await q(`DECLARE $k AS Utf8; SELECT id, subj, text, contact, st, who, note, ts FROM inbox WHERE kind=$k ORDER BY ts DESC LIMIT 100;`, { $k: TypedValues.utf8(kind) });
       return reply(200, { items: r.filter(x => !st || x.st === st).map(x => ({ id: x.id, subj: x.subj, text: x.text, contact: can("contacts") ? x.contact : (x.contact ? "скрыто — видит только админ" : ""), st: x.st, stT: QST[x.st] || x.st, who: x.who, note: x.note, ts: num(x.ts) })) }, origin) }
-    if (op === "qset") { const id = clean(b.id, 40), st = String(b.st || ""), note = clean(b.note, 500); if (!QST[st]) return reply(400, { error: "Неверный статус" }, origin);
+    if (op === "qset") { const id = clean(b.id, 120), st = String(b.st || ""), note = clean(b.note, 500); if (!QST[st]) return reply(400, { error: "Неверный статус" }, origin);
       const r = await q(`DECLARE $id AS Utf8; SELECT kind, subj FROM inbox WHERE id=$id;`, { $id: TypedValues.utf8(id) }); if (!r[0]) return reply(404, { error: "Заявка не найдена" }, origin);
-      if (!can("q:" + r[0].kind)) return NO;
+      if (!can(KPERM[r[0].kind])) return NO;
       await q(`DECLARE $id AS Utf8; DECLARE $st AS Utf8; DECLARE $w AS Utf8; DECLARE $n AS Utf8; UPDATE inbox SET st=$st, who=$w, note=$n WHERE id=$id;`, { $id: TypedValues.utf8(id), $st: TypedValues.utf8(st), $w: TypedValues.utf8(me.name), $n: TypedValues.utf8(note) });
       await mlog(who, "заявка «" + QST[st] + "»", KINDS[r[0].kind] + ": " + (r[0].subj || id) + (note ? " — " + note : "")); return reply(200, { ok: true }, origin) }
     if (op === "traffic") { if (!can("mods")) return NO; return reply(200, { items: await traffic(Math.min(31, Math.max(1, Math.round(Number(b.days)) || 14))) }, origin) }

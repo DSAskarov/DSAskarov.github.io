@@ -859,7 +859,7 @@ html.tilt .card:hover{transform:perspective(900px) rotateX(var(--rx,0deg)) rotat
 
 <footer class="nocopy">
   <span>Ни одна нейросеть не пострадала при создании этого сайта. Пара человек — немного.</span>
-  <span><a href="#trust">Почему нам можно доверять</a> · <a href="#roadmap">Дорожная карта</a> · <a href="#claims">Жалобы и претензии</a> · <a href="#terms">Пользовательское соглашение</a> · <a href="#privacy">Согласие на обработку данных</a></span>
+  <span><a href="#trust">Почему нам можно доверять</a> · <a href="#roadmap">Дорожная карта</a> · <a href="#claims">Жалобы и претензии</a> · <a href="otvet.html">Ответы на обращения</a> · <a href="#terms">Пользовательское соглашение</a> · <a href="#privacy">Согласие на обработку данных</a></span>
   <span>© DSAskarov, ИИгры онлайн, 2026. Копирование дизайна, текстов и кода без разрешения автора запрещено.</span>
 </footer>
 </main>
@@ -1396,7 +1396,8 @@ const SEALFAIL="Приём обращений сейчас недоступен.
 const MAILTO0=(subj,lines)=>{location.href="mailto:askarov.dmitry@yandex.ru?subject="+encodeURIComponent("ИИгры: "+subj)+"&body="+encodeURIComponent(lines.filter(Boolean).join("\n").slice(0,1800));toast("Открываем почту — проверьте письмо и отправьте его.")};
 const MAILTO=async(subj,lines,kind)=>{lines=lines.filter(Boolean);const c=lines.filter(l=>/^(Почта|Контакт)/.test(l)).map(l=>l.replace(/^[^:]+:\s*/,"")).join(", "),t=lines.filter(l=>!/^(Почта|Контакт)/.test(l)).join("\n");
   kind=kind||(/резюме/.test(subj)?"resume":/проект/.test(subj)?"publish":/жалоб|претенз|наруш/i.test(subj)?"complaint":"idea");
-  try{await api("submit",null,{kind,subj:String(subj).slice(0,120),text:t.slice(0,3000),contact:c.slice(0,200)});toast("Отправлено! Команда рассмотрит обращение и ответит.")}catch(err){if(/робот|captcha/i.test(err.message||"")){toast(err.message);return}MAILTO0(subj,lines)}};
+  try{const j=await api("submit",null,{kind,subj:String(subj).slice(0,120),text:t.slice(0,3000),contact:c.slice(0,200)});try{const L=JSON.parse(localStorage.getItem("iigry-tickets")||"[]");L.push(j.id);localStorage.setItem("iigry-tickets",JSON.stringify(L.slice(-20)))}catch(_){}
+    toast("Отправлено! Номер обращения: "+j.id+". Ответ команды появится на странице «Ответы на обращения» — ссылка внизу сайта.",9000)}catch(err){if(/робот|captcha/i.test(err.message||"")){toast(err.message);return}MAILTO0(subj,lines)}};
 /* Жалобы и претензии */
 $("claimForm").onsubmit=async e=>{e.preventDefault();const x=$("cX").value.trim(),m=$("cMail").value.trim();
   if(!x||!m.includes("@")){toast("Укажите почту и суть обращения.");return}
