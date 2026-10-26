@@ -22,39 +22,44 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 <div class="row"><input id="key" type="password" autocomplete="off" placeholder="Код модератора или ключ админа" style="flex:1"><button class="main" id="go">Войти</button></div>
 <p class="muted">Код выдаёт админ. Не пересылайте его никому: по нему вас видно в журнале действий. Код хранится только в этом браузере.</p><p class="msg" id="lmsg"></p></section>
 <div id="app" hidden>
-<section class="card"><div class="row" style="justify-content:space-between"><p style="margin:0">Вы вошли как <b id="who"></b></p><button id="out">Выйти</button></div></section>
-<section class="card"><h2>Сообщения</h2><div class="row"><select id="room"><option value="live">Живой чат</option><option value="talk-site">Обсуждения: сайт</option><option value="talk-industry">Обсуждения: индустрия</option><option value="talk-wishes">Обсуждения: пожелания</option></select>
+<section class="card"><div class="row" style="justify-content:space-between"><p style="margin:0">Вы вошли как <b id="who"></b></p><button id="out">Выйти</button></div><p class="muted" id="can"></p></section>
+<section class="card" id="secMsgs"><h2>Сообщения</h2><div class="row"><select id="room"><option value="live">Живой чат</option><option value="talk-site">Обсуждения: сайт</option><option value="talk-industry">Обсуждения: индустрия</option><option value="talk-wishes">Обсуждения: пожелания</option></select>
 <select id="days"><option value="1">Бан на 1 день</option><option value="7">Бан на 7 дней</option><option value="30">Бан на 30 дней</option></select><button id="rl">Обновить</button></div>
 <p class="muted">«Удалить» убирает сообщение. «Бан» удаляет его и запрещает автору писать на выбранный срок.</p><div class="list" id="msgs"></div></section>
-<section class="card"><h2>Рекорды</h2><div class="row"><select id="game"><option value="bugs">Лови баги</option><option value="post">Звёздный почтальон</option><option value="react">Быстрее нейросети</option><option value="cat">Кот на орбите</option><option value="words">Ферма слов</option></select><button id="rg">Обновить</button></div>
+<section class="card" id="secScores"><h2>Рекорды</h2><div class="row"><select id="game"><option value="bugs">Лови баги</option><option value="post">Звёздный почтальон</option><option value="react">Быстрее нейросети</option><option value="cat">Кот на орбите</option><option value="words">Ферма слов</option></select><button id="rg">Обновить</button></div>
 <p class="muted">Удаляйте только явные подделки и оскорбительные ники.</p><div class="list" id="scores"></div></section>
-<section class="card" id="adm" hidden><h2>Команда модераторов</h2><div class="row"><input id="mname" maxlength="30" placeholder="Имя модератора" style="flex:1"><button class="main" id="add">Выдать код</button></div>
+<section class="card" id="adm" hidden><h2>Команда</h2><div id="addBox"><div class="row"><input id="mname" maxlength="30" placeholder="Имя, например «Аня»" style="flex:1"><select id="mrole"><option value="chat">Модератор чата</option><option value="games">Модератор рейтингов</option><option value="senior">Старший модератор</option></select><button class="main" id="add">Выдать код</button></div>
+<ul class="muted" style="margin:8px 0 0;padding-left:18px"><li><b>Модератор чата</b> — следит за живым чатом и обсуждениями: удаляет сообщения, банит нарушителей до 7 дней.</li><li><b>Модератор рейтингов</b> — следит за таблицами лидеров: удаляет подделанные рекорды и оскорбительные ники.</li><li><b>Старший модератор</b> — всё перечисленное, баны до 30 дней, снятие банов и просмотр состава команды. Коды не выдаёт.</li><li><b>Админ</b> — только вы: выдаёте и отзываете коды.</li></ul></div>
 <div id="newcode" hidden><p class="muted">Код показывается один раз — передайте его модератору лично (не в общий чат):</p><div class="code" id="code"></div></div>
-<div class="list" id="mods"></div><div class="row" style="margin-top:10px"><button class="red" id="unban">Снять все баны</button></div></section>
+<div class="list" id="mods"></div><div class="row" style="margin-top:10px"><button class="red" id="unban" hidden>Снять все баны</button></div></section>
 <section class="card"><h2>Журнал действий</h2><div class="list" id="log"></div></section>
 </div></main>
 <script>
 const API="https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av",$=id=>document.getElementById(id);
 const st={get(){try{return sessionStorage.getItem("iigry-mod")||localStorage.getItem("iigry-mod")||""}catch(_){return""}},set(v){try{v?localStorage.setItem("iigry-mod",v):(localStorage.removeItem("iigry-mod"),sessionStorage.removeItem("iigry-mod"))}catch(_){}}};
-let K="",ROLE="";const T=ts=>new Date(ts).toLocaleString("ru-RU",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
+let K="",ROLE="",P=[];const can=x=>P.includes(x);
+const DESC={del:"удалять сообщения",ban:"банить авторов",score:"удалять рекорды",unban:"снимать баны",mods:"видеть состав команды",team:"выдавать и отзывать коды"};const T=ts=>new Date(ts).toLocaleString("ru-RU",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
 async function call(body){const r=await fetch(API+"?a=mod",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(Object.assign({k:K},body))});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||"Ошибка "+r.status);return j}
 const el=(tag,txt,cls)=>{const e=document.createElement(tag);if(txt!=null)e.textContent=txt;if(cls)e.className=cls;return e};
 const btn=(t,cls,fn)=>{const b=el("button",t,cls);b.type="button";b.onclick=async()=>{b.disabled=true;try{await fn()}catch(e){alertBox(e.message)}b.disabled=false};return b};
 function alertBox(t){$("lmsg").textContent=t;const m=el("p",t,"msg");document.querySelector("main").prepend(m);setTimeout(()=>m.remove(),4000)}
-async function login(k){K=k;try{const j=await call({op:"me"});ROLE=j.role;$("who").textContent=j.name+(j.role==="admin"?" (админ)":" (модератор)");$("login").hidden=true;$("app").hidden=false;$("adm").hidden=ROLE!=="admin";st.set(K);loadMsgs();loadScores();loadLog();if(ROLE==="admin")loadMods()}
+async function login(k){K=k;try{const j=await call({op:"me"});ROLE=j.role;P=j.perms||[];$("who").textContent=j.name+" — "+j.title;$("can").textContent="Вам доступно: "+P.map(x=>DESC[x]).join(", ")+".";
+    $("login").hidden=true;$("app").hidden=false;$("secMsgs").hidden=!can("del");$("secScores").hidden=!can("score");$("adm").hidden=!can("mods");$("addBox").hidden=!can("team");$("unban").hidden=!can("unban");
+    [...$("days").options].forEach(o=>{o.hidden=o.disabled=+o.value>j.ban});$("days").hidden=!can("ban");
+    st.set(K);if(can("del"))loadMsgs();if(can("score"))loadScores();loadLog();if(can("mods"))loadMods()}
   catch(e){$("lmsg").textContent=e.message;st.set("")}}
 async function loadMsgs(){const box=$("msgs");box.textContent="Загрузка…";const r=await fetch(API+"?a=list&room="+$("room").value).then(r=>r.json()).catch(()=>({items:[]}));box.innerHTML="";
   (r.items||[]).slice().reverse().forEach(m=>{const it=el("div",null,"it"),tx=el("div",null,"tx");tx.append(el("b",m.n+" "),el("small",T(m.ts)),el("div",m.t));
-    it.append(tx,btn("Удалить","",async()=>{await call({op:"del",room:$("room").value,ts:m.ts,id:m.id});it.remove();loadLog()}),btn("Бан","red",async()=>{await call({op:"ban",room:$("room").value,ts:m.ts,id:m.id,days:$("days").value});it.remove();loadLog()}));box.append(it)});
+    it.append(tx,btn("Удалить","",async()=>{await call({op:"del",room:$("room").value,ts:m.ts,id:m.id});it.remove();loadLog()}));if(can("ban"))it.append(btn("Бан","red",async()=>{await call({op:"ban",room:$("room").value,ts:m.ts,id:m.id,days:$("days").value});it.remove();loadLog()}));box.append(it)});
   if(!box.children.length)box.textContent="Сообщений нет."}
 async function loadScores(){const box=$("scores");box.textContent="Загрузка…";const g=$("game").value,r=await fetch(API+"?a=top&game="+g).then(r=>r.json()).catch(()=>({items:[]}));box.innerHTML="";
   (r.items||[]).forEach((s,i)=>{const it=el("div",null,"it"),tx=el("div",(i+1)+". "+s.n+" — "+s.v,"tx");it.append(tx,btn("Удалить","red",async()=>{await call({op:"score",game:g,n:s.n});it.remove();loadLog()}));box.append(it)});
   if(!box.children.length)box.textContent="Рекордов нет."}
 async function loadLog(){const j=await call({op:"log"}).catch(()=>({items:[]})),box=$("log");box.innerHTML="";(j.items||[]).forEach(x=>{const it=el("div",null,"it");it.append(el("div",T(x.ts)+" · "+x.who+" — "+x.act+": "+x.what,"tx"));box.append(it)});if(!box.children.length)box.textContent="Пока пусто."}
-async function loadMods(){const j=await call({op:"mods"}),box=$("mods");box.innerHTML="";(j.items||[]).forEach(m=>{const it=el("div",null,"it");it.append(el("div",m.name+" · с "+T(m.ts),"tx"),btn("Отозвать","red",async()=>{if(!confirm("Отозвать доступ у «"+m.name+"»?"))return;await call({op:"rm",name:m.name});loadMods();loadLog()}));box.append(it)});if(!box.children.length)box.textContent="Модераторов пока нет."}
+async function loadMods(){const j=await call({op:"mods"}),box=$("mods");box.innerHTML="";(j.items||[]).forEach(m=>{const it=el("div",null,"it");it.append(el("div",m.name+" — "+m.title+" · с "+T(m.ts),"tx"));if(can("team"))it.append(btn("Отозвать","red",async()=>{if(!confirm("Отозвать доступ у «"+m.name+"»?"))return;await call({op:"rm",name:m.name});loadMods();loadLog()}));box.append(it)});if(!box.children.length)box.textContent="В команде пока никого."}
 $("go").onclick=()=>login($("key").value.trim());$("key").onkeydown=e=>{if(e.key==="Enter")login($("key").value.trim())};
 $("out").onclick=()=>{st.set("");location.reload()};$("rl").onclick=loadMsgs;$("room").onchange=loadMsgs;$("rg").onclick=loadScores;$("game").onchange=loadScores;
-$("add").onclick=async()=>{try{const j=await call({op:"add",name:$("mname").value.trim()});$("code").textContent=j.code;$("newcode").hidden=false;$("mname").value="";loadMods();loadLog()}catch(e){alertBox(e.message)}};
+$("add").onclick=async()=>{try{const j=await call({op:"add",name:$("mname").value.trim(),role:$("mrole").value});$("code").textContent=j.code;$("newcode").hidden=false;$("mname").value="";loadMods();loadLog()}catch(e){alertBox(e.message)}};
 $("unban").onclick=async()=>{if(!confirm("Снять все баны?"))return;try{await call({op:"unban"});loadLog()}catch(e){alertBox(e.message)}};
 const saved=st.get();if(saved)login(saved);
 </script></body></html>

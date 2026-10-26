@@ -51,9 +51,9 @@ async function db(ctx) {
           .withColumn(new Column("id", Types.optional(Types.UTF8))).withColumn(new Column("rc", Types.optional(Types.UTF8)))
           .withColumn(new Column("st", Types.optional(Types.UTF8))).withColumn(new Column("err", Types.optional(Types.UTF8)))
           .withColumn(new Column("ts", Types.optional(Types.UINT64))).withPrimaryKeys("id"));
-        await ensure("mods", new TableDescription()
+        await ensure("team", new TableDescription()
           .withColumn(new Column("name", Types.optional(Types.UTF8))).withColumn(new Column("h", Types.optional(Types.UTF8)))
-          .withColumn(new Column("ts", Types.optional(Types.UINT64))).withPrimaryKeys("name"));
+          .withColumn(new Column("role", Types.optional(Types.UTF8))).withColumn(new Column("ts", Types.optional(Types.UINT64))).withPrimaryKeys("name"));
         await ensure("modlog", new TableDescription()
           .withColumn(new Column("ts", Types.optional(Types.UINT64))).withColumn(new Column("id", Types.optional(Types.UTF8)))
           .withColumn(new Column("who", Types.optional(Types.UTF8))).withColumn(new Column("act", Types.optional(Types.UTF8)))
@@ -176,6 +176,13 @@ async function npdCancel(id) {
     if (!r.ok) throw new Error("аннулирование: " + r.status); await putRc(id, old.rc, "canceled", "") } catch (e) { console.error("npd cancel", e && e.message) } }
 // Модерация: главный ключ админа — в GitHub Secrets (ADMIN_KEY); коды модераторов выдаёт админ, на сервере хранится только их отпечаток
 const ADMIN_KEY = env("ADMIN_KEY");
+// Уровни доступа команды: кто за что отвечает
+const ROLES = {
+  chat:   { t: "Модератор чата",      p: ["del", "ban"], ban: 7 },
+  games:  { t: "Модератор рейтингов", p: ["score"], ban: 0 },
+  senior: { t: "Старший модератор",   p: ["del", "ban", "score", "unban", "mods"], ban: 30 },
+  admin:  { t: "Админ",               p: ["del", "ban", "score", "unban", "mods", "team"], ban: 30 }
+};
 const kh = k => crypto.createHash("sha256").update(salt + "|mod|" + k).digest("hex");
 const same = (a, b) => a.length === b.length && crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
 async function modAuth(k, ip) {
@@ -183,8 +190,8 @@ async function modAuth(k, ip) {
   const fail = await q(`DECLARE $ip AS Utf8; SELECT ts, cnt FROM rl WHERE ip=$ip;`, { $ip: TypedValues.utf8("mf:" + ip) });
   if (fail[0] && Date.now() - num(fail[0].ts) < 3600e3 && num(fail[0].cnt) >= 10) return { blocked: true };
   if (ADMIN_KEY && same(k, ADMIN_KEY)) return { role: "admin", name: "Админ" };
-  const h = kh(k), rows = await q(`DECLARE $h AS Utf8; SELECT name FROM mods WHERE h=$h;`, { $h: TypedValues.utf8(h) });
-  if (rows[0]) return { role: "mod", name: rows[0].name };
+  const h = kh(k), rows = await q(`DECLARE $h AS Utf8; SELECT name, role FROM team WHERE h=$h;`, { $h: TypedValues.utf8(h) });
+  if (rows[0] && ROLES[rows[0].role]) return { role: rows[0].role, name: rows[0].name };
   const c = fail[0] && Date.now() - num(fail[0].ts) < 3600e3 ? num(fail[0].cnt) : 0;
   await q(`DECLARE $ip AS Utf8; DECLARE $ts AS Uint64; DECLARE $c AS Uint64; UPSERT INTO rl (ip, ts, cnt) VALUES ($ip, $ts, $c);`, { $ip: TypedValues.utf8("mf:" + ip), $ts: TypedValues.uint64(Date.now()), $c: TypedValues.uint64(c + 1) });
   return null }
@@ -288,31 +295,33 @@ exports.handler = async (event, ctx) => {
     const b = parse(event) || {}, ip = ipOf(event, hd), me = await modAuth(b.k, ip);
     if (me && me.blocked) return reply(429, { error: "Слишком много неверных кодов. Попробуйте через час." }, origin);
     if (!me) return reply(403, { error: "Неверный код модератора." }, origin);
-    const op = String(b.op || ""), who = me.name;
-    if (op === "me") return reply(200, { role: me.role, name: me.name }, origin);
+    const op = String(b.op || ""), R0 = ROLES[me.role], who = me.name + " (" + R0.t.toLowerCase() + ")", can = x => R0.p.includes(x);
+    if (op === "me") return reply(200, { role: me.role, title: R0.t, name: me.name, perms: R0.p, ban: R0.ban, roles: Object.fromEntries(Object.entries(ROLES).filter(([k]) => k !== "admin").map(([k, v]) => [k, v.t])) }, origin);
+    const NO = reply(403, { error: "Это не входит в ваш уровень доступа." }, origin);
     const room = String(b.room || ""), mts = Math.round(Number(b.ts)) || 0, mid = clean(b.id, 20);
     if (op === "del" || op === "ban") {
+      if (!can(op)) return NO;
       if (!ROOMS[room]) return reply(400, { error: "Нет такой комнаты" }, origin);
       const m = await q(`DECLARE $r AS Utf8; DECLARE $ts AS Uint64; DECLARE $id AS Utf8; SELECT n, t, ip FROM msgs WHERE room=$r AND ts=$ts AND id=$id;`, { $r: TypedValues.utf8(room), $ts: TypedValues.uint64(mts), $id: TypedValues.utf8(mid) });
       if (!m[0]) return reply(404, { error: "Сообщение уже удалено" }, origin);
       await q(`DECLARE $r AS Utf8; DECLARE $ts AS Uint64; DECLARE $id AS Utf8; DELETE FROM msgs WHERE room=$r AND ts=$ts AND id=$id;`, { $r: TypedValues.utf8(room), $ts: TypedValues.uint64(mts), $id: TypedValues.utf8(mid) });
-      if (op === "ban") { const days = Math.min(30, Math.max(1, Math.round(Number(b.days)) || 1));
+      if (op === "ban") { const days = Math.min(R0.ban, Math.max(1, Math.round(Number(b.days)) || 1));
         await q(`DECLARE $ip AS Utf8; DECLARE $u AS Uint64; DECLARE $by AS Utf8; UPSERT INTO bans (ip, until, by) VALUES ($ip, $u, $by);`, { $ip: TypedValues.utf8(m[0].ip), $u: TypedValues.uint64(Date.now() + days * 864e5), $by: TypedValues.utf8(who) });
         await mlog(who, "бан " + days + " дн.", m[0].n + ": " + m[0].t) } else await mlog(who, "удалил сообщение", m[0].n + ": " + m[0].t);
       return reply(200, { ok: true }, origin) }
-    if (op === "score") { const g = String(b.game || ""), nk = clean(b.n, 40).toLowerCase(); if (!GAMES[g]) return reply(400, { error: "Нет такой игры" }, origin);
+    if (op === "score") { if (!can("score")) return NO; const g = String(b.game || ""), nk = clean(b.n, 40).toLowerCase(); if (!GAMES[g]) return reply(400, { error: "Нет такой игры" }, origin);
       await q(`DECLARE $g AS Utf8; DECLARE $k AS Utf8; DELETE FROM scores WHERE game=$g AND nk=$k;`, { $g: TypedValues.utf8(g), $k: TypedValues.utf8(nk) });
       await mlog(who, "удалил рекорд", g + ": " + nk); return reply(200, { ok: true }, origin) }
     if (op === "log") { const r = await q(`SELECT ts, who, act, what FROM modlog ORDER BY ts DESC LIMIT 60;`); return reply(200, { items: r.map(x => ({ ts: num(x.ts), who: x.who, act: x.act, what: x.what })) }, origin) }
-    if (me.role !== "admin") return reply(403, { error: "Это может только админ." }, origin);
-    if (op === "mods") { const r = await q(`SELECT name, ts FROM mods;`); return reply(200, { items: r.map(x => ({ name: x.name, ts: num(x.ts) })) }, origin) }
-    if (op === "add") { const name = clean(b.name, 30); if (name.length < 2 || BAD.test(name) || LINK.test(name)) return reply(400, { error: "Имя модератора: 2–30 символов, без ссылок." }, origin);
+    if (op === "mods") { if (!can("mods")) return NO; const r = await q(`SELECT name, role, ts FROM team;`); return reply(200, { items: r.map(x => ({ name: x.name, role: x.role, title: (ROLES[x.role] || {}).t || x.role, ts: num(x.ts) })) }, origin) }
+    if (op === "unban") { if (!can("unban")) return NO; await q(`DELETE FROM bans;`); await mlog(who, "снял все баны", "-"); return reply(200, { ok: true }, origin) }
+    if (!can("team")) return reply(403, { error: "Это может только админ." }, origin);
+    if (op === "add") { const role = String(b.role || ""); if (!ROLES[role] || role === "admin") return reply(400, { error: "Выберите уровень доступа." }, origin); const name = clean(b.name, 30); if (name.length < 2 || BAD.test(name) || LINK.test(name)) return reply(400, { error: "Имя модератора: 2–30 символов, без ссылок." }, origin);
       const code = "mod-" + crypto.randomBytes(18).toString("base64url");
-      await q(`DECLARE $n AS Utf8; DECLARE $h AS Utf8; DECLARE $ts AS Uint64; UPSERT INTO mods (name, h, ts) VALUES ($n, $h, $ts);`, { $n: TypedValues.utf8(name), $h: TypedValues.utf8(kh(code)), $ts: TypedValues.uint64(Date.now()) });
-      await mlog(who, "выдал код модератору", name); return reply(200, { code, name }, origin) }
+      await q(`DECLARE $n AS Utf8; DECLARE $h AS Utf8; DECLARE $r AS Utf8; DECLARE $ts AS Uint64; UPSERT INTO team (name, h, role, ts) VALUES ($n, $h, $r, $ts);`, { $n: TypedValues.utf8(name), $h: TypedValues.utf8(kh(code)), $r: TypedValues.utf8(role), $ts: TypedValues.uint64(Date.now()) });
+      await mlog(who, "выдал код", name + " — " + ROLES[role].t); return reply(200, { code, name, title: ROLES[role].t }, origin) }
     if (op === "rm") { const name = clean(b.name, 30);
-      await q(`DECLARE $n AS Utf8; DELETE FROM mods WHERE name=$n;`, { $n: TypedValues.utf8(name) }); await mlog(who, "отозвал доступ", name); return reply(200, { ok: true }, origin) }
-    if (op === "unban") { await q(`DELETE FROM bans;`); await mlog(who, "снял все баны", "-"); return reply(200, { ok: true }, origin) }
+      await q(`DECLARE $n AS Utf8; DELETE FROM team WHERE name=$n;`, { $n: TypedValues.utf8(name) }); await mlog(who, "отозвал доступ", name); return reply(200, { ok: true }, origin) }
     return reply(400, { error: "Нет такой команды" }, origin);
   }
   if (a === "buy" && method === "POST") {
