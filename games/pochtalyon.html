@@ -115,7 +115,7 @@ requestAnimationFrame(frame);
     b.disabled=false;b.textContent="Купить полную версию — "+price+" ₽"}
   async function back(id){say("Проверяем оплату…");
     for(let i=0;i<40;i++){try{const r=await fetch(API+"?a=order&id="+id),j=await r.json();
-        if(j.st==="succeeded"&&j.lic&&j.prod===prod){put(prod,{id,lic:j.lic,ts:Date.now()});history.replaceState(null,"",location.pathname);draw();say("Оплата прошла! Полная версия открыта — начните игру заново.","#4ADE95");return}
+        if(j.st==="succeeded"&&j.lic&&j.prod===prod){put(prod,{id,lic:j.lic,ts:Date.now()});history.replaceState(null,"",location.pathname);draw();say("Оплата прошла! Полная версия открыта — начните игру заново.","#4ADE95");if(j.receipt&&/^https:\/\/lknpd\.nalog\.ru\//.test(j.receipt)){const r=document.createElement("a");r.href=j.receipt;r.target="_blank";r.rel="noopener";r.textContent="Ваш чек";r.style.color="#E7BD52";const m=box.querySelector(".pmsg");m.append(" ",r)}return}
         if(j.st==="canceled"){history.replaceState(null,"",location.pathname);draw();say("Платёж отменён — деньги не списаны. Можно попробовать ещё раз.","#E8333F");return}
         if(r.status===400||r.status===404){draw();say(j.error||"Заказ не найден.","#E8333F");return}}catch(_){}
       await new Promise(r=>setTimeout(r,3000))}

@@ -85,6 +85,8 @@ jobs:
             CAPTCHA_SECRET=${{ steps.cap.outputs.sec || '-' }}
             YK_SHOP=1507601
             YK_SECRET=${{ secrets.YK_SECRET || '-' }}
+            NPD_INN=695207648961
+            NPD_PASSWORD=${{ secrets.NPD_PASSWORD || '-' }}
       - name: Открыть функцию для сайта и проверить
         env: { IAM: "${{ steps.tok.outputs.iam }}", FID: "${{ steps.fn.outputs.function-id }}" }
         run: |

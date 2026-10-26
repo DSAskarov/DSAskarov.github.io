@@ -1,0 +1,17 @@
+# Ежедневная досылка чеков в «Мой налог»: если чек по оплате не пробился сразу, сервер пробьёт его здесь.
+# Если чек не получается пробить — запуск станет красным, и GitHub пришлёт письмо владельцу.
+name: Чеки «Мой налог»
+on:
+  schedule: [{ cron: "17 6 * * *" }]   # каждый день в 9:17 по Москве
+  workflow_dispatch:
+permissions: { contents: read }
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Досылка чеков
+        env: { P: "${{ secrets.NPD_PASSWORD }}" }
+        run: |
+          if [ -z "$P" ]; then echo "Пароль «Мой налог» ещё не добавлен — пропускаем"; exit 0; fi
+          K=$(printf '%s' "$P|iigry-cron" | sha256sum | cut -d' ' -f1); echo "::add-mask::$K"
+          curl -sS --fail-with-body -X POST -H "X-Cron-Key: $K" "https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av?a=npdsync"; echo

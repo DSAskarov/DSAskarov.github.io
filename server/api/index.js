@@ -47,6 +47,10 @@ async function db(ctx) {
           .withColumn(new Column("id", Types.optional(Types.UTF8))).withColumn(new Column("prod", Types.optional(Types.UTF8)))
           .withColumn(new Column("pid", Types.optional(Types.UTF8))).withColumn(new Column("st", Types.optional(Types.UTF8)))
           .withColumn(new Column("ts", Types.optional(Types.UINT64))).withPrimaryKeys("id"));
+        await ensure("receipts", new TableDescription()
+          .withColumn(new Column("id", Types.optional(Types.UTF8))).withColumn(new Column("rc", Types.optional(Types.UTF8)))
+          .withColumn(new Column("st", Types.optional(Types.UTF8))).withColumn(new Column("err", Types.optional(Types.UTF8)))
+          .withColumn(new Column("ts", Types.optional(Types.UINT64))).withPrimaryKeys("id"));
         await ensure("cfg", new TableDescription()
           .withColumn(new Column("k", Types.optional(Types.UTF8))).withColumn(new Column("v", Types.optional(Types.UTF8)))
           .withPrimaryKeys("k"));
@@ -114,7 +118,52 @@ async function syncOrder(id, o) {
   const p = await yk("payments/" + encodeURIComponent(o.pid)); if (!p || !p.metadata || p.metadata.order !== id) return o;
   const P = PRODUCTS[o.prod]; if (p.status === "succeeded" && !(p.amount && p.amount.value === P.price && p.amount.currency === "RUB")) return o;
   if (p.status !== o.st && (p.status === "succeeded" || p.status === "canceled")) { await setSt(id, p.status); o.st = p.status }
+  if (o.st === "succeeded") o.rc = await npdReceipt(id, o.prod, Date.parse(p.captured_at || p.created_at) || 0);
   return o }
+// Чеки самозанятого в «Мой налог» (lknpd.nalog.ru). Официального API для своих сайтов нет — используем тот же API, что и веб-кабинет.
+// Пароль — только в GitHub Secrets. Ошибка чека не ломает покупку: продажа остаётся в списке и пробивается повторно.
+const NPD_INN = env("NPD_INN"), NPD_PASS = env("NPD_PASSWORD"), NPD = "https://lknpd.nalog.ru/api/v1";
+const NPD_DEV = crypto.createHash("sha256").update("iigry-" + NPD_INN).digest("hex").replace(/^(.{8})(.{4})(.{4})(.{4})(.{12}).*/, "$1-$2-$3-$4-$5");
+const devInfo = () => ({ sourceDeviceId: NPD_DEV, sourceType: "WEB", appVersion: "1.0.0", metaDetails: { userAgent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36" } });
+let npdTok = "", npdExp = 0;
+const cfgGet = async k => { const r = await q(`DECLARE $k AS Utf8; SELECT v FROM cfg WHERE k=$k;`, { $k: TypedValues.utf8(k) }); return r[0] ? r[0].v : "" };
+const cfgSet = (k, v) => q(`DECLARE $k AS Utf8; DECLARE $v AS Utf8; UPSERT INTO cfg (k,v) VALUES ($k,$v);`, { $k: TypedValues.utf8(k), $v: TypedValues.utf8(v) });
+async function npdFetch(path, body, tok) {
+  const r = await fetch(NPD + path, { method: "POST", headers: Object.assign({ "Content-Type": "application/json", Accept: "application/json, text/plain, */*" }, tok ? { Authorization: "Bearer " + tok } : {}),
+    body: JSON.stringify(body), signal: AbortSignal.timeout(12000) });
+  const j = await r.json().catch(() => ({})); return { ok: r.ok, status: r.status, j } }
+async function npdToken() {
+  if (npdTok && Date.now() < npdExp - 60e3) return npdTok;
+  const rt = await cfgGet("npd_rt");
+  if (rt) { const r = await npdFetch("/auth/token", { deviceInfo: devInfo(), refreshToken: rt });
+    if (r.ok && r.j.token) { npdTok = r.j.token; npdExp = Date.parse(r.j.tokenExpireIn) || Date.now() + 600e3; if (r.j.refreshToken && r.j.refreshToken !== rt) await cfgSet("npd_rt", r.j.refreshToken); return npdTok } }
+  if (!NPD_INN || !NPD_PASS) throw new Error("нет данных для входа в «Мой налог»");
+  const r = await npdFetch("/auth/lkfl", { username: NPD_INN, password: NPD_PASS, deviceInfo: devInfo() });
+  if (!r.ok || !r.j.token) throw new Error("вход в «Мой налог»: " + r.status + " " + String(r.j.message || r.j.code || "").slice(0, 120));
+  npdTok = r.j.token; npdExp = Date.parse(r.j.tokenExpireIn) || Date.now() + 600e3; if (r.j.refreshToken) await cfgSet("npd_rt", r.j.refreshToken); return npdTok }
+const mskIso = t => new Date(t + 3 * 3600e3).toISOString().slice(0, 19) + "+03:00";
+const rcUrl = rc => NPD_INN && rc ? NPD + "/receipt/" + NPD_INN + "/" + encodeURIComponent(rc) + "/print" : "";
+async function getRc(id) { const r = await q(`DECLARE $id AS Utf8; SELECT rc, st FROM receipts WHERE id=$id;`, { $id: TypedValues.utf8(id) }); return r[0] || null }
+const putRc = (id, rc, st, err) => q(`DECLARE $id AS Utf8; DECLARE $rc AS Utf8; DECLARE $st AS Utf8; DECLARE $e AS Utf8; DECLARE $ts AS Uint64; UPSERT INTO receipts (id, rc, st, err, ts) VALUES ($id, $rc, $st, $e, $ts);`,
+  { $id: TypedValues.utf8(id), $rc: TypedValues.utf8(rc || ""), $st: TypedValues.utf8(st), $e: TypedValues.utf8(String(err || "").slice(0, 300)), $ts: TypedValues.uint64(Date.now()) });
+// Пробить чек по оплаченному заказу (один раз; повторный вызов безопасен)
+async function npdReceipt(id, prod, paidAt) {
+  if (!NPD_INN || !NPD_PASS) return "";
+  const old = await getRc(id); if (old && old.rc) return old.rc;
+  const P = PRODUCTS[prod]; if (!P) return "";
+  try { const tok = await npdToken(), now = Date.now();
+    const r = await npdFetch("/income", { paymentType: "CASH", ignoreMaxTotalIncomeRestriction: false,
+      client: { contactPhone: null, displayName: null, incomeType: "FROM_INDIVIDUAL", inn: null },
+      requestTime: mskIso(now), operationTime: mskIso(paidAt || now), services: [{ name: P.title, amount: Number(P.price), quantity: 1 }], totalAmount: P.price }, tok);
+    if (r.status === 401) { npdTok = ""; await cfgSet("npd_rt", "") }
+    if (!r.j.approvedReceiptUuid) throw new Error("чек: " + r.status + " " + String(r.j.message || r.j.code || "").slice(0, 150));
+    await putRc(id, r.j.approvedReceiptUuid, "ok", ""); return r.j.approvedReceiptUuid }
+  catch (e) { console.error("npd", e && e.message); await putRc(id, "", "fail", e && e.message); return "" } }
+async function npdCancel(id) {
+  const old = await getRc(id); if (!old || !old.rc || old.st === "canceled") return;
+  try { const tok = await npdToken(), now = mskIso(Date.now());
+    const r = await npdFetch("/cancel", { operationTime: now, requestTime: now, comment: "Возврат средств", receiptUuid: old.rc, partnerCode: null }, tok);
+    if (!r.ok) throw new Error("аннулирование: " + r.status); await putRc(id, old.rc, "canceled", "") } catch (e) { console.error("npd cancel", e && e.message) } }
 const NEED = { error: "Подтвердите, что вы не робот.", need: "captcha" };
 const parse = event => { try { return JSON.parse(event.isBase64Encoded ? Buffer.from(event.body || "", "base64").toString() : event.body || "{}") || {} } catch (_) { return null } };
 
@@ -122,11 +171,25 @@ exports.handler = async (event, ctx) => {
   const hd = event.headers || {}, origin = hd.Origin || hd.origin || "";
   const method = event.httpMethod || "GET", qs = event.queryStringParameters || {}, a = qs.a || "";
   if (method === "OPTIONS") return reply(204, null, origin);
+  // Ежедневная досылка чеков (вызывает GitHub Actions; ключ выводится из пароля и известен только серверу и GitHub)
+  if (a === "npdsync" && method === "POST") {
+    const key = NPD_PASS ? crypto.createHash("sha256").update(NPD_PASS + "|iigry-cron").digest("hex") : "";
+    const got = String(hd["X-Cron-Key"] || hd["x-cron-key"] || "");
+    if (!key || got.length !== key.length || !crypto.timingSafeEqual(Buffer.from(got), Buffer.from(key))) return { statusCode: 403, body: "no" };
+    await db(ctx); const rows = await q(`SELECT o.id AS id, o.prod AS prod, o.pid AS pid, o.ts AS ts, r.rc AS rc FROM orders AS o LEFT JOIN receipts AS r ON o.id = r.id WHERE o.st = "succeeded";`);
+    let made = 0, fail = 0;
+    for (const r of rows) { if (r.rc) continue; const p = YK_SECRET && await yk("payments/" + encodeURIComponent(r.pid));
+      const rc = await npdReceipt(r.id, r.prod, p ? Date.parse(p.captured_at || p.created_at) : num(r.ts)); rc ? made++ : fail++ }
+    return { statusCode: fail ? 500 : 200, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ checked: rows.length, made, fail }) };
+  }
   // Уведомления ЮKassa приходят без Origin: проверяем платёж повторным запросом в ЮKassa
   if (a === "yk" && method === "POST") {
     try { await db(ctx); const b = parse(event) || {}, pid = String((b.object && b.object.id) || "").slice(0, 64);
       if (/^[\w-]{10,64}$/.test(pid) && YK_SECRET) { const p = await yk("payments/" + encodeURIComponent(pid)), id = p && p.metadata && String(p.metadata.order || "");
-        if (id && ORDER_ID.test(id)) { const o = await getOrder(id); if (o && o.pid === pid) await syncOrder(id, o) } } } catch (e) { console.error("yk hook", e && e.message) }
+        if (id && ORDER_ID.test(id)) { const o = await getOrder(id); if (o && o.pid === pid) await syncOrder(id, o) } }
+      if (b.event === "refund.succeeded" && YK_SECRET) { const rid = String(b.object.id || "").slice(0, 64), rf = /^[\w-]{10,64}$/.test(rid) && await yk("refunds/" + encodeURIComponent(rid));
+        if (rf && rf.status === "succeeded") { const rows = await q(`DECLARE $p AS Utf8; SELECT id FROM orders WHERE pid=$p;`, { $p: TypedValues.utf8(String(rf.payment_id || "")) });
+          if (rows[0]) { await npdCancel(rows[0].id); await setSt(rows[0].id, "refunded") } } } } catch (e) { console.error("yk hook", e && e.message) }
     return { statusCode: 200, headers: { "Content-Type": "text/plain" }, body: "ok" };
   }
   if (a === "ping") return reply(200, { ok: true, ts: Date.now() }, origin);
@@ -214,7 +277,8 @@ exports.handler = async (event, ctx) => {
   if (a === "order" && method === "GET") {
     const id = String(qs.id || ""); if (!ORDER_ID.test(id)) return reply(400, { error: "Неверный номер заказа" }, origin);
     const o = await syncOrder(id, await getOrder(id)); if (!o) return reply(404, { error: "Заказ не найден" }, origin);
-    return reply(200, o.st === "succeeded" ? { st: o.st, prod: o.prod, lic: licOf(id, o.prod) } : { st: o.st, prod: o.prod }, origin);
+    if (o.st === "succeeded" && !o.rc) { const r = await getRc(id); o.rc = r && r.rc }
+    return reply(200, o.st === "succeeded" ? { st: o.st, prod: o.prod, lic: licOf(id, o.prod), receipt: rcUrl(o.rc) } : { st: o.st, prod: o.prod }, origin);
   }
   if (a === "lic" && method === "POST") {
     const b = parse(event) || {}, id = String(b.id || ""), prod = String(b.prod || ""), lic = String(b.lic || "");
