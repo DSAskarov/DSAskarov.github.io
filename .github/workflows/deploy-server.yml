@@ -126,7 +126,7 @@ jobs:
           S=$(printf '%s' "$TG|iigry-tg" | sha256sum | cut -c1-48); echo "::add-mask::$S"
           curl -sS -X POST "https://api.telegram.org/bot$TG/deleteWebhook" | jq -c '{ok}'   # входящие забирает ретранслятор
           curl -sS -X POST "https://api.telegram.org/bot$TG/setMyCommands" -H "Content-Type: application/json" \
-            -d '{"commands":[{"command":"settings","description":"Выбрать уведомления"},{"command":"stop","description":"Отключить уведомления"}]}' | jq -c '{ok}'
+            -d '{"commands":[{"command":"stats","description":"Статистика сейчас и выгрузка"},{"command":"settings","description":"Выбрать уведомления"},{"command":"stop","description":"Отключить уведомления"}]}' | jq -c '{ok}'
           curl -sS -X POST "https://api.telegram.org/bot$TG/setMyDescription" -H "Content-Type: application/json" \
             -d '{"description":"Бот площадки «ИИгры онлайн» (dsaskarov.github.io): уведомления для команды о покупках, сообщениях и модерации."}' | jq -c '{ok}'
       - name: Выключить технические работы

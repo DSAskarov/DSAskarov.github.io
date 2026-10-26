@@ -30,6 +30,7 @@ textarea{background:#0F0E13;color:var(--fg);border:1px solid var(--line);border-
 <p class="muted">Здесь всё, что ждёт команду: срочное (жалобы и вызовы в чате) — сверху в красной рамке. Ответ на вызов в чате появится прямо в чате от имени команды; ответ на заявку увидит автор по номеру обращения.</p><div class="list" id="all" style="max-height:none"></div></section>
 <section class="card" id="secT" hidden><h2>Посещаемость за 14 дней</h2><div class="row"><button id="tU" class="main">Уникальные</button><button id="tV">Все просмотры</button><span class="muted" id="tSum"></span></div>
 <div id="tBars" style="display:flex;gap:4px;align-items:flex-end;height:140px;margin-top:12px"></div><div id="tDays" style="display:flex;gap:4px;margin-top:4px"></div>
+<div class="row" id="admStat" hidden style="margin-top:10px"><button id="sNow">📊 Сводка сейчас</button><button id="sCsv">📥 Скачать таблицу (CSV)</button></div><div id="sBox" class="muted" style="margin-top:8px;white-space:pre-line"></div>
 <p class="muted">Уникальные — разные устройства (браузеры) за день: номер устройства хранится в браузере, поэтому смена IP или VPN не создаёт нового посетителя. Боты и команда сайта не считаются.</p></section>
 <section class="card" id="secQ" hidden><h2>Заявки</h2><div class="row"><select id="qkind"></select><select id="qst"><option value="">Все статусы</option><option value="new">Новые</option><option value="work">В работе</option><option value="ok">Принятые</option><option value="no">Отклонённые</option></select><button id="rq">Обновить</button></div>
 <p class="muted">Откройте заявку, напишите короткий комментарий и выберите решение. Контакты заявителей видит только админ — это персональные данные.</p><div class="list" id="queue"></div></section>
@@ -61,7 +62,7 @@ async function login(k){K=k;try{const j=await call({op:"me"});ROLE=j.role;P=j.pe
     const ks=Object.keys(KIND).filter(k=>can("q:"+k));$("secQ").hidden=!ks.length;$("qkind").innerHTML="";ks.forEach(k=>{const o=el("option",KIND[k]);o.value=k;$("qkind").append(o)});if(ks.length)loadQ();
     $("mrole").innerHTML="";$("roleHelp").innerHTML="";Object.entries(j.roles||{}).forEach(([k,t])=>{const o=el("option",t);o.value=k;$("mrole").append(o);const li=el("li");li.append(el("b",t)," — "+(RHELP[k]||""));$("roleHelp").append(li)});{const li=el("li");li.append(el("b","Админ")," — "+RHELP.admin);$("roleHelp").append(li)}
     $("secAll").hidden=!["del","q:publish","q:complaint","q:idea","q:resume"].some(can);if(!$("secAll").hidden)loadAll();
-    $("secT").hidden=!can("mods");if(can("mods"))loadT();
+    $("secT").hidden=!can("mods");$("admStat").hidden=!can("team");if(can("mods"))loadT();
     st.set(K);if(can("del"))loadMsgs();if(can("score"))loadScores();loadLog();if(can("mods"))loadMods()}
   catch(e){$("lmsg").textContent=e.message;st.set("")}}
 async function loadMsgs(){const box=$("msgs");box.textContent="Загрузка…";const r=await fetch(API+"?a=list&room="+$("room").value).then(r=>r.json()).catch(()=>({items:[]}));box.innerHTML="";
@@ -106,6 +107,8 @@ function drawT(){const b=$("tBars"),d=$("tDays");b.innerHTML="";d.innerHTML="";c
     const l=el("div",x.day.slice(8));l.style.cssText="flex:1;min-width:0;text-align:center;font-size:.7rem;color:#B9B6C2";d.append(l)});
   const t=TR[TR.length-1]||{uniq:0,views:0,fresh:0},S=TR.reduce((a,x)=>a+x[TM],0);$("tSum").textContent="Сегодня: "+t.uniq+" уникальных (новых "+t.fresh+"), "+t.views+" просмотров · за 14 дней: "+S+(TM==="uniq"?" уникальных по дням":" просмотров");
   $("tU").className=TM==="uniq"?"main":"";$("tV").className=TM==="views"?"main":""}
+$("sNow").onclick=async()=>{try{const j=await call({op:"summary"});$("sBox").textContent=j.lines.join("\n")}catch(e){alertBox(e.message)}};
+$("sCsv").onclick=async()=>{try{const j=await call({op:"export"}),a=document.createElement("a");a.href=URL.createObjectURL(new Blob([j.csv],{type:"text/csv;charset=utf-8"}));a.download="iigry-stat-"+new Date().toISOString().slice(0,10)+".csv";document.body.append(a);a.click();a.remove()}catch(e){alertBox(e.message)}};
 $("tU").onclick=()=>{TM="uniq";drawT()};$("tV").onclick=()=>{TM="views";drawT()};
 async function loadLog(){const j=await call({op:"log"}).catch(()=>({items:[]})),box=$("log");box.innerHTML="";(j.items||[]).forEach(x=>{const it=el("div",null,"it");it.append(el("div",T(x.ts)+" · "+x.who+" — "+x.act+": "+x.what,"tx"));box.append(it)});if(!box.children.length)box.textContent="Пока пусто."}
 async function loadMods(){const j=await call({op:"mods"}),box=$("mods");box.innerHTML="";(j.items||[]).forEach(m=>{const it=el("div",null,"it");const tx=el("div",m.name+" — "+m.title+" · с "+T(m.ts)+(m.tg?" · Telegram подключён":" · Telegram не подключён"),"tx");it.append(tx);

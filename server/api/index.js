@@ -244,7 +244,18 @@ async function modAuth(k, ip) {
   const c = fail[0] && Date.now() - num(fail[0].ts) < 3600e3 ? num(fail[0].cnt) : 0;
   await q(`DECLARE $ip AS Utf8; DECLARE $ts AS Uint64; DECLARE $c AS Uint64; UPSERT INTO rl (ip, ts, cnt) VALUES ($ip, $ts, $c);`, { $ip: TypedValues.utf8("mf:" + ip), $ts: TypedValues.uint64(Date.now()), $c: TypedValues.uint64(c + 1) });
   return null }
+async function sendStats(chat, me) {
+  const { P, adminP, head, tail } = await statsBuild();
+  if (me.role === "admin") { const e = Date.now() + 15 * 60e3, url = "https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av?a=export&e=" + e + "&t=" + expTok(e);
+    return tgApi("sendMessage", { chat_id: chat, parse_mode: "HTML", disable_web_page_preview: true, text: "📊 " + head + Object.values(adminP).join("\n") + tail,
+      reply_markup: { inline_keyboard: [[{ text: "🔄 Обновить", callback_data: "s:now" }, { text: "📥 Скачать таблицу (CSV)", url }], [{ text: "Панель админа →", url: "https://dsaskarov.github.io/mod.html" }]] } }) }
+  const sb = (await q(`DECLARE $n AS Utf8; SELECT parts FROM statsub WHERE name=$n;`, { $n: TypedValues.utf8(me.name) }))[0], parts = String(sb && sb.parts || "").split(",").filter(k => P[k]);
+  return tgApi("sendMessage", { chat_id: chat, parse_mode: "HTML", text: parts.length ? "📊 " + head + parts.map(k => P[k]).join("\n") + tail : "Админ пока не открыл вам статистику.",
+    reply_markup: parts.length ? { inline_keyboard: [[{ text: "🔄 Обновить", callback_data: "s:now" }]] } : undefined }) }
 async function tgUpdate(u) {
+      if (u.callback_query && String(u.callback_query.data || "") === "s:now") { const cq = u.callback_query, chat = String(cq.message && cq.message.chat && cq.message.chat.id || "");
+        const me = (await q(`DECLARE $c AS Utf8; SELECT name, role FROM tg WHERE chat=$c;`, { $c: TypedValues.utf8(chat) }))[0]; if (me) await sendStats(chat, me);
+        await tgApi("answerCallbackQuery", { callback_query_id: cq.id }); return }
       if (u.callback_query) { const cq = u.callback_query, chat = String(cq.message && cq.message.chat && cq.message.chat.id || ""), c = String(cq.data || "").slice(2);
         const r = await q(`DECLARE $c AS Utf8; SELECT role, cats FROM tg WHERE chat=$c;`, { $c: TypedValues.utf8(chat) });
         if (r[0] && CATS[c] && CAT_ROLES[c].includes(r[0].role)) { let on = String(r[0].cats || "").split(",").filter(Boolean); on = on.includes(c) ? on.filter(x => x !== c) : on.concat(c);
@@ -263,9 +274,10 @@ async function tgUpdate(u) {
           { $c: TypedValues.utf8(chat), $n: TypedValues.utf8(l.name), $r: TypedValues.utf8(l.role), $k: TypedValues.utf8(DEF_CATS[l.role] || ""), $ts: TypedValues.uint64(Date.now()) });
         await say("Готово, <b>" + esc(l.name) + "</b>! Бот подключён. Выберите, о чём присылать уведомления:", catsKb(l.role, DEF_CATS[l.role]));
         await mlog(l.name, "подключил Telegram", "уведомления"); return }
+      if (me && /^\/(stats|статистика)/.test(txt)) { await sendStats(chat, me); return }
       if (me && /^\/(settings|настройки)/.test(txt)) { await say("О чём присылать уведомления:", catsKb(me.role, me.cats)); return }
       if (me && /^\/stop/.test(txt)) { await q(`DECLARE $c AS Utf8; DELETE FROM tg WHERE chat=$c;`, { $c: TypedValues.utf8(chat) }); await say("Уведомления отключены. Подключиться снова можно кодом со страницы модерации."); return }
-      await say(me ? "Команды: /settings — выбрать уведомления, /stop — отключить." : "Привет! Это бот площадки «ИИгры онлайн» — dsaskarov.github.io\n\nЕсли вы в команде сайта: откройте страницу модерации, нажмите «Подключить Telegram» и пришлите сюда шестизначный код.");
+      await say(me ? "Команды: /stats — статистика сейчас, /settings — выбрать уведомления, /stop — отключить." : "Привет! Это бот площадки «ИИгры онлайн» — dsaskarov.github.io\n\nЕсли вы в команде сайта: откройте страницу модерации, нажмите «Подключить Telegram» и пришлите сюда шестизначный код.");
 }
 // Telegram-бот: уведомления команде по категориям. Токен — в GitHub Secrets (TG_BOT_TOKEN).
 const TG = env("TG_BOT_TOKEN"), TG_SECRET = TG ? crypto.createHash("sha256").update(TG + "|iigry-tg").digest("hex").slice(0, 48) : "";
@@ -304,6 +316,44 @@ const mlog = (who, act, what) => notify(/^бан/.test(act) ? "ban" : "mod", "<b
 async function traffic(days) { const out = []; for (let i = days - 1; i >= 0; i--) { const day = new Date(Date.now() + 3 * 3600e3 - i * 864e5).toISOString().slice(0, 10);
     const r = await q(`DECLARE $d AS Utf8; SELECT COUNT(*) AS u, SUM(views) AS v, SUM(isnew) AS n FROM hits WHERE day=$d;`, { $d: TypedValues.utf8(day) });
     out.push({ day, uniq: num(r[0] && r[0].u), views: num(r[0] && r[0].v), fresh: num(r[0] && r[0].n) }) } return out }
+// Сводка: общие данные для бота, сайта и выгрузки
+async function statsBuild() {
+    const now = Date.now(), d1 = now - 864e5, h12 = now - 12 * 3600e3;
+    const ord = await q(`SELECT o.prod AS prod, o.st AS st, o.ts AS ts, r.st AS rst FROM orders AS o LEFT JOIN receipts AS r ON o.id = r.id;`);
+    const paid = ord.filter(o => o.st === "succeeded"), sum = a => a.reduce((x, o) => x + Number((PRODUCTS[o.prod] || {}).price || 0), 0);
+    const pd = paid.filter(o => num(o.ts) > d1), noRc = paid.filter(o => o.rst !== "ok").length;
+    const msgs = await q(`DECLARE $t AS Uint64; SELECT room FROM msgs WHERE ts > $t;`, { $t: TypedValues.uint64(h12) });
+    const inb = await q(`SELECT kind, st FROM inbox;`), nw = {}; inb.filter(x => x.st === "new").forEach(x => nw[x.kind] = (nw[x.kind] || 0) + 1);
+    const sc = await q(`DECLARE $t AS Uint64; SELECT game FROM scores WHERE ts > $t;`, { $t: TypedValues.uint64(d1) });
+    const bans = await q(`DECLARE $t AS Uint64; SELECT ip FROM bans WHERE until > $t;`, { $t: TypedValues.uint64(now) });
+    const team = await q(`SELECT name FROM team;`);
+    const h = new Date(now + 3 * 3600e3).getUTCHours(), hi = h < 12 ? "Доброе утро" : h < 18 ? "Добрый день" : "Добрый вечер";
+    const P = {
+      sales: "💰 Продажи за сутки: <b>" + pd.length + "</b> на " + sum(pd) + " ₽ · всего: " + paid.length + " на " + sum(paid) + " ₽",
+      rc: "🧾 Чеки: " + (noRc ? "⚠️ не пробито " + noRc : "все пробиты ✅"),
+      chat: "💬 Сообщений в чате и обсуждениях за 12 ч: " + msgs.length,
+      scores: "🏆 Новых рекордов за сутки: " + sc.length,
+      inbox: "📥 Новые заявки: " + (Object.keys(nw).length ? Object.entries(nw).filter(([k]) => k !== "resume").map(([k, n]) => KINDS[k].toLowerCase() + " — " + n).join(", ") || "нет" : "нет"),
+      bans: "🚫 Активных банов: " + bans.length + " · 👥 в команде: " + team.length };
+    const tr = await traffic(2), td = tr[1], yd = tr[0];
+    const P2 = Object.assign({ visits: "👀 Посетители сегодня: <b>" + td.uniq + "</b> уникальных (новых " + td.fresh + ") · " + td.views + " просмотров · вчера: " + yd.uniq + " / " + yd.views }, P); Object.keys(P).forEach(k => delete P[k]); Object.assign(P, P2);
+    const head = "<b>" + hi + "! Сводка «ИИгр онлайн»</b>\n\n", tail = "\n\nПодробности: dsaskarov.github.io/mod.html";
+    const adminP = Object.assign({}, P, { inbox: "📥 Новые заявки: " + (Object.keys(nw).length ? Object.entries(nw).map(([k, n]) => KINDS[k].toLowerCase() + " — " + n).join(", ") : "нет") });
+    return { P, adminP, head, tail };
+}
+async function exportCsv() {
+  const tr = await traffic(31), rows = [["Дата", "Уникальные посетители", "Новые устройства", "Просмотры", "Продажи, шт", "Выручка, ₽", "Сообщения", "Рекорды", "Заявки"]];
+  const ord = await q(`SELECT o.prod AS prod, o.st AS st, o.ts AS ts, r.st AS rst FROM orders AS o LEFT JOIN receipts AS r ON o.id = r.id;`);
+  const msgs = await q(`DECLARE $t AS Uint64; SELECT ts FROM msgs WHERE ts > $t;`, { $t: TypedValues.uint64(Date.now() - 32 * 864e5) });
+  const sc = await q(`SELECT ts FROM scores;`), inb = await q(`SELECT ts FROM inbox;`);
+  const dayOf = t => new Date(num(t) + 3 * 3600e3).toISOString().slice(0, 10), cnt = (a, d) => a.filter(x => dayOf(x.ts) === d).length;
+  for (const t of tr) { const pd = ord.filter(o => o.st === "succeeded" && dayOf(o.ts) === t.day);
+    rows.push([t.day, t.uniq, t.fresh, t.views, pd.length, pd.reduce((x, o) => x + Number((PRODUCTS[o.prod] || {}).price || 0), 0), cnt(msgs, t.day), cnt(sc, t.day), cnt(inb, t.day)]) }
+  rows.push([]); rows.push(["Продажи (все)", "Товар", "Сумма, ₽", "Статус", "Чек"]);
+  ord.sort((a, b) => num(a.ts) - num(b.ts)).forEach(o => rows.push([new Date(num(o.ts) + 3 * 3600e3).toISOString().slice(0, 16).replace("T", " "), (PRODUCTS[o.prod] || {}).title || o.prod, (PRODUCTS[o.prod] || {}).price || "", o.st, o.rst === "ok" ? "пробит" : o.st === "succeeded" ? "нет" : ""]));
+  return "\ufeff" + rows.map(r => r.map(c => { const v = String(c == null ? "" : c); return /[;"\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v }).join(";")).join("\r\n") }
+// Ссылка на выгрузку для бота: подписанная, действует 15 минут
+const expTok = exp => crypto.createHmac("sha256", salt).update("export|" + exp).digest("base64url").slice(0, 32);
 const NEED = { error: "Подтвердите, что вы не робот.", need: "captcha" };
 const parse = event => { try { return JSON.parse(event.isBase64Encoded ? Buffer.from(event.body || "", "base64").toString() : event.body || "{}") || {} } catch (_) { return null } };
 
@@ -333,27 +383,7 @@ exports.handler = async (event, ctx) => {
   if (a === "stats" && method === "POST") {
     const got = String(hd["X-Cron-Key"] || hd["x-cron-key"] || "");
     if (!TG_SECRET || !same(got.padEnd(48).slice(0, 48), TG_SECRET)) return { statusCode: 403, body: "no" };
-    await db(ctx); const now = Date.now(), d1 = now - 864e5, h12 = now - 12 * 3600e3;
-    const ord = await q(`SELECT o.prod AS prod, o.st AS st, o.ts AS ts, r.st AS rst FROM orders AS o LEFT JOIN receipts AS r ON o.id = r.id;`);
-    const paid = ord.filter(o => o.st === "succeeded"), sum = a => a.reduce((x, o) => x + Number((PRODUCTS[o.prod] || {}).price || 0), 0);
-    const pd = paid.filter(o => num(o.ts) > d1), noRc = paid.filter(o => o.rst !== "ok").length;
-    const msgs = await q(`DECLARE $t AS Uint64; SELECT room FROM msgs WHERE ts > $t;`, { $t: TypedValues.uint64(h12) });
-    const inb = await q(`SELECT kind, st FROM inbox;`), nw = {}; inb.filter(x => x.st === "new").forEach(x => nw[x.kind] = (nw[x.kind] || 0) + 1);
-    const sc = await q(`DECLARE $t AS Uint64; SELECT game FROM scores WHERE ts > $t;`, { $t: TypedValues.uint64(d1) });
-    const bans = await q(`DECLARE $t AS Uint64; SELECT ip FROM bans WHERE until > $t;`, { $t: TypedValues.uint64(now) });
-    const team = await q(`SELECT name FROM team;`);
-    const h = new Date(now + 3 * 3600e3).getUTCHours(), hi = h < 12 ? "Доброе утро" : h < 18 ? "Добрый день" : "Добрый вечер";
-    const P = {
-      sales: "💰 Продажи за сутки: <b>" + pd.length + "</b> на " + sum(pd) + " ₽ · всего: " + paid.length + " на " + sum(paid) + " ₽",
-      rc: "🧾 Чеки: " + (noRc ? "⚠️ не пробито " + noRc : "все пробиты ✅"),
-      chat: "💬 Сообщений в чате и обсуждениях за 12 ч: " + msgs.length,
-      scores: "🏆 Новых рекордов за сутки: " + sc.length,
-      inbox: "📥 Новые заявки: " + (Object.keys(nw).length ? Object.entries(nw).filter(([k]) => k !== "resume").map(([k, n]) => KINDS[k].toLowerCase() + " — " + n).join(", ") || "нет" : "нет"),
-      bans: "🚫 Активных банов: " + bans.length + " · 👥 в команде: " + team.length };
-    const tr = await traffic(2), td = tr[1], yd = tr[0];
-    const P2 = Object.assign({ visits: "👀 Посетители сегодня: <b>" + td.uniq + "</b> уникальных (новых " + td.fresh + ") · " + td.views + " просмотров · вчера: " + yd.uniq + " / " + yd.views }, P); Object.keys(P).forEach(k => delete P[k]); Object.assign(P, P2);
-    const head = "<b>" + hi + "! Сводка «ИИгр онлайн»</b>\n\n", tail = "\n\nПодробности: dsaskarov.github.io/mod.html";
-    const adminP = Object.assign({}, P, { inbox: "📥 Новые заявки: " + (Object.keys(nw).length ? Object.entries(nw).map(([k, n]) => KINDS[k].toLowerCase() + " — " + n).join(", ") : "нет") });
+    await db(ctx); const { P, adminP, head, tail } = await statsBuild();
     await notify("stat", head + Object.values(adminP).join("\n") + tail);
     // Части сводки для модераторов — по выбору админа
     const subs = await q(`SELECT name, parts FROM statsub;`);
@@ -375,6 +405,12 @@ exports.handler = async (event, ctx) => {
       ["🎮 <b>Заявки на публикацию</b> (пример, обычный приоритет)\n«Кот на орбите: Венера» — доработка с новыми уровнями", "Открыть и ответить →"]];
     for (const r of adm) for (const [t, b] of ex) await tgApi("sendMessage", { chat_id: r.chat, text: t, parse_mode: "HTML", reply_markup: { inline_keyboard: [[{ text: b, url: L }]] } });
     return { statusCode: 200, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ok: true, to: adm.length }) };
+  }
+  // Выгрузка статистики CSV по подписанной ссылке из бота (действует 15 минут)
+  if (a === "export" && method === "GET") {
+    const e = Number(qs.e) || 0, t = String(qs.t || ""); await db(ctx);
+    if (!(e > Date.now()) || e > Date.now() + 16 * 60e3 || t.length !== 32 || !same(t, expTok(e))) return { statusCode: 403, headers: { "Content-Type": "text/plain; charset=utf-8" }, body: "Ссылка устарела — запросите новую в боте командой /stats" };
+    return { statusCode: 200, headers: { "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": "attachment; filename=\"iigry-stat-" + new Date().toISOString().slice(0, 10) + ".csv\"", "Cache-Control": "no-store" }, body: await exportCsv() };
   }
   // Режим технических работ: включается автоматически перед обновлением сайта и выключается после
   if (a === "maint" && method === "POST") {
@@ -609,6 +645,9 @@ exports.handler = async (event, ctx) => {
       await q(`DECLARE $id AS Utf8; DECLARE $st AS Utf8; DECLARE $w AS Utf8; DECLARE $n AS Utf8; UPDATE inbox SET st=$st, who=$w, note=$n WHERE id=$id;`, { $id: TypedValues.utf8(id), $st: TypedValues.utf8(st), $w: TypedValues.utf8(me.name), $n: TypedValues.utf8(note) });
       await mlog(who, "заявка «" + QST[st] + "»", KINDS[r[0].kind] + ": " + (r[0].subj || id) + (note ? " — " + note : "")); return reply(200, { ok: true }, origin) }
     if (op === "traffic") { if (!can("mods")) return NO; return reply(200, { items: await traffic(Math.min(31, Math.max(1, Math.round(Number(b.days)) || 14))) }, origin) }
+    if (op === "summary" || op === "export") { if (!can("team")) return NO;
+      if (op === "export") return reply(200, { csv: await exportCsv() }, origin);
+      const { adminP } = await statsBuild(); return reply(200, { lines: Object.values(adminP).map(x => x.replace(/<[^>]+>/g, "")) }, origin) }
     if (op === "log") { const r = await q(`SELECT ts, who, act, what FROM modlog ORDER BY ts DESC LIMIT 60;`); return reply(200, { items: r.map(x => ({ ts: num(x.ts), who: x.who, act: x.act, what: x.what })) }, origin) }
     if (op === "mods") { if (!can("mods")) return NO; const r = await q(`SELECT name, role, ts FROM team;`), ss = await q(`SELECT name, parts FROM statsub;`), sm = Object.fromEntries(ss.map(x => [x.name, x.parts]));
       const tgs = await q(`SELECT name FROM tg;`), tn = new Set(tgs.map(x => x.name));
