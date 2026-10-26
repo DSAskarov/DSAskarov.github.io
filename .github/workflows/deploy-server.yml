@@ -88,6 +88,7 @@ jobs:
             NPD_INN=695207648961
             NPD_PASSWORD=${{ secrets.NPD_PASSWORD || '-' }}
             ADMIN_KEY=${{ secrets.ADMIN_KEY || '-' }}
+            TG_BOT_TOKEN=${{ secrets.TG_BOT_TOKEN || '-' }}
       - name: Открыть функцию для сайта и проверить
         env: { IAM: "${{ steps.tok.outputs.iam }}", FID: "${{ steps.fn.outputs.function-id }}" }
         run: |
@@ -112,3 +113,15 @@ jobs:
           echo "Проверка поддельного уведомления ЮKassa:"; curl -sS -X POST -H "Content-Type: application/json" "$U?a=yk" -d '{"event":"payment.succeeded","object":{"id":"fake-payment-000"}}'; echo
           echo "Проверка чужого кода модератора:"; curl -sS -X POST -H "$O" -H "Content-Type: application/json" "$U?a=mod" -d '{"k":"mod-0000000000000000000000","op":"me"}'; echo
           echo "Проверка поддельной лицензии:"; curl -sS -X POST -H "$O" -H "Content-Type: application/json" "$U?a=lic" -d '{"id":"000000000000000000000000","prod":"post-full","lic":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"}'; echo
+      - name: Подключение Telegram-бота
+        env: { TG: "${{ secrets.TG_BOT_TOKEN }}" }
+        run: |
+          if [ -z "$TG" ]; then echo "Токен бота ещё не добавлен — пропускаем"; exit 0; fi
+          FID=$(echo '${{ steps.fn.outputs.function-id }}'); [ -n "$FID" ] || FID=d4enbk0c6huhltqsm5av
+          S=$(printf '%s' "$TG|iigry-tg" | sha256sum | cut -c1-48); echo "::add-mask::$S"
+          curl -sS -X POST "https://api.telegram.org/bot$TG/setWebhook" -H "Content-Type: application/json" \
+            -d "{\"url\":\"https://functions.yandexcloud.net/$FID?a=tg\",\"secret_token\":\"$S\",\"allowed_updates\":[\"message\",\"callback_query\"],\"drop_pending_updates\":true}" | jq -c '{ok,description}'
+          curl -sS -X POST "https://api.telegram.org/bot$TG/setMyCommands" -H "Content-Type: application/json" \
+            -d '{"commands":[{"command":"settings","description":"Выбрать уведомления"},{"command":"stop","description":"Отключить уведомления"}]}' | jq -c '{ok}'
+          curl -sS -X POST "https://api.telegram.org/bot$TG/setMyDescription" -H "Content-Type: application/json" \
+            -d '{"description":"Бот площадки «ИИгры онлайн» (dsaskarov.github.io): уведомления для команды о покупках, сообщениях и модерации."}' | jq -c '{ok}'

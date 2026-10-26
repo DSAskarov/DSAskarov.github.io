@@ -22,7 +22,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 <div class="row"><input id="key" type="password" autocomplete="off" placeholder="Код модератора или ключ админа" style="flex:1"><button class="main" id="go">Войти</button></div>
 <p class="muted">Код выдаёт админ. Не пересылайте его никому: по нему вас видно в журнале действий. Код хранится только в этом браузере.</p><p class="msg" id="lmsg"></p></section>
 <div id="app" hidden>
-<section class="card"><div class="row" style="justify-content:space-between"><p style="margin:0">Вы вошли как <b id="who"></b></p><button id="out">Выйти</button></div><p class="muted" id="can"></p></section>
+<section class="card"><div class="row" style="justify-content:space-between"><p style="margin:0">Вы вошли как <b id="who"></b></p><button id="out">Выйти</button></div><p class="muted" id="can"></p><div class="row" style="margin-top:8px"><button id="tgb">Подключить Telegram</button><span class="muted" id="tgm"></span></div></section>
 <section class="card" id="secMsgs"><h2>Сообщения</h2><div class="row"><select id="room"><option value="live">Живой чат</option><option value="talk-site">Обсуждения: сайт</option><option value="talk-industry">Обсуждения: индустрия</option><option value="talk-wishes">Обсуждения: пожелания</option></select>
 <select id="days"><option value="1">Бан на 1 день</option><option value="7">Бан на 7 дней</option><option value="30">Бан на 30 дней</option></select><button id="rl">Обновить</button></div>
 <p class="muted">«Удалить» убирает сообщение. «Бан» удаляет его и запрещает автору писать на выбранный срок.</p><div class="list" id="msgs"></div></section>
@@ -57,6 +57,8 @@ async function loadScores(){const box=$("scores");box.textContent="Загруз�
   if(!box.children.length)box.textContent="Рекордов нет."}
 async function loadLog(){const j=await call({op:"log"}).catch(()=>({items:[]})),box=$("log");box.innerHTML="";(j.items||[]).forEach(x=>{const it=el("div",null,"it");it.append(el("div",T(x.ts)+" · "+x.who+" — "+x.act+": "+x.what,"tx"));box.append(it)});if(!box.children.length)box.textContent="Пока пусто."}
 async function loadMods(){const j=await call({op:"mods"}),box=$("mods");box.innerHTML="";(j.items||[]).forEach(m=>{const it=el("div",null,"it");it.append(el("div",m.name+" — "+m.title+" · с "+T(m.ts),"tx"));if(can("team"))it.append(btn("Отозвать","red",async()=>{if(!confirm("Отозвать доступ у «"+m.name+"»?"))return;await call({op:"rm",name:m.name});loadMods();loadLog()}));box.append(it)});if(!box.children.length)box.textContent="В команде пока никого."}
+$("tgb").onclick=async()=>{try{const j=await call({op:"tglink"});$("tgm").textContent="";const a=el("a","@"+j.bot);a.href="https://t.me/"+j.bot;a.target="_blank";a.rel="noopener";a.style.color="#E7BD52";
+  $("tgm").append("Откройте ",a,", нажмите «Старт» и отправьте код ",el("b",j.code)," — он действует 10 минут.")}catch(e){alertBox(e.message)}};
 $("go").onclick=()=>login($("key").value.trim());$("key").onkeydown=e=>{if(e.key==="Enter")login($("key").value.trim())};
 $("out").onclick=()=>{st.set("");location.reload()};$("rl").onclick=loadMsgs;$("room").onchange=loadMsgs;$("rg").onclick=loadScores;$("game").onchange=loadScores;
 $("add").onclick=async()=>{try{const j=await call({op:"add",name:$("mname").value.trim(),role:$("mrole").value});$("code").textContent=j.code;$("newcode").hidden=false;$("mname").value="";loadMods();loadLog()}catch(e){alertBox(e.message)}};
