@@ -31,10 +31,10 @@ async function checkFile(u, L) {
   fs.mkdirSync("dl", { recursive: true }); const f = "dl/file"; fs.writeFileSync(f, buf);
   const sha = crypto.createHash("sha256").update(buf).digest("hex"); L.push("📦 Файл " + (buf.length / 1e6).toFixed(1) + " МБ, SHA-256 " + sha.slice(0, 16) + "…");
   let out = ""; try { out = execFileSync("clamscan", ["--no-summary", "--scan-archive=yes", "--max-filesize=300M", "--max-scansize=600M", f], { encoding: "utf8" }); L.push("✅ ClamAV: вирусов не найдено") }
-  catch (e) { out = String(e.stdout || ""); if (/FOUND/.test(out)) { L.push("⛔ ClamAV нашёл угрозу: " + out.split(":").pop().trim()); fs.rmSync(f); return "bad" } L.push("⚠️ ClamAV не смог проверить файл") }
+  catch (e) { out = String(e.stdout || ""); if (/FOUND/.test(out)) { L.push("⛔ ClamAV нашёл угрозу: " + out.split(":").pop().trim()); fs.rmSync(f); return "bad" } L.push("⚠️ ClamAV не смог проверить файл"); var clamFail = true }
   const vb = await vtFile(sha, L); fs.rmSync(f); if (vb) return "bad";
   if (BAD_EXT.test(new URL(r.url).pathname) || /application\/(x-msdownload|vnd\.android)/.test(r.headers.get("content-type") || "")) { L.push("⚠️ Исполняемый файл или APK — перед публикацией запустите в песочнице сами"); return "warn" }
-  return "ok" }
+  return typeof clamFail !== "undefined" && clamFail ? "warn" : "ok" }
 async function checkPage(u, L, br) {
   let v = "ok"; const ctx = await br.newContext({ viewport: { width: 1280, height: 800 }, acceptDownloads: false, permissions: [] });
   await ctx.addInitScript(() => { window.__ask = []; const w = (o, k, n) => { try { const f = o[k]; o[k] = function () { window.__ask.push(n); return f && f.apply(this, arguments) } } catch (_) {} };
@@ -65,7 +65,8 @@ async function checkPage(u, L, br) {
   if (/<form[^>]+action=["']https?:/i.test(html)) { L.push("⚠️ Форма отправляет данные на внешний адрес"); if (v === "ok") v = "warn" }
   await ctx.close(); return v }
 (async () => {
-  const q = await (await fetch(API + "?a=checkq", { method: "POST", headers: H })).json(); const items = q.items || [];
+  const DRY = process.env.ITEMS; // для проверки самого скрипта: ITEMS='[{"id":"x","subj":"t","urls":["https://..."]}]'
+  const q = DRY ? { items: JSON.parse(DRY) } : await (await fetch(API + "?a=checkq", { method: "POST", headers: H })).json(); const items = q.items || [];
   console.log("Заявок на проверку:", items.length); if (!items.length) return;
   const br = await chromium.launch();
   for (const it of items) { const L = []; let verdict = "ok"; const up = v => { if (v === "bad" || (v === "warn" && verdict === "ok")) verdict = v };
@@ -80,5 +81,5 @@ async function checkPage(u, L, br) {
     if (!VT) L.push("ℹ️ Проверка VirusTotal выключена (нет ключа) — работают ClamAV и поведенческий анализ");
     L.push("Подробный журнал: " + RUN);
     console.log(it.subj, verdict, L);
-    await fetch(API + "?a=checkres", { method: "POST", headers: H, body: JSON.stringify({ id: it.id, verdict, res: { lines: L, run: RUN } }) }) }
+    if (!DRY) await fetch(API + "?a=checkres", { method: "POST", headers: H, body: JSON.stringify({ id: it.id, verdict, res: { lines: L, run: RUN } }) }) }
   await br.close() })().catch(e => { console.error(e); process.exit(1) });
