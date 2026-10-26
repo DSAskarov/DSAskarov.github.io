@@ -122,7 +122,7 @@ modes();setTimeout(()=>{modes();hist()},300);
 </script><script>/* Счётчик посещений «ИИгр»: случайный номер устройства хранится только в этом браузере; без cookie и слежки на других сайтах. Команда сайта не считается. */
 (function(){try{if(navigator.webdriver||localStorage.getItem("iigry-mod"))return;let d=localStorage.getItem("iigry-did");
  if(!/^[0-9a-f]{32}$/.test(d||"")){const a=new Uint8Array(16);crypto.getRandomValues(a);d=[...a].map(x=>x.toString(16).padStart(2,"0")).join("");localStorage.setItem("iigry-did",d)}
- const go=()=>{if(document.visibilityState!=="visible")return;document.removeEventListener("visibilitychange",go);fetch("https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av?a=hit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({d,p:location.pathname}),keepalive:true}).catch(()=>{})};
+ const go=()=>{if(document.visibilityState!=="visible")return;document.removeEventListener("visibilitychange",go);fetch("https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av?a=hit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({d,p:location.pathname,r:document.referrer}),keepalive:true}).catch(()=>{})};
  setTimeout(()=>{document.visibilityState==="visible"?go():document.addEventListener("visibilitychange",go)},2500)}catch(_){}})();
 /* Технические работы: пока сайт обновляется, показываем понятное предупреждение и сами обновляем страницу, когда всё готово */
 (function(){const API="https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av?a=status";let shown=null,was=false;

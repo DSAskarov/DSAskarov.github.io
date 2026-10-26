@@ -319,6 +319,8 @@ async function tgUpdate(u) {
           { $c: TypedValues.utf8(chat), $n: TypedValues.utf8(l.name), $r: TypedValues.utf8(l.role), $k: TypedValues.utf8(DEF_CATS[l.role] || ""), $ts: TypedValues.uint64(Date.now()) });
         await say("Готово, <b>" + esc(l.name) + "</b>! Бот подключён. Выберите, о чём присылать уведомления:", catsKb(l.role, DEF_CATS[l.role]));
         await mlog(l.name, "подключил Telegram", "уведомления"); return }
+      if (me && me.role === "admin" && /^\/visits/.test(txt)) { const off = (await cfgGet("visits_off")) === "1"; await cfgSet("visits_off", off ? "0" : "1");
+        await say(off ? "👀 Сообщения о каждом заходе снова включены (до 27.11.2026). Выключить — /visits." : "🔕 Сообщения о каждом заходе выключены. Включить снова — /visits."); return }
       if (me && /^\/(stats|статистика)/.test(txt)) { await sendStats(chat, me); return }
       if (me && /^\/(settings|настройки)/.test(txt)) { await say("О чём присылать уведомления:", catsKb(me.role, me.cats)); return }
       if (me && /^\/stop/.test(txt)) { await q(`DECLARE $c AS Utf8; DELETE FROM tg WHERE chat=$c;`, { $c: TypedValues.utf8(chat) }); await say("Уведомления отключены. Подключиться снова можно кодом со страницы модерации."); return }
@@ -399,6 +401,17 @@ async function exportCsv() {
   return "\ufeff" + rows.map(r => r.map(c => { const v = String(c == null ? "" : c); return /[;"\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v }).join(";")).join("\r\n") }
 // Ссылка на выгрузку для бота: подписанная, действует 15 минут
 const expTok = exp => crypto.createHmac("sha256", salt).update("export|" + exp).digest("base64url").slice(0, 32);
+// Временная функция по просьбе Дмитрия: короткое сообщение админу в бот о каждом заходе на сайт.
+// Сама выключается 27.11.2026 (через месяц); раньше — командой /visits в боте.
+const VISITS_UNTIL = Date.parse("2026-11-27T00:00:00+03:00");
+const PAGES = { "/": "главная", "/index.html": "главная", "/kabinet.html": "кабинет", "/kak-opublikovat.html": "публикация проекта", "/otvet.html": "ответы на обращения", "/avtor.html": "профиль автора", "/mod.html": "модерация" };
+async function visitPing(b, ua, isnew, views) { try { if (Date.now() > VISITS_UNTIL || (await cfgGet("visits_off")) === "1") return;
+    const path = String(b.p || "/").slice(0, 80), gm = /^\/games\/([a-z0-9-]+)\.html$/.exec(path), page = gm ? "игра «" + gm[1] + "»" : PAGES[path] || path;
+    let from = ""; try { const h = new URL(String(b.r || "")).hostname; if (h && !/dsaskarov\.github\.io$/.test(h)) from = " · откуда: " + h.replace(/^www\./, "") } catch (_) {}
+    const dev = /iPhone|Android.+Mobile|Mobile/i.test(ua) ? "📱" : /iPad|Tablet|Android/i.test(ua) ? "📲" : "💻";
+    const who = isnew ? "🆕 новый посетитель" : views > 1 ? "🔁 снова (" + views + "-й просмотр за день)" : "↩️ вернулся";
+    const adm = await q(`SELECT chat, role FROM tg;`);
+    await Promise.all(adm.filter(r => r.role === "admin").map(r => tgApi("sendMessage", { chat_id: r.chat, disable_notification: !isnew, text: "👀 " + dev + " " + page + " · " + who + from }))) } catch (e) { console.error("visit", e && e.message) } }
 // --- Аккаунты ---
 const u8 = v => TypedValues.utf8(String(v)), u64 = v => TypedValues.uint64(v);
 const Hs = s => crypto.createHash("sha256").update(salt + "|acc|" + s).digest("hex");
@@ -667,6 +680,7 @@ exports.handler = async (event, ctx) => {
       if (!k[0]) { isnew = 1; await q(`DECLARE $v AS Utf8; DECLARE $f AS Utf8; UPSERT INTO devs (dev, first) VALUES ($v, $f);`, { $v: TypedValues.utf8(dev), $f: TypedValues.utf8(day) }) } }
     if (cur[0]) await q(`DECLARE $d AS Utf8; DECLARE $v AS Utf8; UPDATE hits SET views = views + 1u WHERE day=$d AND dev=$v;`, { $d: TypedValues.utf8(day), $v: TypedValues.utf8(dev) });
     else await q(`DECLARE $d AS Utf8; DECLARE $v AS Utf8; DECLARE $n AS Uint64; UPSERT INTO hits (day, dev, views, isnew) VALUES ($d, $v, 1u, $n);`, { $d: TypedValues.utf8(day), $v: TypedValues.utf8(dev), $n: TypedValues.uint64(isnew) });
+    await visitPing(b, ua, isnew, cur[0] ? num(cur[0].views) + 1 : 1);
     return reply(200, { ok: true }, origin);
   }
   if (a === "ticket" && method === "GET") {
