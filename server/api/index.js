@@ -79,6 +79,11 @@ async function db(ctx) {
           .withColumn(new Column("ts", Types.optional(Types.UINT64))).withPrimaryKeys("id"));
         await ensure("statsub", new TableDescription()
           .withColumn(new Column("name", Types.optional(Types.UTF8))).withColumn(new Column("parts", Types.optional(Types.UTF8))).withPrimaryKeys("name"));
+        await ensure("hits", new TableDescription()
+          .withColumn(new Column("day", Types.optional(Types.UTF8))).withColumn(new Column("dev", Types.optional(Types.UTF8)))
+          .withColumn(new Column("views", Types.optional(Types.UINT64))).withColumn(new Column("isnew", Types.optional(Types.UINT64))).withPrimaryKeys("day", "dev"));
+        await ensure("devs", new TableDescription()
+          .withColumn(new Column("dev", Types.optional(Types.UTF8))).withColumn(new Column("first", Types.optional(Types.UTF8))).withPrimaryKeys("dev"));
         await ensure("cfg", new TableDescription()
           .withColumn(new Column("k", Types.optional(Types.UTF8))).withColumn(new Column("v", Types.optional(Types.UTF8)))
           .withPrimaryKeys("k"));
@@ -270,6 +275,9 @@ function catsKb(role, cats) { const on = String(cats || "").split(",");
   return { inline_keyboard: Object.keys(CATS).filter(c => CAT_ROLES[c].includes(role)).map(c => [{ text: (on.includes(c) ? "✅ " : "⬜️ ") + CATS[c].replace(/^\S+ /, ""), callback_data: "t:" + c }]) } }
 const mlog = (who, act, what) => notify(/^бан/.test(act) ? "ban" : "mod", "<b>" + esc(who) + "</b>: " + esc(act) + " — " + esc(String(what).slice(0, 200))).then(() => q(`DECLARE $ts AS Uint64; DECLARE $id AS Utf8; DECLARE $w AS Utf8; DECLARE $a AS Utf8; DECLARE $x AS Utf8; UPSERT INTO modlog (ts, id, who, act, what) VALUES ($ts, $id, $w, $a, $x);`,
   { $ts: TypedValues.uint64(Date.now()), $id: TypedValues.utf8(crypto.randomBytes(4).toString("hex")), $w: TypedValues.utf8(who), $a: TypedValues.utf8(act), $x: TypedValues.utf8(String(what).slice(0, 300)) }));
+async function traffic(days) { const out = []; for (let i = days - 1; i >= 0; i--) { const day = new Date(Date.now() + 3 * 3600e3 - i * 864e5).toISOString().slice(0, 10);
+    const r = await q(`DECLARE $d AS Utf8; SELECT COUNT(*) AS u, SUM(views) AS v, SUM(isnew) AS n FROM hits WHERE day=$d;`, { $d: TypedValues.utf8(day) });
+    out.push({ day, uniq: num(r[0] && r[0].u), views: num(r[0] && r[0].v), fresh: num(r[0] && r[0].n) }) } return out }
 const NEED = { error: "Подтвердите, что вы не робот.", need: "captcha" };
 const parse = event => { try { return JSON.parse(event.isBase64Encoded ? Buffer.from(event.body || "", "base64").toString() : event.body || "{}") || {} } catch (_) { return null } };
 
@@ -316,6 +324,8 @@ exports.handler = async (event, ctx) => {
       scores: "🏆 Новых рекордов за сутки: " + sc.length,
       inbox: "📥 Новые заявки: " + (Object.keys(nw).length ? Object.entries(nw).filter(([k]) => k !== "resume").map(([k, n]) => KINDS[k].toLowerCase() + " — " + n).join(", ") || "нет" : "нет"),
       bans: "🚫 Активных банов: " + bans.length + " · 👥 в команде: " + team.length };
+    const tr = await traffic(2), td = tr[1], yd = tr[0];
+    const P2 = Object.assign({ visits: "👀 Посетители сегодня: <b>" + td.uniq + "</b> уникальных (новых " + td.fresh + ") · " + td.views + " просмотров · вчера: " + yd.uniq + " / " + yd.views }, P); Object.keys(P).forEach(k => delete P[k]); Object.assign(P, P2);
     const head = "<b>" + hi + "! Сводка «ИИгр онлайн»</b>\n\n", tail = "\n\nПодробности: dsaskarov.github.io/mod.html";
     const adminP = Object.assign({}, P, { inbox: "📥 Новые заявки: " + (Object.keys(nw).length ? Object.entries(nw).map(([k, n]) => KINDS[k].toLowerCase() + " — " + n).join(", ") : "нет") });
     await notify("stat", head + Object.values(adminP).join("\n") + tail);
@@ -425,6 +435,19 @@ exports.handler = async (event, ctx) => {
     else await q(`DECLARE $ip AS Utf8; DECLARE $ts AS Uint64; DECLARE $c AS Uint64; UPSERT INTO rl (ip, ts, cnt) VALUES ($ip, $ts, $c);`, P);
     return reply(200, { ok: true, best: better ? v : prev, improved: better, n }, origin);
   }
+  // Счётчик посещений: анонимный номер устройства из браузера (на сервере — только его отпечаток), без cookie и слежки
+  if (a === "hit" && method === "POST") {
+    const b = parse(event) || {}, raw = String(b.d || ""); if (!/^[0-9a-f]{32}$/.test(raw)) return reply(400, { error: "bad" }, origin);
+    const ua = String(hd["User-Agent"] || hd["user-agent"] || ""); if (!ua || /bot|crawl|spider|headless|preview|monitor|curl|python|wget/i.test(ua)) return reply(200, { ok: true }, origin);
+    const dev = crypto.createHash("sha256").update(salt + "|dev|" + raw).digest("hex").slice(0, 32), day = new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 10);
+    const cur = await q(`DECLARE $d AS Utf8; DECLARE $v AS Utf8; SELECT views FROM hits WHERE day=$d AND dev=$v;`, { $d: TypedValues.utf8(day), $v: TypedValues.utf8(dev) });
+    if (cur[0] && num(cur[0].views) >= 300) return reply(200, { ok: true }, origin);
+    let isnew = 0; if (!cur[0]) { const k = await q(`DECLARE $v AS Utf8; SELECT first FROM devs WHERE dev=$v;`, { $v: TypedValues.utf8(dev) });
+      if (!k[0]) { isnew = 1; await q(`DECLARE $v AS Utf8; DECLARE $f AS Utf8; UPSERT INTO devs (dev, first) VALUES ($v, $f);`, { $v: TypedValues.utf8(dev), $f: TypedValues.utf8(day) }) } }
+    if (cur[0]) await q(`DECLARE $d AS Utf8; DECLARE $v AS Utf8; UPDATE hits SET views = views + 1u WHERE day=$d AND dev=$v;`, { $d: TypedValues.utf8(day), $v: TypedValues.utf8(dev) });
+    else await q(`DECLARE $d AS Utf8; DECLARE $v AS Utf8; DECLARE $n AS Uint64; UPSERT INTO hits (day, dev, views, isnew) VALUES ($d, $v, 1u, $n);`, { $d: TypedValues.utf8(day), $v: TypedValues.utf8(dev), $n: TypedValues.uint64(isnew) });
+    return reply(200, { ok: true }, origin);
+  }
   if (a === "submit" && method === "POST") {
     const b = parse(event); if (!b) return reply(400, { error: "Неверный запрос" }, origin);
     const kind = String(b.kind || ""); if (!KINDS[kind]) return reply(400, { error: "Неизвестный тип обращения" }, origin);
@@ -476,11 +499,12 @@ exports.handler = async (event, ctx) => {
       if (!can("q:" + r[0].kind)) return NO;
       await q(`DECLARE $id AS Utf8; DECLARE $st AS Utf8; DECLARE $w AS Utf8; DECLARE $n AS Utf8; UPDATE inbox SET st=$st, who=$w, note=$n WHERE id=$id;`, { $id: TypedValues.utf8(id), $st: TypedValues.utf8(st), $w: TypedValues.utf8(me.name), $n: TypedValues.utf8(note) });
       await mlog(who, "заявка «" + QST[st] + "»", KINDS[r[0].kind] + ": " + (r[0].subj || id) + (note ? " — " + note : "")); return reply(200, { ok: true }, origin) }
+    if (op === "traffic") { if (!can("mods")) return NO; return reply(200, { items: await traffic(Math.min(31, Math.max(1, Math.round(Number(b.days)) || 14))) }, origin) }
     if (op === "log") { const r = await q(`SELECT ts, who, act, what FROM modlog ORDER BY ts DESC LIMIT 60;`); return reply(200, { items: r.map(x => ({ ts: num(x.ts), who: x.who, act: x.act, what: x.what })) }, origin) }
     if (op === "mods") { if (!can("mods")) return NO; const r = await q(`SELECT name, role, ts FROM team;`), ss = await q(`SELECT name, parts FROM statsub;`), sm = Object.fromEntries(ss.map(x => [x.name, x.parts]));
       const tgs = await q(`SELECT name FROM tg;`), tn = new Set(tgs.map(x => x.name));
       return reply(200, { items: r.map(x => ({ name: x.name, role: x.role, title: (ROLES[x.role] || {}).t || x.role, ts: num(x.ts), parts: can("team") ? String(sm[x.name] || "").split(",").filter(Boolean) : [], tg: tn.has(x.name) })) }, origin) }
-    if (op === "statset") { if (!can("team")) return NO; const name = clean(b.name, 30), OK = ["sales", "rc", "chat", "scores", "inbox", "bans"];
+    if (op === "statset") { if (!can("team")) return NO; const name = clean(b.name, 30), OK = ["visits", "sales", "rc", "chat", "scores", "inbox", "bans"];
       const parts = (Array.isArray(b.parts) ? b.parts : []).map(String).filter(p => OK.includes(p));
       await q(`DECLARE $n AS Utf8; DECLARE $p AS Utf8; UPSERT INTO statsub (name, parts) VALUES ($n, $p);`, { $n: TypedValues.utf8(name), $p: TypedValues.utf8(parts.join(",")) });
       await mlog(who, "настроил сводку", name + ": " + (parts.join(", ") || "отключена")); return reply(200, { ok: true }, origin) }

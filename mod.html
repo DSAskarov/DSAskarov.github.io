@@ -23,6 +23,9 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 <p class="muted">Код выдаёт админ. Не пересылайте его никому: по нему вас видно в журнале действий. Код хранится только в этом браузере.</p><p class="msg" id="lmsg"></p></section>
 <div id="app" hidden>
 <section class="card"><div class="row" style="justify-content:space-between"><p style="margin:0">Вы вошли как <b id="who"></b></p><button id="out">Выйти</button></div><p class="muted" id="can"></p><div class="row" style="margin-top:8px"><button id="tgb">Подключить Telegram</button><span class="muted" id="tgm"></span></div></section>
+<section class="card" id="secT" hidden><h2>Посещаемость за 14 дней</h2><div class="row"><button id="tU" class="main">Уникальные</button><button id="tV">Все просмотры</button><span class="muted" id="tSum"></span></div>
+<div id="tBars" style="display:flex;gap:4px;align-items:flex-end;height:140px;margin-top:12px"></div><div id="tDays" style="display:flex;gap:4px;margin-top:4px"></div>
+<p class="muted">Уникальные — разные устройства (браузеры) за день: номер устройства хранится в браузере, поэтому смена IP или VPN не создаёт нового посетителя. Боты и команда сайта не считаются.</p></section>
 <section class="card" id="secQ" hidden><h2>Заявки</h2><div class="row"><select id="qkind"></select><select id="qst"><option value="">Все статусы</option><option value="new">Новые</option><option value="work">В работе</option><option value="ok">Принятые</option><option value="no">Отклонённые</option></select><button id="rq">Обновить</button></div>
 <p class="muted">Откройте заявку, напишите короткий комментарий и выберите решение. Контакты заявителей видит только админ — это персональные данные.</p><div class="list" id="queue"></div></section>
 <section class="card" id="secMsgs"><h2>Сообщения</h2><div class="row"><select id="room"><option value="live">Живой чат</option><option value="talk-site">Обсуждения: сайт</option><option value="talk-industry">Обсуждения: индустрия</option><option value="talk-wishes">Обсуждения: пожелания</option></select>
@@ -52,6 +55,7 @@ async function login(k){K=k;try{const j=await call({op:"me"});ROLE=j.role;P=j.pe
     [...$("days").options].forEach(o=>{o.hidden=o.disabled=+o.value>j.ban});$("days").hidden=!can("ban");
     const ks=Object.keys(KIND).filter(k=>can("q:"+k));$("secQ").hidden=!ks.length;$("qkind").innerHTML="";ks.forEach(k=>{const o=el("option",KIND[k]);o.value=k;$("qkind").append(o)});if(ks.length)loadQ();
     $("mrole").innerHTML="";$("roleHelp").innerHTML="";Object.entries(j.roles||{}).forEach(([k,t])=>{const o=el("option",t);o.value=k;$("mrole").append(o);const li=el("li");li.append(el("b",t)," — "+(RHELP[k]||""));$("roleHelp").append(li)});{const li=el("li");li.append(el("b","Админ")," — "+RHELP.admin);$("roleHelp").append(li)}
+    $("secT").hidden=!can("mods");if(can("mods"))loadT();
     st.set(K);if(can("del"))loadMsgs();if(can("score"))loadScores();loadLog();if(can("mods"))loadMods()}
   catch(e){$("lmsg").textContent=e.message;st.set("")}}
 async function loadMsgs(){const box=$("msgs");box.textContent="Загрузка…";const r=await fetch(API+"?a=list&room="+$("room").value).then(r=>r.json()).catch(()=>({items:[]}));box.innerHTML="";
@@ -68,9 +72,17 @@ async function loadQ(){const box=$("queue");box.textContent="Загрузка…
     const row=el("div",null,"row");row.style.marginTop="6px";[["work","В работу",""],["ok","Принять","main"],["no","Отклонить","red"]].forEach(([st,t,c])=>row.append(btn(t,c,async()=>{await call({op:"qset",id:x.id,st,note:note.value.trim()});loadQ();loadLog()})));tx.append(row);
     it.append(tx);box.append(it)});if(!box.children.length)box.textContent="Заявок нет."}
 $("rq").onclick=loadQ;$("qkind").onchange=loadQ;$("qst").onchange=loadQ;
+let TR=[],TM="uniq";
+async function loadT(){try{TR=(await call({op:"traffic",days:14})).items||[]}catch(_){TR=[]}drawT()}
+function drawT(){const b=$("tBars"),d=$("tDays");b.innerHTML="";d.innerHTML="";const mx=Math.max(1,...TR.map(x=>x[TM]));
+  TR.forEach(x=>{const c=el("div");c.title=x.day+": "+x.uniq+" уникальных, "+x.views+" просмотров, новых "+x.fresh;c.style.cssText="flex:1;min-width:0;border-radius:4px 4px 0 0;background:"+(TM==="uniq"?"#E7BD52":"#E8333F")+";height:"+Math.max(2,x[TM]/mx*130)+"px";b.append(c);
+    const l=el("div",x.day.slice(8));l.style.cssText="flex:1;min-width:0;text-align:center;font-size:.7rem;color:#B9B6C2";d.append(l)});
+  const t=TR[TR.length-1]||{uniq:0,views:0,fresh:0},S=TR.reduce((a,x)=>a+x[TM],0);$("tSum").textContent="Сегодня: "+t.uniq+" уникальных (новых "+t.fresh+"), "+t.views+" просмотров · за 14 дней: "+S+(TM==="uniq"?" уникальных по дням":" просмотров");
+  $("tU").className=TM==="uniq"?"main":"";$("tV").className=TM==="views"?"main":""}
+$("tU").onclick=()=>{TM="uniq";drawT()};$("tV").onclick=()=>{TM="views";drawT()};
 async function loadLog(){const j=await call({op:"log"}).catch(()=>({items:[]})),box=$("log");box.innerHTML="";(j.items||[]).forEach(x=>{const it=el("div",null,"it");it.append(el("div",T(x.ts)+" · "+x.who+" — "+x.act+": "+x.what,"tx"));box.append(it)});if(!box.children.length)box.textContent="Пока пусто."}
 async function loadMods(){const j=await call({op:"mods"}),box=$("mods");box.innerHTML="";(j.items||[]).forEach(m=>{const it=el("div",null,"it");const tx=el("div",m.name+" — "+m.title+" · с "+T(m.ts)+(m.tg?" · Telegram подключён":" · Telegram не подключён"),"tx");it.append(tx);
-    if(can("team")){const PARTS={sales:"Продажи",rc:"Чеки",chat:"Общение",scores:"Рекорды",inbox:"Заявки",bans:"Баны и команда"},box2=el("div",null,"row");box2.style.marginTop="6px";box2.append(el("small","Сводка в бот:"));
+    if(can("team")){const PARTS={visits:"Посещаемость",sales:"Продажи",rc:"Чеки",chat:"Общение",scores:"Рекорды",inbox:"Заявки",bans:"Баны и команда"},box2=el("div",null,"row");box2.style.marginTop="6px";box2.append(el("small","Сводка в бот:"));
       const cb={};Object.entries(PARTS).forEach(([k,t])=>{const l=el("label");l.style.cssText="display:inline-flex;gap:4px;align-items:center;font-size:.85rem";const c=document.createElement("input");c.type="checkbox";c.checked=(m.parts||[]).includes(k);cb[k]=c;l.append(c,t);box2.append(l)});
       box2.append(btn("Сохранить","",async()=>{await call({op:"statset",name:m.name,parts:Object.keys(cb).filter(k=>cb[k].checked)});alertBox("Сводка для «"+m.name+"» сохранена.");loadLog()}));tx.append(box2)}
     if(can("team"))it.append(btn("Отозвать","red",async()=>{if(!confirm("Отозвать доступ у «"+m.name+"»?"))return;await call({op:"rm",name:m.name});loadMods();loadLog()}));box.append(it)});if(!box.children.length)box.textContent="В команде пока никого."}
