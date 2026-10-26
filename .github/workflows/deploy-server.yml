@@ -94,6 +94,7 @@ jobs:
             NPD_PASSWORD=${{ secrets.NPD_PASSWORD || '-' }}
             ADMIN_KEY=${{ secrets.ADMIN_KEY || '-' }}
             TG_BOT_TOKEN=${{ secrets.TG_BOT_TOKEN || '-' }}
+            SMTP_PASS=${{ secrets.SMTP_PASS || '-' }}
       - name: Открыть функцию для сайта и проверить
         env: { IAM: "${{ steps.tok.outputs.iam }}", FID: "${{ steps.fn.outputs.function-id }}" }
         run: |
@@ -126,7 +127,7 @@ jobs:
           S=$(printf '%s' "$TG|iigry-tg" | sha256sum | cut -c1-48); echo "::add-mask::$S"
           curl -sS -X POST "https://api.telegram.org/bot$TG/deleteWebhook" | jq -c '{ok}'   # входящие забирает ретранслятор
           curl -sS -X POST "https://api.telegram.org/bot$TG/setMyCommands" -H "Content-Type: application/json" \
-            -d '{"commands":[{"command":"my","description":"Мои проекты и их статистика"},{"command":"stats","description":"Статистика сайта (для команды)"},{"command":"settings","description":"Выбрать уведомления"},{"command":"stop","description":"Отключить уведомления"}]}' | jq -c '{ok}'
+            -d '{"commands":[{"command":"my","description":"Мои проекты и их статистика"},{"command":"phone","description":"Привязать телефон для входа"},{"command":"stats","description":"Статистика сайта (для команды)"},{"command":"settings","description":"Выбрать уведомления"},{"command":"stop","description":"Отключить уведомления"}]}' | jq -c '{ok}'
           curl -sS -X POST "https://api.telegram.org/bot$TG/setMyDescription" -H "Content-Type: application/json" \
             -d '{"description":"Бот площадки «ИИгры онлайн» (dsaskarov.github.io): вход авторов на сайт, ответы модераторов и статистика проектов; уведомления для команды."}' | jq -c '{ok}'
       - name: Выключить технические работы

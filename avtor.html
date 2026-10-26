@@ -1,0 +1,82 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; font-src https://fonts.gstatic.com; img-src 'self' data: https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; connect-src https://functions.yandexcloud.net https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; frame-src https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; object-src 'none'; base-uri 'none'; form-action 'none'"><meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="description" content="Открытый профиль автора на «ИИгры онлайн»."><meta property="og:title" content="Профиль автора — ИИгры онлайн"><meta property="og:description" content="Открытый профиль автора на «ИИгры онлайн»."><meta name="theme-color" content="#0B0A0E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23B3141F'/%3E%3Ctext x='32' y='44' font-size='30' font-family='Arial' font-weight='700' text-anchor='middle' fill='%23F6DE8D'%3EИИ%3C/text%3E%3C/svg%3E">
+<style>*{box-sizing:border-box}html,body{margin:0}[hidden]{display:none!important}</style></head><body>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@700;800;900&family=Golos+Text:wght@400;600&display=swap">
+<style>
+:root{--bg:#0B0A0E;--panel:#16141B;--fg:#F4F4F6;--muted:#B9B6C2;--red:#E8333F;--gold:#E7BD52;--green:#4ADE95;--line:rgba(255,255,255,.12);color-scheme:dark}
+body{background:radial-gradient(60vmax 50vmax at 85% 0%,rgba(231,189,82,.12),transparent 60%),var(--bg);color:var(--fg);font:400 16px/1.55 "Golos Text",system-ui,sans-serif;padding:16px}
+main{max-width:760px;margin:0 auto;display:grid;gap:14px}a{color:var(--gold)}
+h1{font:900 clamp(1.5rem,6vw,2.2rem)/1.1 Rubik,sans-serif;margin:6px 0 0}h1 b{color:var(--red)}h2{font:800 1.2rem Rubik,sans-serif;margin:0}
+.lead,.muted{color:var(--muted);margin:0}.muted{font-size:.88rem}
+.bar{height:10px;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),#F6DE8D);transition:width .3s}
+.nav{display:flex;gap:6px;flex-wrap:wrap}.nav span{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:4px 10px;font:600 .8rem "Golos Text";color:var(--muted)}
+.nav span.cur{border-color:var(--gold);color:var(--gold)}.nav span.ok{border-color:rgba(74,222,149,.6);color:var(--fg)}.nav span.ok::before{content:"✓ ";color:var(--green)}
+.step{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;display:grid;gap:12px}
+label.f{display:grid;gap:4px;font-weight:600;font-size:.92rem}
+input,select,textarea{background:#0F0E13;color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:10px;font:400 1rem "Golos Text";width:100%}
+textarea{min-height:90px;resize:vertical}
+.ck{display:flex;gap:10px;align-items:flex-start;font-size:.92rem}.ck input{width:20px;height:20px;flex:none;accent-color:#E7BD52;margin-top:2px}
+.checks{display:grid;gap:4px;background:#0F0E13;border:1px solid var(--line);border-radius:10px;padding:10px;font-size:.9rem}
+.checks div::before{display:inline-block;width:1.4em}.checks .y::before{content:"✅"}.checks .n::before{content:"❌"}.checks .w::before{content:"⏳"}.checks .i::before{content:"ℹ️"}
+.btn{border:0;border-radius:10px;padding:11px 16px;font:700 .95rem "Golos Text";background:linear-gradient(135deg,#FF4A55,#A3101C);color:#fff;cursor:pointer;text-decoration:none;display:inline-block}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--fg)}.btn.gold{background:var(--gold);color:#1A1306}.btn:disabled{opacity:.4;cursor:not-allowed}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.big{font:900 1.6rem Rubik;color:var(--gold);letter-spacing:1px}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+[hidden]{display:none!important}
+</style><style>.proj{background:#0F0E13;border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:6px}.proj h3{margin:0;font:800 1.05rem Rubik,sans-serif}
+.tag{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:2px 9px;font-size:.8rem;color:var(--muted)}.tag.ok{border-color:rgba(74,222,149,.6);color:var(--green)}.tag.bad{border-color:var(--red);color:#FF7A82}
+.spark{display:flex;align-items:flex-end;gap:2px;height:44px}.spark i{flex:1;background:var(--gold);border-radius:4px 4px 0 0;min-height:2px}
+.nums{display:flex;gap:16px;flex-wrap:wrap;font-size:.9rem}.nums b{font:800 1.2rem Rubik;color:var(--fg)}
+.card{border-radius:16px;padding:18px;display:flex;gap:14px;align-items:center;color:#fff}.card .av{font-size:2.6rem;width:64px;height:64px;display:grid;place-items:center;background:rgba(0,0,0,.25);border-radius:50%;flex:none}
+.card b{font:800 1.25rem Rubik,sans-serif;display:block}.card p{margin:2px 0 0;opacity:.9;font-size:.9rem}
+.pick{display:flex;gap:6px;flex-wrap:wrap}.pick button{border:2px solid transparent;border-radius:12px;background:#0F0E13;color:var(--fg);font-size:1.4rem;width:46px;height:46px;cursor:pointer}.pick button[aria-pressed=true]{border-color:var(--gold)}
+.pick.bg button{width:52px;height:34px}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.sub{font:800 1rem Rubik,sans-serif;margin:6px 0 0}.wayrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:#0F0E13;border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.wayrow span{flex:1;min-width:160px}.btn.sm{padding:7px 11px;font-size:.85rem}</style>
+<main>
+<p style="margin:0"><a href="./">← ИИгры онлайн</a> · <a href="kabinet.html">Мой кабинет</a></p>
+<section id="box" style="display:grid;gap:12px" aria-live="polite"><p class="muted">Загрузка…</p></section>
+</main>
+<script>
+const $=id=>document.getElementById(id),el=(t,x,c)=>{const e=document.createElement(t);if(x!=null)e.textContent=x;if(c)e.className=c;return e};
+const BG=["linear-gradient(135deg,#FF4A55,#5A0A12)","linear-gradient(135deg,#F6DE8D,#9A6B12)","linear-gradient(135deg,#4ADE95,#0D4A31)","linear-gradient(135deg,#6AA8FF,#0E2A5C)","linear-gradient(135deg,#B48CFF,#3A1A6E)","linear-gradient(135deg,#8B8794,#26242C)"];
+const safe=u=>/^https:\/\/[^\s"'<>`]+$/i.test(u||"")?u:"";
+async function load(){const b=$("box"),n=decodeURIComponent(location.hash.slice(1));b.innerHTML="";
+  if(n.length<2){b.append(el("h1","Профиль автора"),el("p","Откройте профиль по ссылке со страницы проекта.","muted"));return}
+  let p;try{const r=await fetch("https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av?a=profile&nick="+encodeURIComponent(n));p=await r.json();if(!r.ok)throw new Error(p.error)}catch(e){b.append(el("h1","Автор не найден"),el("p",e.message||"Нет связи с сервером","muted"));return}
+  document.title=p.nick+" — автор на ИИгры онлайн";
+  const c=el("div",null,"card");c.style.background=BG[p.bg]||BG[0];const a=el("div",p.av,"av");a.setAttribute("aria-hidden","true");const t=el("div");const h=el("h1",p.nick);h.style.cssText="margin:0;color:#fff";t.append(h,el("p","На сайте с "+new Date(p.since).toLocaleDateString("ru-RU",{day:"numeric",month:"long",year:"numeric"})));c.append(a,t);b.append(c);
+  const s=el("div",null,"step");if(p.about)s.append(el("p",p.about));
+  const L=[["Роль",p.role],["Возраст",p.age],["Город",p.city],["Увлечения",p.hob],["Любимые жанры",p.genres]].filter(x=>x[1]);
+  if(L.length){const d=el("div",null,"checks");L.forEach(([k,v])=>d.append(el("div",k+": "+v,"i")));s.append(d)}
+  if(safe(p.link)){const l=el("a","Ссылка автора →");l.href=safe(p.link);l.target="_blank";l.rel="noopener noreferrer nofollow ugc";s.append(l)}
+  const cs=p.c||{},links=[];
+  if(cs.tg)links.push(["Telegram "+cs.tg,"https://t.me/"+cs.tg.replace(/^@/,"")]);if(cs.vk)links.push(["VK","https://vk.com/"+cs.vk]);if(cs.email)links.push([cs.email,"mailto:"+cs.email]);
+  if(cs.phone)links.push([cs.phone,"tel:"+cs.phone.replace(/[^\d+]/g,"")]);if(safe(cs.other))links.push(["Другая соцсеть",safe(cs.other)]);
+  if(links.length){s.append(el("h2","Контакты"));const r=el("div",null,"row");links.forEach(([t,u])=>{const x=el("a",t,"btn ghost sm");x.href=u;if(/^https/.test(u)){x.target="_blank";x.rel="noopener noreferrer nofollow ugc"}r.append(x)});s.append(r)}
+  s.append(el("h2","Проекты"));if((p.projects||[]).length){const ul=el("ul");p.projects.forEach(x=>ul.append(el("li",x.title)));s.append(ul,(()=>{const x=el("a","Открыть каталог →");x.href="./#catalog";return x})())}else s.append(el("p","Пока нет опубликованных проектов.","muted"));
+  if(!s.children.length)s.append(el("p","Автор пока ничего о себе не рассказал.","muted"));b.append(s)}
+addEventListener("hashchange",load);load();
+</script><script>/* Счётчик посещений «ИИгр»: случайный номер устройства хранится только в этом браузере; без cookie и слежки на других сайтах. Команда сайта не считается. */
+(function(){try{if(navigator.webdriver||localStorage.getItem("iigry-mod"))return;let d=localStorage.getItem("iigry-did");
+ if(!/^[0-9a-f]{32}$/.test(d||"")){const a=new Uint8Array(16);crypto.getRandomValues(a);d=[...a].map(x=>x.toString(16).padStart(2,"0")).join("");localStorage.setItem("iigry-did",d)}
+ const go=()=>{if(document.visibilityState!=="visible")return;document.removeEventListener("visibilitychange",go);fetch("https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av?a=hit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({d,p:location.pathname}),keepalive:true}).catch(()=>{})};
+ setTimeout(()=>{document.visibilityState==="visible"?go():document.addEventListener("visibilitychange",go)},2500)}catch(_){}})();
+/* Технические работы: пока сайт обновляется, показываем понятное предупреждение и сами обновляем страницу, когда всё готово */
+(function(){const API="https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av?a=status";let shown=null,was=false;
+ function show(j){if(shown)return;const d=document.createElement("div");d.setAttribute("role","alertdialog");d.setAttribute("aria-live","assertive");
+  d.style.cssText="position:fixed;inset:0;z-index:2147483000;background:rgba(11,10,14,.88);display:grid;place-items:center;padding:16px;font-family:Golos Text,system-ui,sans-serif";
+  const c=document.createElement("div");c.style.cssText="max-width:440px;background:#16141B;border:1px solid #E7BD52;border-radius:16px;padding:22px;color:#F4F4F6;text-align:center;display:grid;gap:10px";
+  const h=document.createElement("b");h.style.cssText="font:800 1.3rem Rubik,system-ui,sans-serif;color:#E7BD52";h.textContent="🛠 Идут технические работы";
+  const p=document.createElement("p");p.style.margin="0";const left=Math.max(1,Math.round((j.until-Date.now())/60000));p.textContent=(j.text||"Сайт обновляется — добавляем новое.")+" Обычно это пара минут (не дольше "+left+" мин). Страница обновится сама, когда всё будет готово.";
+  const b=document.createElement("button");b.type="button";b.textContent="Понятно, подожду";b.style.cssText="border:0;border-radius:10px;padding:10px 16px;font:700 1rem inherit;background:linear-gradient(135deg,#FF4A55,#A3101C);color:#fff;cursor:pointer;justify-self:center";
+  b.onclick=()=>{d.remove();shown=null;bar()};c.append(h,p,b);d.append(c);document.body.append(d);shown=d}
+ function bar(){if(document.getElementById("iigry-maint-bar"))return;const s=document.createElement("div");s.id="iigry-maint-bar";s.textContent="🛠 Идут технические работы — возможны недолгие сбои";s.style.cssText="position:fixed;left:0;right:0;bottom:0;z-index:2147482999;background:#E7BD52;color:#1A1306;font:700 .9rem Golos Text,system-ui,sans-serif;text-align:center;padding:6px";document.body.append(s)}
+ async function check(){try{const j=await (await fetch(API,{cache:"no-store"})).json();
+   if(j.maint){was=true;if(!document.getElementById("iigry-maint-bar"))show(j)}else if(was){location.reload()}}catch(_){} }
+ check();setInterval(check,20000)})();
+</script>
+</body></html>

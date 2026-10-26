@@ -1,2 +1,2 @@
 { "name": "iigry-api", "version": "1.0.0", "private": true, "main": "index.js",
-  "dependencies": { "ydb-sdk": "5.11.1" } }
+  "dependencies": { "ydb-sdk": "5.11.1", "nodemailer": "6.9.16" } }

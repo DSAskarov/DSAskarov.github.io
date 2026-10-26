@@ -99,6 +99,9 @@ async function db(ctx) {
         await T("ulogin", [["code", Types.UTF8], ["ph", Types.UTF8], ["st", Types.UTF8], ["uid", Types.UTF8], ["exp", Types.UINT64]], ["code"]);
         await T("usess", [["h", Types.UTF8], ["uid", Types.UTF8], ["exp", Types.UINT64]], ["h"]);
         await T("own", [["id", Types.UTF8], ["uid", Types.UTF8], ["pid", Types.UTF8], ["title", Types.UTF8], ["ts", Types.UINT64]], ["id"]);
+        await T("uauth", [["k", Types.UTF8], ["uid", Types.UTF8], ["ts", Types.UINT64]], ["k"]);
+        await T("ucode", [["k", Types.UTF8], ["h", Types.UTF8], ["exp", Types.UINT64], ["n", Types.UINT64], ["uid", Types.UTF8]], ["k"]);
+        await T("uprof", [["uid", Types.UTF8], ["j", Types.UTF8]], ["uid"]);
         await T("pv", [["pid", Types.UTF8], ["day", Types.UTF8], ["dev", Types.UTF8], ["v", Types.UINT64]], ["pid", "day", "dev"]);
         await ensure("cfg", new TableDescription()
           .withColumn(new Column("k", Types.optional(Types.UTF8))).withColumn(new Column("v", Types.optional(Types.UTF8)))
@@ -270,9 +273,13 @@ async function tgUpdate(u) {
         const me = (await q(`DECLARE $c AS Utf8; SELECT name, role FROM tg WHERE chat=$c;`, { $c: TypedValues.utf8(chat) }))[0]; if (me) await sendStats(chat, me);
         await tgApi("answerCallbackQuery", { callback_query_id: cq.id }); return }
       if (u.callback_query && /^[LN]:[0-9a-f]{24}$/.test(String(u.callback_query.data || ""))) { const cq = u.callback_query, chat = String(cq.message && cq.message.chat && cq.message.chat.id || ""), [k, code] = cq.data.split(":");
-        const l = (await q(`DECLARE $c AS Utf8; SELECT st, exp FROM ulogin WHERE code=$c;`, { $c: u8(code) }))[0]; let t;
+        const l = (await q(`DECLARE $c AS Utf8; SELECT st, exp, uid FROM ulogin WHERE code=$c;`, { $c: u8(code) }))[0]; let t;
         if (!chat || !l || l.st !== "wait" || num(l.exp) < Date.now()) t = "Ссылка для входа устарела. Нажмите «Войти» на сайте ещё раз.";
         else if (k === "N") { await q(`DECLARE $c AS Utf8; DECLARE $s AS Utf8; UPDATE ulogin SET st=$s WHERE code=$c;`, { $c: u8(code), $s: u8("no") }); t = "Вход отменён. Если вы не нажимали «Войти» — кто-то прислал вам чужую ссылку, просто не переходите по таким." }
+        else if (l.uid) { const other = await userByChat(chat);
+          if (other && other.uid !== l.uid) { await q(`DECLARE $c AS Utf8; DECLARE $s AS Utf8; UPDATE ulogin SET st=$s WHERE code=$c;`, { $c: u8(code), $s: u8("no") }); t = "Этот Telegram уже привязан к другому аккаунту сайта («" + esc(other.nick) + "»). Сначала отвяжите его там в кабинете." }
+          else { await q(`DECLARE $u AS Utf8; DECLARE $c AS Utf8; UPDATE users SET chat=$c WHERE uid=$u;`, { $u: u8(l.uid), $c: u8(chat) });
+            await q(`DECLARE $c AS Utf8; DECLARE $s AS Utf8; UPDATE ulogin SET st=$s WHERE code=$c;`, { $c: u8(code), $s: u8("ok") }); t = "✅ Telegram привязан к вашему аккаунту. Теперь сюда будут приходить ответы модераторов, а в кабинете можно привязать телефон (/phone)." } }
         else { let me = await userByChat(chat); if (!me) { me = { uid: crypto.randomBytes(8).toString("hex"), nick: "Автор-" + crypto.randomBytes(2).toString("hex").toUpperCase() };
             await q(`DECLARE $u AS Utf8; DECLARE $c AS Utf8; DECLARE $n AS Utf8; DECLARE $ts AS Uint64; UPSERT INTO users (uid, chat, nick, ts) VALUES ($u, $c, $n, $ts);`, { $u: u8(me.uid), $c: u8(chat), $n: u8(me.nick), $ts: u64(Date.now()) }) }
           await q(`DECLARE $c AS Utf8; DECLARE $s AS Utf8; DECLARE $u AS Utf8; UPDATE ulogin SET st=$s, uid=$u WHERE code=$c;`, { $c: u8(code), $s: u8("ok"), $u: u8(me.uid) });
@@ -289,6 +296,15 @@ async function tgUpdate(u) {
       const chat = String(m.chat.id), txt = String(m.text || "").trim();
       const me = (await q(`DECLARE $c AS Utf8; SELECT name, role, cats FROM tg WHERE chat=$c;`, { $c: TypedValues.utf8(chat) }))[0];
       const say = (text, kb) => tgApi("sendMessage", Object.assign({ chat_id: chat, text, parse_mode: "HTML" }, kb ? { reply_markup: kb } : {}));
+      if (m.contact) { const uu = await userByChat(chat), kb = { remove_keyboard: true };
+        if (!uu) { await say("Сначала войдите на сайт через Telegram — тогда номер можно будет привязать.", kb); return }
+        if (!m.from || String(m.contact.user_id || "") !== String(m.from.id)) { await say("Можно привязать только свой номер — нажмите кнопку «📱 Поделиться моим номером».", kb); return }
+        const ph = normPhone(m.contact.phone_number); if (!ph) { await say("Номер не распознан.", kb); return }
+        const au = await authOf("p:" + ph); if (au && au.uid !== uu.uid) { await say("Этот номер уже привязан к другому аккаунту сайта.", kb); return }
+        await q(`DECLARE $k AS Utf8; DECLARE $u AS Utf8; DECLARE $ts AS Uint64; UPSERT INTO uauth (k, uid, ts) VALUES ($k, $u, $ts);`, { $k: u8("p:" + ph), $u: u8(uu.uid), $ts: u64(Date.now()) });
+        await say("✅ Номер привязан. Теперь на сайте можно входить и по номеру телефона — код будет приходить сюда, бесплатно. В открытом профиле номер не показывается, пока вы сами не включите это в кабинете.", kb); return }
+      if (/^\/(phone|телефон)|^\/start phone$/i.test(txt)) { if (!(await userByChat(chat))) { await say("Сначала войдите на сайт через Telegram (кнопка «Войти» на dsaskarov.github.io)."); return }
+        await say("Чтобы входить на сайт по номеру телефона, нажмите кнопку ниже — Telegram передаст ваш номер (только ваш, чужой нельзя).", { keyboard: [[{ text: "📱 Поделиться моим номером", request_contact: true }]], resize_keyboard: true, one_time_keyboard: true }); return }
       const sm = /^\/start\s+in_([0-9a-f]{24})$/.exec(txt);
       if (sm) { const l = (await q(`DECLARE $c AS Utf8; SELECT st, exp FROM ulogin WHERE code=$c;`, { $c: u8(sm[1]) }))[0];
         if (!l || l.st !== "wait" || num(l.exp) < Date.now()) { await say("Ссылка для входа устарела — нажмите «Войти» на сайте ещё раз."); return }
@@ -306,7 +322,7 @@ async function tgUpdate(u) {
       if (me && /^\/(stats|статистика)/.test(txt)) { await sendStats(chat, me); return }
       if (me && /^\/(settings|настройки)/.test(txt)) { await say("О чём присылать уведомления:", catsKb(me.role, me.cats)); return }
       if (me && /^\/stop/.test(txt)) { await q(`DECLARE $c AS Utf8; DELETE FROM tg WHERE chat=$c;`, { $c: TypedValues.utf8(chat) }); await say("Уведомления отключены. Подключиться снова можно кодом со страницы модерации."); return }
-      await say(me ? "Команды: /my — мои проекты, /stats — статистика сайта, /settings — выбрать уведомления, /stop — отключить." : "Привет! Это бот площадки «ИИгры онлайн» — dsaskarov.github.io\n\n🎮 Авторам: войдите на сайт через «Войти» — сюда будут приходить ответы модераторов и статистика ваших проектов (команда /my).\n\nЕсли вы в команде сайта: откройте страницу модерации, нажмите «Подключить Telegram» и пришлите сюда шестизначный код.");
+      await say(me ? "Команды: /my — мои проекты, /phone — привязать телефон, /stats — статистика сайта, /settings — выбрать уведомления, /stop — отключить." : "Привет! Это бот площадки «ИИгры онлайн» — dsaskarov.github.io\n\n🎮 Авторам: войдите на сайт через «Войти» — сюда будут приходить ответы модераторов и статистика ваших проектов (команда /my).\n\nЕсли вы в команде сайта: откройте страницу модерации, нажмите «Подключить Telegram» и пришлите сюда шестизначный код.");
 }
 // Telegram-бот: уведомления команде по категориям. Токен — в GitHub Secrets (TG_BOT_TOKEN).
 const TG = env("TG_BOT_TOKEN"), TG_SECRET = TG ? crypto.createHash("sha256").update(TG + "|iigry-tg").digest("hex").slice(0, 48) : "";
@@ -404,7 +420,8 @@ async function myProjects(uid, site) {
   return res }
 async function isAdminChat(chat) { const r = (await q(`DECLARE $c AS Utf8; SELECT role FROM tg WHERE chat=$c;`, { $c: u8(chat) }))[0]; return !!(r && r.role === "admin") }
 async function tellAuthor(id, text) { try { const o = (await q(`DECLARE $id AS Utf8; SELECT uid, title FROM own WHERE id=$id;`, { $id: u8(id) }))[0]; if (!o) return;
-  const u = (await q(`DECLARE $u AS Utf8; SELECT chat FROM users WHERE uid=$u;`, { $u: u8(o.uid) }))[0]; if (!u || !u.chat) return;
+  const u = (await q(`DECLARE $u AS Utf8; SELECT chat FROM users WHERE uid=$u;`, { $u: u8(o.uid) }))[0]; if (!u) return;
+  if (!u.chat) { const em = (await authsOf(o.uid)).find(k => k.startsWith("e:")); if (em) await sendMail(em.slice(2), "«ИИгры онлайн»: новости по проекту", "Проект «" + String(o.title || "").replace(/^Новый проект: /, "") + "»\n" + text.replace(/<[^>]+>/g, "").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&") + "\n\nКабинет: https://dsaskarov.github.io/kabinet.html"); return }
   await tgApi("sendMessage", { chat_id: u.chat, parse_mode: "HTML", disable_web_page_preview: true, text: "🎮 <b>" + esc(String(o.title || "").replace(/^Новый проект: /, "")) + "</b>\n" + text,
     reply_markup: { inline_keyboard: [[{ text: "Мой кабинет →", url: "https://dsaskarov.github.io/kabinet.html" }]] } }) } catch (e) { console.error("author", e && e.message) } }
 async function countPv(dev, pid) { const day = dayNow();
@@ -413,6 +430,43 @@ async function countPv(dev, pid) { const day = dayNow();
   await q(`DECLARE $p AS Utf8; DECLARE $d AS Utf8; DECLARE $v AS Utf8; DECLARE $n AS Uint64; UPSERT INTO pv (pid, day, dev, v) VALUES ($p, $d, $v, $n);`, { $p: u8(pid), $d: u8(day), $v: u8(dev), $n: u64(cur ? num(cur.v) + 1 : 1) }) }
 async function nickFree(nick, uid) { const l = nick.toLowerCase(); return !(await q(`SELECT uid, nick FROM users;`)).some(x => x.uid !== uid && String(x.nick || "").toLowerCase() === l) }
 const nickBad = n => n.length < 2 || n.length > 30 || RESV.test(n) || BAD.test(n) || LINK.test(n) || /^Автор-/i.test(n);
+// --- Вход по почте и телефону, привязка способов входа, профиль ---
+const SMTP_PASS = env("SMTP_PASS"), SMTP_USER = env("SMTP_USER") || "askarov.dmitry@yandex.ru";
+const EMAIL_RE = /^[^\s@<>"']{1,64}@[^\s@<>"']{1,190}\.[a-zа-я]{2,24}$/i;
+const normEmail = e => clean(e, 254).toLowerCase(), normPhone = p => { let d = String(p || "").replace(/\D/g, ""); if (d.length === 11 && d[0] === "8") d = "7" + d.slice(1); if (d.length === 10 && d[0] === "9") d = "7" + d; return /^\d{10,15}$/.test(d) ? "+" + d : "" };
+const mask = k => k.startsWith("e:") ? k.slice(2).replace(/^(.{2}).*(@.*)$/, "$1…$2") : k.startsWith("p:") ? k.slice(2).replace(/^(\+\d{2}).*(\d{2})$/, "$1 … $2") : "Telegram";
+let mailer = null;
+async function sendMail(to, subj, text) { if (!SMTP_PASS) return false;
+  try { if (!mailer) mailer = require("nodemailer").createTransport({ host: "smtp.yandex.ru", port: 465, secure: true, auth: { user: SMTP_USER, pass: SMTP_PASS } });
+    await mailer.sendMail({ from: "«ИИгры онлайн» <" + SMTP_USER + ">", to, subject: subj, text: text + "\n\n— «ИИгры онлайн», https://dsaskarov.github.io\nЕсли вы ничего не запрашивали, просто удалите это письмо." }); return true } catch (e) { console.error("mail", e && e.message); return false } }
+async function authOf(k) { return (await q(`DECLARE $k AS Utf8; SELECT uid FROM uauth WHERE k=$k;`, { $k: u8(k) }))[0] || null }
+async function authsOf(uid) { const r = await q(`SELECT k, uid FROM uauth;`); return r.filter(x => x.uid === uid).map(x => x.k) }
+async function newUser(chat) { const u = { uid: crypto.randomBytes(8).toString("hex"), chat: chat || "", nick: "Автор-" + crypto.randomBytes(2).toString("hex").toUpperCase(), ts: Date.now() };
+  await q(`DECLARE $u AS Utf8; DECLARE $c AS Utf8; DECLARE $n AS Utf8; DECLARE $ts AS Uint64; UPSERT INTO users (uid, chat, nick, ts) VALUES ($u, $c, $n, $ts);`, { $u: u8(u.uid), $c: u8(u.chat), $n: u8(u.nick), $ts: u64(u.ts) }); return u }
+async function newSession(uid) { const tok = crypto.randomBytes(32).toString("base64url");
+  await q(`DECLARE $h AS Utf8; DECLARE $u AS Utf8; DECLARE $e AS Uint64; UPSERT INTO usess (h, uid, exp) VALUES ($h, $u, $e);`, { $h: u8(Hs("s|" + tok)), $u: u8(uid), $e: u64(Date.now() + 30 * 864e5) }); return tok }
+// Одноразовый код: 6 цифр, 10 минут, не больше 5 попыток; храним только отпечаток
+async function codeMake(k, uid) { const old = (await q(`DECLARE $k AS Utf8; SELECT exp FROM ucode WHERE k=$k;`, { $k: u8(k) }))[0];
+  if (old && num(old.exp) - 9 * 60e3 > Date.now()) return { err: "Код уже отправлен — новый можно запросить через минуту." };
+  const c = String(crypto.randomInt(0, 1e6)).padStart(6, "0");
+  await q(`DECLARE $k AS Utf8; DECLARE $h AS Utf8; DECLARE $e AS Uint64; DECLARE $u AS Utf8; UPSERT INTO ucode (k, h, exp, n, uid) VALUES ($k, $h, $e, 0u, $u);`, { $k: u8(k), $h: u8(Hs("c|" + k + "|" + c)), $e: u64(Date.now() + 10 * 60e3), $u: u8(uid || "") }); return { code: c } }
+async function codeCheck(k, c) { const r = (await q(`DECLARE $k AS Utf8; SELECT h, exp, n, uid FROM ucode WHERE k=$k;`, { $k: u8(k) }))[0];
+  if (!r || num(r.exp) < Date.now()) return { err: "Код устарел — запросите новый." };
+  if (num(r.n) >= 5) return { err: "Слишком много попыток — запросите новый код." };
+  if (!/^\d{6}$/.test(String(c || "")) || !same(r.h, Hs("c|" + k + "|" + c))) { await q(`DECLARE $k AS Utf8; UPDATE ucode SET n = n + 1u WHERE k=$k;`, { $k: u8(k) }); return { err: "Неверный код." } }
+  await q(`DECLARE $k AS Utf8; DELETE FROM ucode WHERE k=$k;`, { $k: u8(k) }); return { ok: true, uid: r.uid } }
+const AV = ["🎮", "🦊", "🐱", "🐼", "🦉", "🐉", "👾", "🤖", "🚀", "🌟", "🎧", "🧩"];
+const ROLE = { player: "Игрок", author: "Автор", both: "Игрок и автор" };
+function profClean(b) { const o = {}, c = b.c || {}, sh = b.show || {}, t = (v, n) => { const x = clean(v, n); return BAD.test(x) ? "" : x };
+  o.av = AV.includes(b.av) ? b.av : AV[0]; o.bg = Math.min(5, Math.max(0, Math.round(Number(b.bg)) || 0));
+  o.about = t(b.about, 500); o.city = t(b.city, 60); o.hob = t(b.hob, 200); o.genres = t(b.genres, 200); o.role = ROLE[b.role] ? b.role : "";
+  const age = Math.round(Number(b.age)); o.age = age >= 6 && age <= 120 ? age : "";
+  const link = clean(b.link, 200); o.link = /^https:\/\/[^\s<>"']+$/i.test(link) ? link : "";
+  o.c = { phone: /^\+?[\d\s()-]{7,20}$/.test(clean(c.phone, 20)) ? clean(c.phone, 20) : "", email: EMAIL_RE.test(clean(c.email, 254)) ? clean(c.email, 254) : "",
+    tg: /^@?\w{4,32}$/.test(clean(c.tg, 33)) ? "@" + clean(c.tg, 33).replace(/^@/, "") : "", vk: /^(https:\/\/vk\.com\/)?[\w.]{2,50}$/.test(clean(c.vk, 70)) ? clean(c.vk, 70).replace(/^https:\/\/vk\.com\//, "") : "",
+    other: /^https:\/\/[^\s<>"']+$/i.test(clean(c.other, 200)) ? clean(c.other, 200) : "" };
+  o.show = {}; ["age", "city", "phone", "email", "tg", "vk", "other"].forEach(k => o.show[k] = !!sh[k]); return o }
+async function profOf(uid) { const r = (await q(`DECLARE $u AS Utf8; SELECT j FROM uprof WHERE uid=$u;`, { $u: u8(uid) }))[0]; try { return r ? JSON.parse(r.j) : null } catch (_) { return null } }
 const NEED = { error: "Подтвердите, что вы не робот.", need: "captcha" };
 const parse = event => { try { return JSON.parse(event.isBase64Encoded ? Buffer.from(event.body || "", "base64").toString() : event.body || "{}") || {} } catch (_) { return null } };
 
@@ -661,16 +715,66 @@ exports.handler = async (event, ctx) => {
     const tok = crypto.randomBytes(32).toString("base64url");
     await q(`DECLARE $h AS Utf8; DECLARE $u AS Utf8; DECLARE $e AS Uint64; UPSERT INTO usess (h, uid, exp) VALUES ($h, $u, $e);`, { $h: u8(Hs("s|" + tok)), $u: u8(l.uid), $e: u64(Date.now() + 30 * 864e5) });
     return reply(200, { st: "ok", token: tok }, origin) }
+  if ((a === "elogin" || a === "plogin") && method === "POST") { const b = parse(event) || {}, now = Date.now(), ip = ipOf(event, hd);
+    if (!passOk(b.pass, ip)) return reply(401, NEED, origin);
+    const lim = await limit("C:" + ip, now, 20000, 10); if (lim.err) return reply(429, { error: lim.err }, origin);
+    await q(`DECLARE $ip AS Utf8; DECLARE $ts AS Uint64; DECLARE $c AS Uint64; UPSERT INTO rl (ip, ts, cnt) VALUES ($ip, $ts, $c);`, { $ip: u8("C:" + ip), $ts: u64(now), $c: u64(lim.cnt + 1) });
+    if (a === "elogin") { const e = normEmail(b.email); if (!EMAIL_RE.test(e)) return reply(400, { error: "Проверьте адрес почты" }, origin);
+      if (!SMTP_PASS) return reply(503, { error: "Вход по почте включится в ближайшие дни. Пока войдите через Telegram." }, origin);
+      const c = await codeMake("e:" + e); if (c.err) return reply(429, { error: c.err }, origin);
+      if (!(await sendMail(e, "Код входа на «ИИгры онлайн»: " + c.code, "Ваш код для входа: " + c.code + "\nОн действует 10 минут. Никому его не сообщайте — даже команде сайта."))) return reply(502, { error: "Не получилось отправить письмо — попробуйте позже или войдите через Telegram." }, origin);
+      return reply(200, { ok: true }, origin) }
+    const ph = normPhone(b.phone); if (!ph) return reply(400, { error: "Проверьте номер: например, +7 900 123-45-67" }, origin);
+    const au = await authOf("p:" + ph), u = au && (await q(`DECLARE $u AS Utf8; SELECT chat FROM users WHERE uid=$u;`, { $u: u8(au.uid) }))[0];
+    if (u && u.chat) { const c = await codeMake("p:" + ph); if (c.err) return reply(429, { error: c.err }, origin);
+      await tgApi("sendMessage", { chat_id: u.chat, parse_mode: "HTML", text: "🔐 Код для входа на сайт по номеру телефона: <b>" + c.code + "</b>\nДействует 10 минут. Никому его не сообщайте. Если это не вы — просто ничего не делайте." }) }
+    return reply(200, { ok: true, note: "Если этот номер привязан к аккаунту, код придёт в Telegram-бот @iigry_bot. Номер привязывается в кабинете — через бота, это бесплатно (без платных SMS)." }, origin) }
+  if ((a === "echeck" || a === "pcheck") && method === "POST") { const b = parse(event) || {}, k = a === "echeck" ? "e:" + normEmail(b.email) : "p:" + normPhone(b.phone);
+    if (k.length < 5) return reply(400, { error: "bad" }, origin);
+    const r = await codeCheck(k, b.code); if (r.err) return reply(400, { error: r.err }, origin);
+    let au = await authOf(k), uid = au && au.uid;
+    if (!uid) { if (a === "pcheck") return reply(400, { error: "Номер не привязан" }, origin); uid = (await newUser("")).uid;
+      await q(`DECLARE $k AS Utf8; DECLARE $u AS Utf8; DECLARE $ts AS Uint64; UPSERT INTO uauth (k, uid, ts) VALUES ($k, $u, $ts);`, { $k: u8(k), $u: u8(uid), $ts: u64(Date.now()) }) }
+    return reply(200, { st: "ok", token: await newSession(uid) }, origin) }
+  if (a === "profile" && method === "GET") { const n = clean(qs.nick, 30).toLowerCase(); if (n.length < 2) return reply(400, { error: "bad" }, origin);
+    const u = (await q(`SELECT uid, nick, ts FROM users;`)).find(x => String(x.nick || "").toLowerCase() === n && !/^Автор-/.test(x.nick)); if (!u) return reply(404, { error: "Автор не найден" }, origin);
+    const p = await profOf(u.uid) || profClean({}), pub = { nick: u.nick, since: num(u.ts), av: p.av, bg: p.bg, about: p.about, hob: p.hob, genres: p.genres, role: ROLE[p.role] || "", link: p.link, c: {} };
+    if (p.show.age) pub.age = p.age; if (p.show.city) pub.city = p.city; ["phone", "email", "tg", "vk", "other"].forEach(k => { if (p.show[k] && p.c[k]) pub.c[k] = p.c[k] });
+    const own = await q(`DECLARE $u AS Utf8; SELECT pid, title FROM own WHERE uid=$u;`, { $u: u8(u.uid) }); pub.projects = own.filter(o => o.pid).map(o => ({ pid: o.pid, title: String(o.title || "").replace(/^Новый проект: /, "") }));
+    return reply(200, pub, origin) }
   if (a === "u" && method === "POST") { const b = parse(event) || {}, op = String(b.op || ""), u = await userOf(b.token);
     if (!u) return reply(401, { error: "Войдите заново", need: "login" }, origin);
     if (op === "me") { const adm = await isAdminChat(u.chat); return reply(200, { user: { nick: u.nick, since: num(u.ts), named: !/^Автор-/.test(u.nick) }, admin: adm, projects: await myProjects(u.uid, adm) }, origin) }
     if (op === "nick") { const n = clean(b.nick, 30).replace(/^@/, ""); if (nickBad(n)) return reply(400, { error: "Ник от 2 до 30 знаков, без ссылок и служебных слов" }, origin);
       if (!(await nickFree(n, u.uid))) return reply(400, { error: "Такой ник уже занят" }, origin);
       await q(`DECLARE $u AS Utf8; DECLARE $n AS Utf8; UPDATE users SET nick=$n WHERE uid=$u;`, { $u: u8(u.uid), $n: u8(n) }); return reply(200, { ok: true, nick: n }, origin) }
+    if (op === "prof") { if (b.set) { const p = profClean(b.set); await q(`DECLARE $u AS Utf8; DECLARE $j AS Utf8; UPSERT INTO uprof (uid, j) VALUES ($u, $j);`, { $u: u8(u.uid), $j: u8(JSON.stringify(p)) }); return reply(200, { ok: true, prof: p }, origin) }
+      return reply(200, { prof: await profOf(u.uid) || profClean({}) }, origin) }
+    if (op === "ways") { const ks = await authsOf(u.uid); return reply(200, { tg: !!u.chat, email: ks.filter(k => k.startsWith("e:")).map(mask), phone: ks.filter(k => k.startsWith("p:")).map(mask), keys: ks.filter(k => !k.startsWith("t:")).map(k => ({ id: Hs("k|" + k).slice(0, 16), t: k[0], m: mask(k) })) }, origin) }
+    if (op === "linkemail") { const e = normEmail(b.email); if (!EMAIL_RE.test(e)) return reply(400, { error: "Проверьте адрес почты" }, origin);
+      if (!SMTP_PASS) return reply(503, { error: "Привязка почты включится в ближайшие дни." }, origin);
+      const au = await authOf("e:" + e); if (au) return reply(400, { error: au.uid === u.uid ? "Эта почта уже привязана" : "Эта почта уже привязана к другому аккаунту" }, origin);
+      const c = await codeMake("le:" + u.uid + ":" + e, u.uid); if (c.err) return reply(429, { error: c.err }, origin);
+      if (!(await sendMail(e, "Код привязки почты: " + c.code, "Код, чтобы привязать эту почту к аккаунту «" + u.nick + "»: " + c.code + "\nДействует 10 минут."))) return reply(502, { error: "Не получилось отправить письмо" }, origin);
+      return reply(200, { ok: true }, origin) }
+    if (op === "linkemail2") { const e = normEmail(b.email), r = await codeCheck("le:" + u.uid + ":" + e, b.code); if (r.err) return reply(400, { error: r.err }, origin);
+      if (await authOf("e:" + e)) return reply(400, { error: "Эта почта уже привязана" }, origin);
+      await q(`DECLARE $k AS Utf8; DECLARE $u AS Utf8; DECLARE $ts AS Uint64; UPSERT INTO uauth (k, uid, ts) VALUES ($k, $u, $ts);`, { $k: u8("e:" + e), $u: u8(u.uid), $ts: u64(Date.now()) }); return reply(200, { ok: true }, origin) }
+    if (op === "linktg") { if (u.chat) return reply(400, { error: "Telegram уже привязан" }, origin);
+      const code = crypto.randomBytes(12).toString("hex"), poll = crypto.randomBytes(24).toString("base64url");
+      await q(`DECLARE $c AS Utf8; DECLARE $p AS Utf8; DECLARE $s AS Utf8; DECLARE $u AS Utf8; DECLARE $e AS Uint64; UPSERT INTO ulogin (code, ph, st, uid, exp) VALUES ($c, $p, $s, $u, $e);`,
+        { $c: u8(code), $p: u8(Hs("p|" + poll)), $s: u8("wait"), $u: u8(u.uid), $e: u64(Date.now() + 10 * 60e3) });
+      return reply(200, { code, poll, link: "https://t.me/iigry_bot?start=in_" + code }, origin) }
+    if (op === "unlink") { const ks = await authsOf(u.uid), ways = ks.length + (u.chat ? 1 : 0), id = String(b.id || "");
+      if (ways < 2) return reply(400, { error: "Это единственный способ входа — сначала привяжите другой" }, origin);
+      if (id === "tg") { await q(`DECLARE $u AS Utf8; DECLARE $c AS Utf8; UPDATE users SET chat=$c WHERE uid=$u;`, { $u: u8(u.uid), $c: u8("") }); return reply(200, { ok: true }, origin) }
+      const k = ks.find(x => Hs("k|" + x).slice(0, 16) === id); if (!k) return reply(404, { error: "Не найдено" }, origin);
+      await q(`DECLARE $k AS Utf8; DELETE FROM uauth WHERE k=$k;`, { $k: u8(k) }); return reply(200, { ok: true }, origin) }
     if (op === "out") { await q(`DECLARE $h AS Utf8; DELETE FROM usess WHERE h=$h;`, { $h: u8(Hs("s|" + b.token)) }); return reply(200, { ok: true }, origin) }
     if (op === "delete") { const ss = await q(`DECLARE $u AS Utf8; SELECT h FROM usess WHERE uid=$u;`, { $u: u8(u.uid) });
       for (const x of ss) await q(`DECLARE $h AS Utf8; DELETE FROM usess WHERE h=$h;`, { $h: u8(x.h) });
-      await q(`DECLARE $u AS Utf8; DELETE FROM users WHERE uid=$u;`, { $u: u8(u.uid) }); return reply(200, { ok: true }, origin) }
+      for (const k of await authsOf(u.uid)) await q(`DECLARE $k AS Utf8; DELETE FROM uauth WHERE k=$k;`, { $k: u8(k) });
+      await q(`DECLARE $u AS Utf8; DELETE FROM uprof WHERE uid=$u; DELETE FROM users WHERE uid=$u;`, { $u: u8(u.uid) }); return reply(200, { ok: true }, origin) }
     return reply(400, { error: "bad" }, origin) }
   if (a === "pv" && method === "POST") { const b = parse(event) || {}, raw = String(b.d || ""), pid = String(b.pid || "");
     if (!/^[0-9a-f]{32}$/.test(raw) || !/^[a-z0-9:_-]{1,40}$/i.test(pid)) return reply(400, { error: "bad" }, origin);
