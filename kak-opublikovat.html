@@ -41,7 +41,7 @@ window.IIGRY_ACC=(function(){
     const b=mk("button",em?"Прислать код на почту":"Прислать код","btn");b.type="button";b.style.justifySelf="start";
     const c=inp("6 цифр","text",6);c.inputMode="numeric";c.autocomplete="one-time-code";const cl=lab("Код из "+(em?"письма":"Telegram-бота"),c);cl.hidden=true;
     const go=mk("button","Войти","btn gold");go.type="button";go.hidden=true;go.style.justifySelf="start";
-    const st=mk("p",em?"Если аккаунта ещё нет — он создастся сам.":"Вход по номеру работает, если номер привязан к аккаунту (в кабинете → «Способы входа»). Код приходит в Telegram-бот — это бесплатно, без платных SMS.","muted");st.style.margin="0";st.setAttribute("aria-live","polite");
+    const st=mk("p",em?"Если аккаунта ещё нет — он создастся сам.":"Код придёт в Telegram-бот. Номер привязывается в кабинете.","muted");st.style.margin="0";st.setAttribute("aria-live","polite");
     box.append(lab(em?"Почта":"Номер телефона",i),b,cl,go,st);
     b.onclick=async()=>{b.disabled=true;st.textContent="Отправляем…";
       try{const{r,j}=await human(em?"elogin":"plogin",em?{email:i.value}:{phone:i.value});

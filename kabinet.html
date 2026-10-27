@@ -41,7 +41,7 @@ window.IIGRY_ACC=(function(){
     const b=mk("button",em?"Прислать код на почту":"Прислать код","btn");b.type="button";b.style.justifySelf="start";
     const c=inp("6 цифр","text",6);c.inputMode="numeric";c.autocomplete="one-time-code";const cl=lab("Код из "+(em?"письма":"Telegram-бота"),c);cl.hidden=true;
     const go=mk("button","Войти","btn gold");go.type="button";go.hidden=true;go.style.justifySelf="start";
-    const st=mk("p",em?"Если аккаунта ещё нет — он создастся сам.":"Вход по номеру работает, если номер привязан к аккаунту (в кабинете → «Способы входа»). Код приходит в Telegram-бот — это бесплатно, без платных SMS.","muted");st.style.margin="0";st.setAttribute("aria-live","polite");
+    const st=mk("p",em?"Если аккаунта ещё нет — он создастся сам.":"Код придёт в Telegram-бот. Номер привязывается в кабинете.","muted");st.style.margin="0";st.setAttribute("aria-live","polite");
     box.append(lab(em?"Почта":"Номер телефона",i),b,cl,go,st);
     b.onclick=async()=>{b.disabled=true;st.textContent="Отправляем…";
       try{const{r,j}=await human(em?"elogin":"plogin",em?{email:i.value}:{phone:i.value});
@@ -107,7 +107,7 @@ function inp(v,max,ph,type){const i=el("input");i.value=v==null?"":v;i.maxLength
 function cb(v,t){const l=el("label",null,"ck"),c=el("input");c.type="checkbox";c.checked=!!v;l.append(c,el("span",t));l.c=c;return l}
 function preview(nick,P){const c=el("div",null,"card");c.style.background=BG[P.bg]||BG[0];const a=el("div",P.av,"av");a.setAttribute("aria-hidden","true");const t=el("div");t.append(el("b",nick),el("p",P.about||"Пока ничего о себе не рассказал(а)"));c.append(a,t);return c}
 async function show(){const b=$("box");
-  if(!A.tok()){b.innerHTML="";b.append(el("h2","Вход и регистрация"),A.login(show),el("p","Публиковать проекты могут только зарегистрированные авторы. Пароли не нужны: вход через Telegram, почту или телефон. Входя, вы соглашаетесь с условиями и обработкой данных: храним выбранный способ входа (номер чата с ботом, почту или телефон), ник и то, что вы сами напишете в профиле.","muted"));return}
+  if(!A.tok()){b.innerHTML="";const nt=el("p","Входя, вы принимаете ","muted"),l1=el("a","условия"),l2=el("a","политику данных");l1.href="./#terms";l2.href="./#privacy";nt.append(l1," и ",l2,".");b.append(el("h2","Вход и регистрация"),A.login(show),nt);return}
   const [j,pf,w]=await Promise.all([A.call("me"),A.call("prof"),A.call("ways")]);if(j.need||pf.need){show();return}
   b.innerHTML="";if(j.error){b.append(el("p",j.error));const r=el("button","Повторить","btn");r.type="button";r.onclick=show;b.append(r);return}
   const u=j.user,P=pf.prof||{av:"🎮",bg:0,c:{},show:{}};P.c=P.c||{};P.show=P.show||{};
