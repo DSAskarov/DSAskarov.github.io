@@ -35,12 +35,12 @@ canvas{width:100%;aspect-ratio:16/10;max-width:100%;background:linear-gradient(1
 </style>
 <div class="game">
   <h1>Лови <b>баги</b></h1>
-  <p class="sub">Ночная смена в отделе разработки. Ловите красные баги, не трогайте зелёные фичи — они и так еле держатся.</p>
-  <div class="lv" id="lv" role="group" aria-label="Выбор смены"></div>
+  <p class="sub">Ловите красные баги, не трогайте зелёные фичи — они и так еле держатся.</p>
+  <div class="lv" id="lv" role="group" aria-label="Выбор уровня"></div>
   <div class="hud"><div>Счёт: <b id="sc">0</b></div><div>Время: <b id="tm">30</b></div><div>Серия: <b id="mul">×1</b></div><div>Рекорд: <b id="best">0</b></div></div>
   <canvas id="cv" width="640" height="400" aria-label="Игровое поле"></canvas>
   <div class="legend"><span><i style="background:#E8333F"></i>Баг: +1</span><span><i style="background:#E7BD52"></i>Золотой баг: +5</span><span><i style="background:#4ADE95"></i>Фича: −3 и сброс серии</span><span><i style="background:#7CC4FF"></i>Кофе: всё замедляется</span><span><i style="background:#fff"></i>Хотфикс: ловит все баги на экране</span></div>
-  <button class="btn" id="go">Начать смену</button>
+  <button class="btn" id="go">Начать игру</button>
   <p class="credit">Игра DSAskarov для площадки «ИИгры онлайн». Поддержать автора: <a href="https://boosty.to/dsaskarov" target="_blank" rel="noopener">Boosty</a> · связь: Telegram @dsaskarov</p>
 </div>
 <script>
@@ -52,10 +52,10 @@ const LV=[
   {n:"Пятница, 18:59",d:"баги делятся",sp:1.7,spawn:.55,feat:.3,split:true}];
 const store={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:v}catch(e){return d}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
 let lvl=0,open=Math.min(2,+store.get("bugs-open",0)||0),bests=LV.map((_,i)=>+store.get("bugs-best"+(i||""),0)||0);
-let bugs=[],fx=[],score=0,time=30,run=false,last=0,spawn=0,streak=0,slow=0,msg="Выберите смену и нажмите «Начать»";
+let bugs=[],fx=[],score=0,time=30,run=false,last=0,spawn=0,streak=0,slow=0,msg="Выберите уровень и нажмите «Начать игру»";
 const LINES=["Это не баг, это фича!","Работает на моём компьютере","Кто трогал прод?","Пятница, 18:59","Сейчас быстренько поправлю","В тестах всё было зелёное"];
 function drawLv(){const box=$("lv");box.innerHTML="";LV.forEach((L,i)=>{const b=document.createElement("button");b.type="button";b.setAttribute("aria-pressed",i===lvl);b.disabled=i>open||run;
-  const lock=i>open?"🔒 "+LV[i-1].need+" очк. в смене "+i:L.d+(bests[i]?" · "+bests[i]:"");
+  const lock=i>open?"🔒 Наберите "+LV[i-1].need+" "+(n=>n%10==1&&n%100!=11?"очко":n%10>=2&&n%10<=4&&(n%100<12||n%100>14)?"очка":"очков")(LV[i-1].need)+" на уровне «"+LV[i-1].n+"»":L.d+(bests[i]?" · "+bests[i]:"");
   b.innerHTML="<b></b><span></span>";b.firstChild.textContent=(i+1)+". "+L.n;b.lastChild.textContent=lock;b.onclick=()=>{lvl=i;drawLv();upd()};box.appendChild(b)})}
 const mul=()=>streak>=12?3:streak>=5?2:1;
 function add(){const L=LV[lvl],r=Math.random();let type=r<.06?"gold":r<.06+L.feat?"feat":r<.06+L.feat+.035?"coffee":r<.06+L.feat+.06?"fix":"bug";
@@ -74,8 +74,8 @@ function drawBug(b){
   cx.restore()}
 function finish(){run=false;time=0;bugs=[];window.IIGRY_SCORE&&IIGRY_SCORE(score);
   if(score>bests[lvl]){bests[lvl]=score;store.set("bugs-best"+(lvl||""),score)}
-  const L=LV[lvl];let opened="";if(L.need&&score>=L.need&&open<lvl+1){open=lvl+1;store.set("bugs-open",open);opened=" Открыта смена «"+LV[open].n+"»!"}
-  msg=(score>=40?"Легенда ночной смены!":score>=20?"Прод спасён. Можно спать.":"Баги победили. Пока что.")+opened;$("go").textContent="Ещё смену";drawLv()}
+  const L=LV[lvl];let opened="";if(L.need&&score>=L.need&&open<lvl+1){open=lvl+1;store.set("bugs-open",open);opened=" Открыт уровень «"+LV[open].n+"»!"}
+  msg=(score>=40?"Легенда отдела разработки!":score>=20?"Прод спасён. Можно спать.":"Баги победили. Пока что.")+opened;$("go").textContent="Ещё раз";drawLv()}
 function frame(t){const dt=Math.min(.05,(t-last)/1000||0);last=t;const k=slow>0?.45:1;
   cx.clearRect(0,0,W,H);
   if(slow>0){slow-=dt;cx.fillStyle="rgba(124,196,255,.07)";cx.fillRect(0,0,W,H)}
@@ -90,7 +90,7 @@ function frame(t){const dt=Math.min(.05,(t-last)/1000||0);last=t;const k=slow>0?
   fx=fx.filter(f=>f.l>0);
   if(!run){cx.fillStyle="rgba(244,244,246,.92)";cx.font="700 20px Golos Text, sans-serif";cx.textAlign="center";
     const parts=msg.split("!").filter(Boolean);if(parts.length>1&&msg.length>34){cx.fillText(parts[0]+"!",W/2,H/2-16);cx.fillStyle="#E7BD52";cx.fillText(parts.slice(1).join("!").trim()+"!",W/2,H/2+12)}else cx.fillText(msg,W/2,H/2-6);
-    if(score){cx.fillStyle="#B9B6C2";cx.font="16px Golos Text, sans-serif";cx.fillText("Поймано: "+score+" · рекорд смены: "+bests[lvl],W/2,H/2+40)}}
+    if(score){cx.fillStyle="#B9B6C2";cx.font="16px Golos Text, sans-serif";cx.fillText("Поймано: "+score+" · рекорд уровня: "+bests[lvl],W/2,H/2+40)}}
   upd();requestAnimationFrame(frame)}
 function upd(){$("sc").textContent=score;$("best").textContent=bests[lvl];$("mul").textContent="×"+mul()}
 function hit(e){if(!run)return;const r=cv.getBoundingClientRect(),x=(e.clientX-r.left)*W/r.width,y=(e.clientY-r.top)*H/r.height;
