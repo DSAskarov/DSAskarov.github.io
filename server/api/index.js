@@ -142,8 +142,11 @@ async function limit(ip, now, gap, perHour) {
 const env = k => { const v = process.env[k] || ""; return v === "-" ? "" : v };
 const CAP_SECRET = env("CAPTCHA_SECRET"), CAP_KEY = env("CAPTCHA_SITEKEY");
 const sign = (ip, exp) => crypto.createHmac("sha256", salt).update(ip + "|" + exp).digest("base64url").slice(0, 32);
-const passOk = (p, ip) => { if (!CAP_SECRET) return true; const m = /^(\d{13})\.([\w-]{32})$/.exec(String(p || "")); if (!m) return false;
-  const exp = Number(m[1]); return exp > Date.now() && crypto.timingSafeEqual(Buffer.from(sign(ip, exp)), Buffer.from(m[2])) };
+// Пропуск: 20 минут — с любого адреса (если сменилась сеть), 12 часов — с того же адреса
+const passOk = (p, ip) => { if (!CAP_SECRET) return true; const m = /^(\d{13})\.([\w-]{32})(?:\.(\d{13})\.([\w-]{32}))?$/.exec(String(p || "")); if (!m) return false;
+  const now = Date.now(), ok = (a, b) => crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
+  if (m[3] && Number(m[3]) > now && Number(m[3]) <= now + 21 * 60e3 && ok(sign("any", Number(m[3])), m[4])) return true;
+  const exp = Number(m[1]); return exp > now && ok(sign(ip, exp), m[2]) };
 async function captchaOk(token, ipRaw) {
   try { const r = await fetch("https://smartcaptcha.cloud.yandex.ru/validate", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({ secret: CAP_SECRET, token: String(token || ""), ip: ipRaw }) });
@@ -604,7 +607,7 @@ exports.handler = async (event, ctx) => {
     const b = parse(event); if (!b) return reply(400, { error: "Неверный запрос" }, origin);
     if (!CAP_SECRET) return reply(200, { pass: "" }, origin);
     if (!(await captchaOk(b.token, rawIp(event, hd)))) return reply(403, { error: "Проверка не пройдена. Попробуйте ещё раз." }, origin);
-    const exp = Date.now() + 12 * 3600e3; return reply(200, { pass: exp + "." + sign(ipOf(event, hd), exp), exp }, origin);
+    const exp = Date.now() + 12 * 3600e3, e20 = Date.now() + 20 * 60e3; return reply(200, { pass: exp + "." + sign(ipOf(event, hd), exp) + "." + e20 + "." + sign("any", e20), exp }, origin);
   }
 
   if (a === "list" && method === "GET") {
