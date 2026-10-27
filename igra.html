@@ -44,14 +44,15 @@ function run(cfg,host,opt){cfg=clean(cfg);opt=opt||{};host.innerHTML="";
  function end(win){st=win?"win":"lose";const sc=Math.floor(S.score);if(sc>best){best=sc;try{localStorage.setItem(key,best)}catch(_){}}opt.onEnd&&opt.onEnd({score:sc,win})}
  function start(){reset();st="play"}
  const pt=e=>{const r=cv.getBoundingClientRect();return{x:(e.clientX-r.left)*W/r.width,y:(e.clientY-r.top)*H/r.height}};
- function tap(p){if(st!=="play"){start();return}
+ function toMenu(){st="menu";S.items=[]}
+ function tap(p){if(st==="play"&&p.x>=0&&p.x<46&&p.y<46){toMenu();return}if(st!=="play"){start();return}
   if(cfg.t==="runner"){if(S.y>=0){S.vy=-640;S.y=-0.01}}
   else if(cfg.t==="clicker"){if(Math.hypot(p.x-W/2,p.y-250)<90){S.score+=S.power;fx.push({x:p.x,y:p.y,t:0,s:"+"+S.power})}
    cfg.ups.forEach((u,i)=>{const y=420+i*52;if(p.y>y&&p.y<y+46&&p.x>20&&p.x<W-20){const price=Math.ceil(u.p*Math.pow(1.6,S.owned[i]));if(S.score>=price){S.score-=price;S.owned[i]++;if(u.k==="auto")S.auto+=u.v;else S.power+=u.v}}})}
   else if(cfg.t==="quiz"&&S.wait<=0){const q=cfg.qs[S.order[S.qi]];q.a.forEach((a,i)=>{const y=330+i*66;if(p.y>y&&p.y<y+56&&p.x>24&&p.x<W-24){S.pick=i;S.wait=1.1;if(i===q.c){S.ok++;S.score=S.ok}}})}}
  cv.addEventListener("pointerdown",e=>{e.preventDefault();cv.focus();const p=pt(e);px=p.x;tap(p)});
  cv.addEventListener("pointermove",e=>{px=pt(e).x});
- const kd=e=>{if(!alive||document.activeElement!==cv&&!opt.globalKeys)return;keys[e.key]=1;if([" ","Enter","ArrowUp","w"].includes(e.key)){e.preventDefault();if(st!=="play"||cfg.t==="runner")tap({x:-1,y:-1})}},ku=e=>{keys[e.key]=0};
+ const kd=e=>{if(!alive||document.activeElement!==cv&&!opt.globalKeys)return;if(e.key==="Escape"&&st==="play"){toMenu();return}keys[e.key]=1;if([" ","Enter","ArrowUp","w"].includes(e.key)){e.preventDefault();if(st!=="play"||cfg.t==="runner")tap({x:-1,y:-1})}},ku=e=>{keys[e.key]=0};
  addEventListener("keydown",kd);addEventListener("keyup",ku);
  function spawnFall(dt,rate,pool,badShare){S.spawn-=dt;if(S.spawn<=0){S.spawn=rate/sp*(0.6+Math.random()*0.8);const bad=Math.random()<badShare;S.items.push({x:30+Math.random()*(W-60),y:-30,v:(160+Math.random()*120)*sp*(1+S.t/90),e:bad?rnd(cfg.bad):rnd(pool),bad})}}
  function moveHero(dt){if(keys.ArrowLeft||keys.a)px=S.hx-300*dt*2;if(keys.ArrowRight||keys.d)px=S.hx+300*dt*2;S.hx+=(Math.max(28,Math.min(W-28,px))-S.hx)*Math.min(1,dt*14)}
@@ -89,12 +90,14 @@ function run(cfg,host,opt){cfg=clean(cfg);opt=opt||{};host.innerHTML="";
     g.fillStyle="#fff";wrap(q.q,W/2,230,W-48,28,22,700);
     q.a.forEach((a,i)=>{const y=330+i*66;let f="rgba(255,255,255,.12)";if(S.pick>=0){if(i===q.c)f="#2E9E65";else if(i===S.pick)f="#C0303B"}btn(24,y,W-48,56,a,f)})}
    g.textAlign="center";fx.forEach(f=>{g.globalAlpha=1-f.t/0.8;g.fillStyle="#fff";g.font=/\d/.test(f.s)?TF(22,800):F(30);g.fillText(f.s,f.x,f.y-f.t*50)});g.globalAlpha=1;
-   g.fillStyle="#fff";g.font=TF(16,700);g.textAlign="left";if(cfg.t!=="clicker"&&cfg.t!=="quiz")g.fillText("Очки: "+Math.floor(S.score)+(cfg.goal?" / "+cfg.goal:""),14,28);
+   g.fillStyle="rgba(255,255,255,.14)";g.beginPath();g.roundRect?g.roundRect(8,8,34,30,8):g.rect(8,8,34,30);g.fill();g.fillStyle="#fff";g.font=TF(18,700);g.textAlign="center";g.fillText("☰",25,24);
+   g.fillStyle="#fff";g.font=TF(16,700);g.textAlign="left";if(cfg.t!=="clicker"&&cfg.t!=="quiz")g.fillText("Очки: "+Math.floor(S.score)+(cfg.goal?" / "+cfg.goal:""),52,28);
    g.textAlign="right";if(cfg.t!=="clicker"&&cfg.t!=="quiz")g.fillText((cfg.time?"⏱ "+Math.max(0,Math.ceil(cfg.time-S.t))+"  ":"")+"❤️".repeat(Math.max(0,Math.min(S.lives,9))),W-14,28);g.textAlign="center";return}
   g.fillStyle="#fff";g.font=F(90);g.fillText(st==="win"?"🏆":"😵",W/2,200);g.fillStyle="#fff";wrap(st==="win"?cfg.winText:cfg.loseText,W/2,300,W-40,30,24,800);
   g.font=TF(18);g.fillStyle="rgba(255,255,255,.85)";g.fillText(cfg.t==="quiz"?"Верно: "+S.ok+" из "+cfg.qs.length:"Очки: "+Math.floor(S.score)+(best?" · рекорд: "+best:""),W/2,380);btn(60,440,W-120,56,"Ещё раз",cfg.accent,"#1A1306")}
  function loop(ts){if(!alive)return;const dt=Math.min(0.05,(ts-(last||ts))/1000);last=ts;if(st==="play")step(dt);draw();raf=requestAnimationFrame(loop)}
  reset();raf=requestAnimationFrame(loop);
+ if(opt.menuHook)window.IIGRY_TO_MENU=()=>{toMenu();cv.focus()};
  return{stop(){alive=false;cancelAnimationFrame(raf);removeEventListener("keydown",kd);removeEventListener("keyup",ku)},start}}
 return{T,D,clean,preset,run}})();
 </script><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@700;800;900&family=Golos+Text:wght@400;600&display=swap">
@@ -120,7 +123,6 @@ textarea{min-height:90px;resize:vertical}
 button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 [hidden]{display:none!important}
 </style><style>main{max-width:460px}</style><main>
-<p style="margin:0"><a href="./">← ИИгры онлайн</a> · <a href="masterskaya.html">Мастерская игр</a></p>
 <div id="game"></div>
 <div class="row" style="justify-content:center"><a class="btn gold" id="remix" href="masterskaya.html">🛠 Сделать свою версию</a><a class="btn ghost" href="masterskaya.html">Создать свою игру</a></div>
 <p class="muted" style="text-align:center">Игра собрана пользователем в Мастерской «ИИгры онлайн». Если в ней что-то неприемлемое — <a href="./#claims">пожалуйтесь</a>.</p>
@@ -128,8 +130,16 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 (function(){const m=/^#g=([\w-]{10,20000})$/.exec(location.hash),box=document.getElementById("game");
  if(!m){box.textContent="Ссылка на игру повреждена или неполная.";return}
  try{const s=m[1].replace(/-/g,"+").replace(/_/g,"/"),b=atob(s),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);
-  const c=IIGRY_ENGINE.clean(JSON.parse(new TextDecoder().decode(u)));document.title=c.title+" — ИИгры онлайн";IIGRY_ENGINE.run(c,box,{globalKeys:true});document.getElementById("remix").href="masterskaya.html"+location.hash}
+  const c=IIGRY_ENGINE.clean(JSON.parse(new TextDecoder().decode(u)));document.title=c.title+" — ИИгры онлайн";IIGRY_ENGINE.run(c,box,{globalKeys:true,menuHook:true});document.getElementById("remix").href="masterskaya.html"+location.hash}
  catch(_){box.textContent="Не получилось открыть игру: ссылка повреждена."}})();
+</script><script>/* Панель навигации «ИИгр»: назад, главная, игры, мастерская, кабинет; в играх — возврат в меню игры */
+(function(){if(document.getElementById("iigry-nav"))return;const P=location.pathname,inG=/\/games\//.test(P),base=inG?"../":"./",here=P.replace(/^.*\//,"")||"index.html";
+ const st=document.createElement("style");st.textContent="#iigry-nav{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:8px 12px;box-sizing:border-box;background:rgba(11,10,14,.92);backdrop-filter:blur(8px);border-bottom:1px solid rgba(255,255,255,.1)}#iigry-nav::-webkit-scrollbar{display:none}#iigry-nav a,#iigry-nav button{flex:none;display:inline-flex;align-items:center;gap:4px;border:1px solid rgba(255,255,255,.14);background:#16141B;color:#F4F4F6;border-radius:999px;padding:6px 12px;font:600 13px/1.2 'Golos Text',system-ui,sans-serif;text-decoration:none;cursor:pointer;white-space:nowrap}#iigry-nav a[aria-current=page]{border-color:#E7BD52;color:#E7BD52}#iigry-nav .gm{border-color:rgba(231,189,82,.6)}#iigry-nav a:focus-visible,#iigry-nav button:focus-visible{outline:2px solid #E7BD52;outline-offset:2px}";
+ document.head.append(st);const n=document.createElement("nav");n.id="iigry-nav";n.setAttribute("aria-label","Навигация по сайту");
+ const b=document.createElement("button");b.type="button";b.textContent="← Назад";b.onclick=()=>{if(document.referrer.indexOf(location.origin)===0&&history.length>1)history.back();else location.href=base};n.append(b);
+ if(inG||/igra\.html$/.test(P)){const m=document.createElement("button");m.type="button";m.className="gm";m.textContent="↺ Меню игры";m.title="Начать сначала с меню игры";m.onclick=()=>{if(window.IIGRY_TO_MENU)window.IIGRY_TO_MENU();else location.reload()};n.append(m)}
+ [["🏠 Главная",""],["🎮 Игры","#catalog"],["🛠 Мастерская","masterskaya.html"],["👤 Кабинет","kabinet.html"]].forEach(([t,h])=>{const a=document.createElement("a");a.textContent=t;a.href=base+h;if(h&&h===here)a.setAttribute("aria-current","page");n.append(a)});
+ document.body.prepend(n);const bs=document.body.style,pt=parseFloat(getComputedStyle(document.body).paddingTop)||0;bs.paddingTop=(pt+n.offsetHeight+6)+"px";document.documentElement.style.scrollPaddingTop=(n.offsetHeight+8)+"px"})();
 </script><script>/* Счётчик посещений «ИИгр»: случайный номер устройства хранится только в этом браузере; без cookie и слежки на других сайтах. Команда сайта не считается. */
 (function(){try{if(navigator.webdriver||localStorage.getItem("iigry-mod"))return;let d=localStorage.getItem("iigry-did");
  if(!/^[0-9a-f]{32}$/.test(d||"")){const a=new Uint8Array(16);crypto.getRandomValues(a);d=[...a].map(x=>x.toString(16).padStart(2,"0")).join("");localStorage.setItem("iigry-did",d)}
