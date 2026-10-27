@@ -1706,7 +1706,7 @@ const STATIC_P=[{"a": "pixel_ira", "c": "game", "cv": 0, "d": "Кот-космо
   const load=()=>scriptP||(scriptP=new Promise((ok,no)=>{const s=document.createElement("script");s.src="https://smartcaptcha.cloud.yandex.ru/captcha.js?render=onload&onload=__iigryCap";
     window.__iigryCap=ok;s.onerror=()=>{scriptP=null;no(new Error("Проверка не загрузилась. Проверьте интернет."))};document.head.appendChild(s)}));
   function overlay(){const d=document.createElement("div");d.setAttribute("role","dialog");d.setAttribute("aria-modal","true");d.setAttribute("aria-label","Проверка, что вы не робот");
-    d.style.cssText="position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;background:rgba(10,9,14,.72);padding:16px";
+    d.style.cssText="position:fixed;inset:0;z-index:999990;display:grid;place-items:center;background:rgba(10,9,14,.72);padding:16px";
     d.innerHTML='<div style="background:#16141B;color:#F4F4F6;border:1px solid rgba(231,189,82,.4);border-radius:16px;padding:18px;width:min(360px,100%);display:grid;gap:12px;font:500 15px/1.4 system-ui,sans-serif"><b style="font-size:17px">Проверим, что вы не робот</b><div id="iigryCapBox" style="min-height:100px"></div><button type="button" style="justify-self:end;background:transparent;color:#B9B6C2;border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:7px 12px;cursor:pointer">Отмена</button></div>';
     document.body.appendChild(d);return d}
   async function need(){const p=get();if(p)return p;if(busy)return busy;
