@@ -128,6 +128,11 @@ function reply(code, obj, origin) {
 }
 const clean = (s, n) => String(s == null ? "" : s).replace(/[\u0000-\u0008\u000B-\u001F\u007F​-‏‪-‮⁦-⁩]/g, "").trim().slice(0, n);
 
+// Ник: команда сайта (вошла в панель модерации) может писать под служебным ником с отметкой «✓ команда»; остальным — понятная ошибка вместо тихой замены
+async function nickFor(b, ip) { const raw = clean(b.n, 30).replace(/^@/, "");
+  if (b.k) { const me = await modAuth(b.k, ip); if (me && !me.blocked) { const base = (raw && !BAD.test(raw) && !LINK.test(raw) ? raw : me.name).replace(/\s*✓.*$/, "").slice(0, 20); return { n: base + " ✓ команда" } } }
+  if (raw && (RESV.test(raw) || BAD.test(raw) || LINK.test(raw))) return { err: "Ник «" + raw + "» нельзя использовать: он похож на ник команды сайта, содержит ссылку или запрещённое слово. Выберите другой." };
+  return { n: nickOf(b) } }
 const nickOf = b => { const n = clean(b.n, 30).replace(/^@/, ""); return !n || RESV.test(n) || BAD.test(n) || LINK.test(n) ? "Аноним #" + clean(b.aid, 6).replace(/[^0-9A-Z]/g, "").slice(0, 6) : n };
 const ipOf = (event, hd) => { const raw = rawIp(event, hd);
   return crypto.createHash("sha256").update(salt + raw).digest("hex").slice(0, 32) };
@@ -629,7 +634,7 @@ exports.handler = async (event, ctx) => {
     if (BAD.test(t)) return reply(400, { error: "Сообщение не прошло фильтр: мат, реклама или запрещённая тема." }, origin);
     if (LINK.test(t)) return reply(400, { error: "Ссылки в сообщениях запрещены — так меньше спама." }, origin);
     if (/(.)\1{7,}/.test(t) || /[A-ZА-ЯЁ]{20,}/.test(t)) return reply(400, { error: "Похоже на флуд. Попробуйте спокойнее." }, origin);
-    const n = nickOf(b), now = Date.now(), ip = ipOf(event, hd);
+    const now = Date.now(), ip = ipOf(event, hd), nk = await nickFor(b, ip); if (nk.err) return reply(400, { error: nk.err }, origin); const n = nk.n;
     const ban = await q(`DECLARE $ip AS Utf8; SELECT until FROM bans WHERE ip=$ip;`, { $ip: TypedValues.utf8(ip) });
     if (ban[0] && num(ban[0].until) > now) return reply(403, { error: "Модератор временно ограничил отправку сообщений с вашего адреса." }, origin);
     const lim = await limit(ip, now, 8000, 40); if (lim.err) return reply(429, { error: lim.err }, origin); const cnt = lim.cnt;
@@ -660,7 +665,7 @@ exports.handler = async (event, ctx) => {
     const v = Math.round(Number(b.v));
     if (!Number.isFinite(v) || v < g.min || v > g.max) return reply(400, { error: "Такой результат не принимается." }, origin);
     if (!(Number(b.ms) >= g.minMs(v))) return reply(400, { error: "Результат пришёл слишком быстро — похоже на подделку." }, origin);
-    const n = nickOf(b), nk = n.toLowerCase(), now = Date.now(), ip = ipOf(event, hd);
+    const ip = ipOf(event, hd), nf = await nickFor(Object.assign({}, b, { k: "" }), ip); if (nf.err) return reply(400, { error: nf.err }, origin); const n = nf.n, nk = n.toLowerCase(), now = Date.now();
     const lim = await limit("s:" + ip, now, 5000, 60); if (lim.err) return reply(429, { error: lim.err }, origin);
     const old = await q(`DECLARE $g AS Utf8; DECLARE $k AS Utf8; SELECT v FROM scores WHERE game=$g AND nk=$k;`, { $g: TypedValues.utf8(b.game), $k: TypedValues.utf8(nk) });
     const prev = old[0] ? num(old[0].v) : null, better = prev === null || (g.asc ? v < prev : v > prev);

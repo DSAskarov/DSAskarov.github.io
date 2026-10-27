@@ -1377,7 +1377,7 @@ function renderTalk(){
 }
 $("topicSeg").onclick=e=>{const b=e.target.closest("[data-t]");if(!b)return;topic=b.dataset.t;$("topicSeg").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b));renderTalk()};
 $("talkForm").onsubmit=async e=>{e.preventDefault();const t=$("talkX").value.trim(),err=check(t,$("talkRobot").checked);if(err){toast(err);return}
-  if(!db){saveNick($("talkN").value);try{await api("post",null,{room:"talk-"+topic,n:$("talkN").value,t,aid:AID,ms:Date.now()-apiOpen});lastSend=Date.now();$("talkX").value="";toast("Опубликовано.");pullTalk()}catch(err){toast(err.message)}return}
+  if(!db){saveNick($("talkN").value);try{await api("post",null,{k:(()=>{try{return sessionStorage.getItem("iigry-mod")||localStorage.getItem("iigry-mod")||""}catch(_){return""}})(),room:"talk-"+topic,n:$("talkN").value,t,aid:AID,ms:Date.now()-apiOpen});lastSend=Date.now();$("talkX").value="";toast("Опубликовано.");pullTalk()}catch(err){toast(err.message)}return}
   if(!UID){toast("Писать в обсуждения можно после входа.");return}
   const mine=ARR(TD[UID]&&TD[UID].posts);
   try{await db.collection("talk").doc(UID).set({n:nick($("talkN").value),posts:mine.concat([{topic,t,ts:Date.now()}]).slice(-50)});lastSend=Date.now();$("talkX").value="";toast("Опубликовано.")}catch(_){toast("Не удалось отправить.")}};
@@ -1689,7 +1689,7 @@ function renderLive(){const L=LV.slice().sort((a,b)=>(a.ts||0)-(b.ts||0)).slice(
 $("lcBtn").onclick=()=>{$("lc").hidden=!$("lc").hidden;if(!$("lc").hidden)renderLive()};
 $("lcClose").onclick=()=>$("lc").hidden=true;
 $("lcForm").onsubmit=async e=>{e.preventDefault();const t=$("lcIn").value.trim(),err=check(t,$("lcRobot").checked);if(err){toast(err);return}
-  if(!db){saveNick($("lcName").value);try{await api("post",null,{room:"live",n:$("lcName").value,t,aid:AID,ms:Date.now()-apiOpen});lastSend=Date.now();$("lcIn").value="";pullLive()}catch(err){toast(err.message)}return}
+  if(!db){saveNick($("lcName").value);try{await api("post",null,{k:(()=>{try{return sessionStorage.getItem("iigry-mod")||localStorage.getItem("iigry-mod")||""}catch(_){return""}})(),room:"live",n:$("lcName").value,t,aid:AID,ms:Date.now()-apiOpen});lastSend=Date.now();$("lcIn").value="";pullLive()}catch(err){toast(err.message)}return}
   if(!UID){toast("Чат доступен после входа.");return}
   const mine=ARR(LVD[UID]&&LVD[UID].msgs);
   try{await db.collection("live").doc(UID).set({n:nick($("lcName").value),msgs:mine.concat([{t,ts:Date.now()}]).slice(-20)});lastSend=Date.now();$("lcIn").value=""}catch(_){toast("Не удалось отправить.")}};
