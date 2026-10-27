@@ -150,38 +150,46 @@ drawAll();
       finally{d.remove()}})().finally(()=>{busy=null});return busy}
   window.IIGRY_PASS={get,need,clear:()=>{try{localStorage.removeItem(PK)}catch(_){}}};
 })();
-</script><script data-game="words" data-asc="0" data-unit="очк.">/* Таблица лидеров ИИгр: общий ник для всех игр и чата, результаты — на сервере в Yandex Cloud */
+</script><script data-game="words" data-asc="0" data-unit="очко|очка|очков">/* Таблица лидеров ИИгр: общий ник для всех игр и чата, результаты — на сервере в Yandex Cloud */
 (function(){
   const me=document.currentScript,G=me.dataset.game,ASC=me.dataset.asc==="1",UNIT=me.dataset.unit||"",
     API="https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av",K="iigry-nick",t0=Date.now();
+  // Единица с правильным падежом: «1 рыба, 3 рыбы, 5 рыб»
+  const U=v=>{const f=UNIT.split("|"),n=Math.abs(v)%100,d=n%10;return v+" "+(f.length<3?UNIT:n>10&&n<20?f[2]:d===1?f[0]:d>=2&&d<=4?f[1]:f[2])};
   const S=(v,n)=>String(v==null?"":v).slice(0,n);
   const getNick=()=>{try{return S(localStorage.getItem(K),30)}catch(_){return ""}},setNick=v=>{try{localStorage.setItem(K,v)}catch(_){}};
   let aid="";try{aid=localStorage.getItem("aid")||""}catch(_){}
   const css=document.createElement("style");css.textContent=`.lb{width:min(560px,100%);margin-top:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:14px 16px;display:grid;gap:10px;font-family:inherit;color:inherit}
 .lb h2{margin:0;font:800 1.05rem/1.2 Rubik,"Golos Text",system-ui,sans-serif}.lb ol{margin:0;padding-left:1.6em;display:grid;gap:4px}
 .lb li{font-variant-numeric:tabular-nums}.lb li b{float:right;color:#E7BD52}.lb li.me{color:#E7BD52}.lb .mu{opacity:.7;font-size:.9rem;margin:0}
-.lb form{display:flex;gap:8px;flex-wrap:wrap}.lb input{flex:1 1 160px;min-width:0;padding:9px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.2);background:rgba(0,0,0,.25);color:inherit;font:inherit}
-.lb button{padding:9px 14px;border-radius:10px;border:0;background:#E7BD52;color:#1A1306;font-weight:800;cursor:pointer}.lb button:focus-visible,.lb input:focus-visible{outline:2px solid #E7BD52;outline-offset:2px}`;
+.lb .lbSave{justify-self:start}.lb form{display:flex;gap:8px;flex-wrap:wrap}.lb input{flex:1 1 160px;min-width:0;padding:9px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.2);background:rgba(0,0,0,.25);color:inherit;font:inherit}
+.lb button{min-height:42px;padding:9px 14px;border-radius:10px;border:0;background:#E7BD52;color:#1A1306;font-weight:800;cursor:pointer}.lb button:focus-visible,.lb input:focus-visible{outline:2px solid #E7BD52;outline-offset:2px}`;
   document.head.appendChild(css);
   const box=document.createElement("section");box.className="lb";box.setAttribute("aria-live","polite");
-  box.innerHTML='<h2>Таблица лидеров</h2><ol></ol><p class="mu" id="lbMsg"></p><form hidden><input maxlength="30" placeholder="Ваш ник" autocomplete="nickname" aria-label="Ваш ник"><button type="submit">В таблицу</button></form><p class="mu">Ник запоминается для всех игр и чата ИИгр.</p>';
+  box.innerHTML='<h2>Таблица лидеров</h2><ol></ol><p class="mu" id="lbMsg"></p><button type="button" class="lbSave" hidden>Записать мой результат</button><form hidden><input maxlength="30" placeholder="Ваш ник" autocomplete="nickname" aria-label="Ваш ник"><button type="submit">В таблицу</button></form><p class="mu">Ник запоминается для всех игр и чата ИИгр.</p>';
   (document.querySelector(".game")||document.body).appendChild(box);
   const ol=box.querySelector("ol"),msg=box.querySelector("#lbMsg"),form=box.querySelector("form"),inp=form.querySelector("input");
-  let pending=null;
+  let pending=null,items=[],fullMsg="";const save=box.querySelector(".lbSave");
+  // Попадает ли результат в топ-5 (для «меньше — лучше» сравнение наоборот)
+  const top5=v=>{const a=items.slice(0,5);return a.length<5||(ASC?v<(+a[4].v||0):v>(+a[4].v||0))};
   const say=t=>{msg.textContent=t};
   async function top(){try{const r=await fetch(API+"?a=top&game="+G,{cache:"no-store"}),j=await r.json();ol.textContent="";
-      const items=Array.isArray(j.items)?j.items.slice(0,10):[],nick=getNick().toLowerCase();
+      items=Array.isArray(j.items)?j.items.slice(0,10):[];const nick=getNick().toLowerCase();
       if(!items.length){const li=document.createElement("li");li.className="mu";li.textContent="Пока пусто. Станьте первым!";ol.appendChild(li);return}
-      items.forEach(x=>{const li=document.createElement("li");li.textContent=S(x.n,30);const b=document.createElement("b");b.textContent=Math.round(+x.v||0)+" "+UNIT;li.appendChild(b);if(S(x.n,30).toLowerCase()===nick)li.className="me";ol.appendChild(li)})}
+      items.forEach(x=>{const li=document.createElement("li");li.textContent=S(x.n,30);const b=document.createElement("b");b.textContent=U(Math.round(+x.v||0));li.appendChild(b);if(S(x.n,30).toLowerCase()===nick)li.className="me";ol.appendChild(li)})}
     catch(_){ol.textContent="";say("Таблица временно недоступна.")}}
   async function send(v,n,again){say("Отправляем результат…");
     try{const P=window.IIGRY_PASS,r=await fetch(API+"?a=score",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({game:G,v,n,aid,ms:Date.now()-t0,pass:P?P.get():""})}),j=await r.json();
       if(r.status===401&&j.need==="captcha"&&P&&!again){P.clear();await P.need();return send(v,n,true)}
       if(!r.ok)throw new Error(j.error||"Не удалось сохранить");
-      say(j.improved?"Новый личный рекорд: "+j.best+" "+UNIT+"!":"Ваш рекорд — "+j.best+" "+UNIT+". Этот результат не лучше, но вы близко.");form.hidden=true;top()}
+      say(fullMsg+(j.improved?"Новый личный рекорд: "+U(j.best)+"!":"Ваш рекорд — "+U(j.best)+". Этот результат не лучше, но вы близко."));fullMsg="";form.hidden=true;save.hidden=true;top()}
     catch(e){say(S(e.message,200))}}
-  window.IIGRY_SCORE=v=>{v=Math.round(+v||0);if(!v)return;const n=getNick();
-    if(n){send(v,n)}else{pending=v;say("Ваш результат: "+v+" "+UNIT+". Впишите ник, чтобы попасть в таблицу.");form.hidden=false;try{inp.focus({preventScroll:true})}catch(_){}}};
+  const ask=(v,t)=>{pending=v;say(t+" Впишите ник, чтобы попасть в таблицу.");form.hidden=false;save.hidden=true;try{inp.focus({preventScroll:true})}catch(_){}};
+  // После игры: прошли игру целиком или попали в топ-5 — записываем сами; иначе — кнопка «Записать мой результат»
+  window.IIGRY_SCORE=(v,o)=>{v=Math.round(+v||0);if(!v)return;const n=getNick(),full=!!(o&&o.full),best=top5(v);
+    if(full||best){fullMsg=full?"Игра пройдена — результат записан. ":"Вы в топ-5! ";if(n)send(v,n);else ask(v,(full?"Игра пройдена! ":"Вы в топ-5! ")+"Результат: "+U(v)+".");return}
+    pending=v;form.hidden=true;save.hidden=false;say("Ваш результат: "+U(v)+". В топ-5 пока не вошёл, но его можно записать в таблицу кнопкой ниже.")};
+  save.onclick=()=>{const n=getNick();if(!pending)return;if(n){const v=pending;pending=null;send(v,n)}else ask(pending,"Результат: "+U(pending)+".")};
   form.addEventListener("submit",e=>{e.preventDefault();const n=S(inp.value,30).trim().replace(/^@/,"");if(!n){say("Впишите ник.");return}setNick(n);if(pending){send(pending,n);pending=null}});
   top();setInterval(()=>{if(!document.hidden)top()},30000);
 })();

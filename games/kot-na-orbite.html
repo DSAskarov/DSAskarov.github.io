@@ -12,7 +12,7 @@
 *{box-sizing:border-box}
 html,body{height:100%}
 body{margin:0;background:radial-gradient(60vmax 60vmax at 20% 0%,rgba(179,20,31,.22),transparent 60%),var(--bg);color:var(--fg);font-family:var(--f-b);display:grid;place-items:center;padding:16px max(16px,env(safe-area-inset-right,0px)) 16px max(16px,env(safe-area-inset-left,0px))}
-.game{width:min(680px,100%);display:grid;gap:12px}
+.game{width:min(680px,100%);display:grid;gap:12px}.game>.credit{order:6}.game>.lb{order:4}
 h1{font:800 clamp(1.4rem,5vw,2rem)/1.1 var(--f-d);margin:0}
 h1 b{color:var(--gold)}
 .sub,.note{color:var(--muted);margin:0;font-size:.95rem}
@@ -20,7 +20,7 @@ h1 b{color:var(--gold)}
 .hud{display:flex;gap:8px;flex-wrap:wrap}
 .hud div{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px 12px;font-variant-numeric:tabular-nums}
 .hud b{font:800 1.05rem var(--f-d)}
-canvas{width:100%;aspect-ratio:16/10;display:block;background:#05040A;border:1px solid var(--line);border-radius:14px;touch-action:none;cursor:pointer;user-select:none;-webkit-user-select:none}
+canvas{-webkit-touch-callout:none;width:100%;aspect-ratio:16/10;display:block;background:#05040A;border:1px solid var(--line);border-radius:14px;touch-action:none;cursor:pointer;user-select:none;-webkit-user-select:none}
 .credit{font-size:.8rem;color:var(--muted);margin:0}
 </style>
 <div class="game">
@@ -28,11 +28,13 @@ canvas{width:100%;aspect-ratio:16/10;display:block;background:#05040A;border:1px
   <p class="sub">Кот-космонавт собирает рыбу между астероидами. Гравитация работает, коту всё равно.</p>
   <div class="hud"><div>Рыба: <b id="sc">0</b></div><div>Орбита: <b id="lv">1</b>/3</div><div>Жизни: <b id="hp">3</b></div><div>Рекорд: <b id="best">0</b></div></div>
   <canvas id="cv" width="680" height="425" aria-label="Игровое поле. Удерживайте, чтобы лететь вверх"></canvas>
-  <p class="note">Управление: удерживайте палец, мышь или пробел — кот включает реактивный ранец и летит вверх. Отпустите — плавно падает. Синий магнит притягивает рыбу, молоко добавляет жизнь. Три орбиты по 40 секунд, каждая быстрее прошлой.</p>
+  <p class="note" style="order:5">Управление: удерживайте палец, мышь или пробел — кот включает реактивный ранец и летит вверх. Отпустите — плавно падает. Синий магнит притягивает рыбу, молоко добавляет жизнь. Три орбиты по 40 секунд, каждая быстрее прошлой.</p>
   <p class="credit">Пример игры на площадке «ИИгры онлайн». Продолжения «Луна», «Луна+» и «Марс» — в дереве доработок на сайте.</p>
 </div>
 <script>
-const cv=document.getElementById("cv"),cx=cv.getContext("2d"),W=cv.width,H=cv.height,$=id=>document.getElementById(id);
+const cv=document.getElementById("cv"),cx=cv.getContext("2d"),W=680,H=425,$=id=>document.getElementById(id);
+// чёткая картинка на телефонах и мониторах с высокой плотностью точек
+const DPR=Math.min(3,window.devicePixelRatio||1);cv.width=W*DPR;cv.height=H*DPR;cx.scale(DPR,DPR);let endT=0;
 const LV=[{n:"Низкая орбита",sp:3,ast:1.1,col:"#B3141F"},{n:"Пояс астероидов",sp:3.8,ast:.7,col:"#8E0E1A"},{n:"Метеоритный дождь",sp:4.6,ast:.5,col:"#E8333F",rain:true}],DUR=40;
 const store={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:v}catch(e){return d}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
 let cat,obj,fish,hp,lvl,lt,state="ready",hold=false,last=0,best=+store.get("cat-best",0)||0,magnet=0,inv=0,banner=0,spA=0,spF=0,spP=0,fx=[];
@@ -45,13 +47,13 @@ function spawn(dt){const L=LV[lvl];spA-=dt;spF-=dt;spP-=dt;
   if(spF<=0){spF=rnd(.35,.8);obj.push({k:"fish",x:W+20,y:rnd(30,H-30),r:12,vx:-L.sp,vy:0,ph:rnd(0,6)})}
   if(spP<=0){spP=rnd(8,13);obj.push({k:Math.random()<.5&&hp<5?"milk":"mag",x:W+20,y:rnd(40,H-40),r:14,vx:-L.sp*.9,vy:0})}}
 function pop(x,y,t,c){fx.push({x,y,t,c,l:1})}
-function hurt(){if(inv>0)return;hp--;inv=1.6;pop(cat.x,cat.y-30,"Ай! −1 жизнь","#E8333F");if(hp<=0){state="over";if(fish>best){best=fish;store.set("cat-best",best)}window.IIGRY_SCORE&&IIGRY_SCORE(fish)}}
+function hurt(){if(inv>0)return;hp--;inv=1.6;pop(cat.x,cat.y-30,"Ай! −1 жизнь","#E8333F");if(hp<=0){state="over";endT=performance.now();hold=false;if(fish>best){best=fish;store.set("cat-best",best)}window.IIGRY_SCORE&&IIGRY_SCORE(fish)}}
 function update(dt){const k=dt*60;
   cat.vy+=(hold?-.55:.38)*k;cat.vy=Math.max(-7,Math.min(7,cat.vy));cat.y+=cat.vy*k;
   if(cat.y<18){cat.y=18;cat.vy=0}if(cat.y>H-18){cat.y=H-18;cat.vy*=-.4}
   lt-=dt;if(magnet>0)magnet-=dt;if(inv>0)inv-=dt;if(banner>0)banner-=dt;
   if(lt<=0){if(lvl<2){lvl++;lt=DUR;banner=2;obj=obj.filter(o=>o.k!=="ast");pop(W/2,H/2+40,"+5 рыб за орбиту","#E7BD52");fish+=5}
-    else{state="win";fish+=10;if(fish>best){best=fish;store.set("cat-best",best)}window.IIGRY_SCORE&&IIGRY_SCORE(fish);return}}
+    else{state="win";endT=performance.now();hold=false;fish+=10;if(fish>best){best=fish;store.set("cat-best",best)}window.IIGRY_SCORE&&IIGRY_SCORE(fish,{full:true});return}}
   spawn(dt);
   obj.forEach(o=>{o.x+=o.vx*k;o.y+=o.vy*k;if(o.rot!=null)o.rot+=o.vr*k;if(o.k==="ast"&&(o.y<o.r||o.y>H-o.r))o.vy*=-1;
     if(o.k==="fish"){o.ph+=dt*4;if(magnet>0){const dx=cat.x-o.x,dy=cat.y-o.y,d=Math.hypot(dx,dy);if(d<220){o.x+=dx/d*6*k;o.y+=dy/d*6*k}}}
@@ -86,13 +88,13 @@ function frame(t){const dt=Math.min(.05,(t-last)/1000||0);last=t;
   if(state==="play"){cx.fillStyle="rgba(255,255,255,.1)";cx.fillRect(0,0,W,4);cx.fillStyle="#E7BD52";cx.fillRect(0,0,W*(1-lt/DUR),4)}
   if(state==="play"&&banner>0){cx.fillStyle="rgba(5,4,10,.55)";cx.fillRect(0,H/2-34,W,52);cx.fillStyle="#E7BD52";cx.font="800 22px Rubik, sans-serif";cx.textAlign="center";cx.fillText("Орбита "+(lvl+1)+": "+LV[lvl].n,W/2,H/2)}
   if(state!=="play"){cx.fillStyle="rgba(5,4,10,.65)";cx.fillRect(0,H/2-60,W,120);cx.textAlign="center";cx.fillStyle="#F4F4F6";cx.font="700 22px Golos Text, sans-serif";
-    const T={ready:["Нажмите, чтобы взлететь","Удерживайте — вверх, отпустите — вниз"],over:["Кот вернулся на Землю","Рыбы: "+fish+". Нажмите, чтобы снова"],win:["Все три орбиты пройдены!","Рыбы: "+fish+" (с бонусами). Кот доволен"]}[state];
+    const T={ready:["Нажмите, чтобы взлететь","Удерживайте — вверх, отпустите — вниз"],over:["Кот вернулся на Землю","Рыбы: "+fish+". "+(performance.now()-endT<1000?"Секунду…":"Нажмите, чтобы снова")],win:["Все три орбиты пройдены!","Рыбы: "+fish+" (с бонусами). Кот доволен"]}[state];
     cx.fillText(T[0],W/2,H/2-6);cx.font="16px Golos Text, sans-serif";cx.fillStyle="#B9B6C2";cx.fillText(T[1],W/2,H/2+22)}
   $("sc").textContent=fish;$("lv").textContent=lvl+1;$("hp").textContent=hp;$("best").textContent=best;
   requestAnimationFrame(frame)}
-function down(e){e&&e.preventDefault&&e.preventDefault();if(state!=="play"){if(state!=="ready")reset();state="play";hold=false;return}hold=true}
+function down(e){e&&e.preventDefault&&e.preventDefault();if(state!=="play"){if(state!=="ready"&&performance.now()-endT<1000)return;if(state==="ready"&&matchMedia("(max-width:700px)").matches)cv.scrollIntoView({behavior:"smooth",block:"center"});if(state!=="ready")reset();state="play";hold=false;return}hold=true}
 function up(){hold=false}
-cv.addEventListener("pointerdown",down);addEventListener("pointerup",up);addEventListener("pointercancel",up);
+cv.addEventListener("pointerdown",down);cv.addEventListener("contextmenu",e=>e.preventDefault());addEventListener("pointerup",up);addEventListener("pointercancel",up);
 addEventListener("keydown",e=>{if(e.code==="Space"||e.code==="ArrowUp"){e.preventDefault();if(!e.repeat)down()}});addEventListener("keyup",e=>{if(e.code==="Space"||e.code==="ArrowUp")up()});
 requestAnimationFrame(frame);
 </script>
@@ -148,38 +150,46 @@ requestAnimationFrame(frame);
       finally{d.remove()}})().finally(()=>{busy=null});return busy}
   window.IIGRY_PASS={get,need,clear:()=>{try{localStorage.removeItem(PK)}catch(_){}}};
 })();
-</script><script data-game="cat" data-asc="0" data-unit="рыб">/* Таблица лидеров ИИгр: общий ник для всех игр и чата, результаты — на сервере в Yandex Cloud */
+</script><script data-game="cat" data-asc="0" data-unit="рыба|рыбы|рыб">/* Таблица лидеров ИИгр: общий ник для всех игр и чата, результаты — на сервере в Yandex Cloud */
 (function(){
   const me=document.currentScript,G=me.dataset.game,ASC=me.dataset.asc==="1",UNIT=me.dataset.unit||"",
     API="https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av",K="iigry-nick",t0=Date.now();
+  // Единица с правильным падежом: «1 рыба, 3 рыбы, 5 рыб»
+  const U=v=>{const f=UNIT.split("|"),n=Math.abs(v)%100,d=n%10;return v+" "+(f.length<3?UNIT:n>10&&n<20?f[2]:d===1?f[0]:d>=2&&d<=4?f[1]:f[2])};
   const S=(v,n)=>String(v==null?"":v).slice(0,n);
   const getNick=()=>{try{return S(localStorage.getItem(K),30)}catch(_){return ""}},setNick=v=>{try{localStorage.setItem(K,v)}catch(_){}};
   let aid="";try{aid=localStorage.getItem("aid")||""}catch(_){}
   const css=document.createElement("style");css.textContent=`.lb{width:min(560px,100%);margin-top:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:14px 16px;display:grid;gap:10px;font-family:inherit;color:inherit}
 .lb h2{margin:0;font:800 1.05rem/1.2 Rubik,"Golos Text",system-ui,sans-serif}.lb ol{margin:0;padding-left:1.6em;display:grid;gap:4px}
 .lb li{font-variant-numeric:tabular-nums}.lb li b{float:right;color:#E7BD52}.lb li.me{color:#E7BD52}.lb .mu{opacity:.7;font-size:.9rem;margin:0}
-.lb form{display:flex;gap:8px;flex-wrap:wrap}.lb input{flex:1 1 160px;min-width:0;padding:9px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.2);background:rgba(0,0,0,.25);color:inherit;font:inherit}
-.lb button{padding:9px 14px;border-radius:10px;border:0;background:#E7BD52;color:#1A1306;font-weight:800;cursor:pointer}.lb button:focus-visible,.lb input:focus-visible{outline:2px solid #E7BD52;outline-offset:2px}`;
+.lb .lbSave{justify-self:start}.lb form{display:flex;gap:8px;flex-wrap:wrap}.lb input{flex:1 1 160px;min-width:0;padding:9px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.2);background:rgba(0,0,0,.25);color:inherit;font:inherit}
+.lb button{min-height:42px;padding:9px 14px;border-radius:10px;border:0;background:#E7BD52;color:#1A1306;font-weight:800;cursor:pointer}.lb button:focus-visible,.lb input:focus-visible{outline:2px solid #E7BD52;outline-offset:2px}`;
   document.head.appendChild(css);
   const box=document.createElement("section");box.className="lb";box.setAttribute("aria-live","polite");
-  box.innerHTML='<h2>Таблица лидеров</h2><ol></ol><p class="mu" id="lbMsg"></p><form hidden><input maxlength="30" placeholder="Ваш ник" autocomplete="nickname" aria-label="Ваш ник"><button type="submit">В таблицу</button></form><p class="mu">Ник запоминается для всех игр и чата ИИгр.</p>';
+  box.innerHTML='<h2>Таблица лидеров</h2><ol></ol><p class="mu" id="lbMsg"></p><button type="button" class="lbSave" hidden>Записать мой результат</button><form hidden><input maxlength="30" placeholder="Ваш ник" autocomplete="nickname" aria-label="Ваш ник"><button type="submit">В таблицу</button></form><p class="mu">Ник запоминается для всех игр и чата ИИгр.</p>';
   (document.querySelector(".game")||document.body).appendChild(box);
   const ol=box.querySelector("ol"),msg=box.querySelector("#lbMsg"),form=box.querySelector("form"),inp=form.querySelector("input");
-  let pending=null;
+  let pending=null,items=[],fullMsg="";const save=box.querySelector(".lbSave");
+  // Попадает ли результат в топ-5 (для «меньше — лучше» сравнение наоборот)
+  const top5=v=>{const a=items.slice(0,5);return a.length<5||(ASC?v<(+a[4].v||0):v>(+a[4].v||0))};
   const say=t=>{msg.textContent=t};
   async function top(){try{const r=await fetch(API+"?a=top&game="+G,{cache:"no-store"}),j=await r.json();ol.textContent="";
-      const items=Array.isArray(j.items)?j.items.slice(0,10):[],nick=getNick().toLowerCase();
+      items=Array.isArray(j.items)?j.items.slice(0,10):[];const nick=getNick().toLowerCase();
       if(!items.length){const li=document.createElement("li");li.className="mu";li.textContent="Пока пусто. Станьте первым!";ol.appendChild(li);return}
-      items.forEach(x=>{const li=document.createElement("li");li.textContent=S(x.n,30);const b=document.createElement("b");b.textContent=Math.round(+x.v||0)+" "+UNIT;li.appendChild(b);if(S(x.n,30).toLowerCase()===nick)li.className="me";ol.appendChild(li)})}
+      items.forEach(x=>{const li=document.createElement("li");li.textContent=S(x.n,30);const b=document.createElement("b");b.textContent=U(Math.round(+x.v||0));li.appendChild(b);if(S(x.n,30).toLowerCase()===nick)li.className="me";ol.appendChild(li)})}
     catch(_){ol.textContent="";say("Таблица временно недоступна.")}}
   async function send(v,n,again){say("Отправляем результат…");
     try{const P=window.IIGRY_PASS,r=await fetch(API+"?a=score",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({game:G,v,n,aid,ms:Date.now()-t0,pass:P?P.get():""})}),j=await r.json();
       if(r.status===401&&j.need==="captcha"&&P&&!again){P.clear();await P.need();return send(v,n,true)}
       if(!r.ok)throw new Error(j.error||"Не удалось сохранить");
-      say(j.improved?"Новый личный рекорд: "+j.best+" "+UNIT+"!":"Ваш рекорд — "+j.best+" "+UNIT+". Этот результат не лучше, но вы близко.");form.hidden=true;top()}
+      say(fullMsg+(j.improved?"Новый личный рекорд: "+U(j.best)+"!":"Ваш рекорд — "+U(j.best)+". Этот результат не лучше, но вы близко."));fullMsg="";form.hidden=true;save.hidden=true;top()}
     catch(e){say(S(e.message,200))}}
-  window.IIGRY_SCORE=v=>{v=Math.round(+v||0);if(!v)return;const n=getNick();
-    if(n){send(v,n)}else{pending=v;say("Ваш результат: "+v+" "+UNIT+". Впишите ник, чтобы попасть в таблицу.");form.hidden=false;try{inp.focus({preventScroll:true})}catch(_){}}};
+  const ask=(v,t)=>{pending=v;say(t+" Впишите ник, чтобы попасть в таблицу.");form.hidden=false;save.hidden=true;try{inp.focus({preventScroll:true})}catch(_){}};
+  // После игры: прошли игру целиком или попали в топ-5 — записываем сами; иначе — кнопка «Записать мой результат»
+  window.IIGRY_SCORE=(v,o)=>{v=Math.round(+v||0);if(!v)return;const n=getNick(),full=!!(o&&o.full),best=top5(v);
+    if(full||best){fullMsg=full?"Игра пройдена — результат записан. ":"Вы в топ-5! ";if(n)send(v,n);else ask(v,(full?"Игра пройдена! ":"Вы в топ-5! ")+"Результат: "+U(v)+".");return}
+    pending=v;form.hidden=true;save.hidden=false;say("Ваш результат: "+U(v)+". В топ-5 пока не вошёл, но его можно записать в таблицу кнопкой ниже.")};
+  save.onclick=()=>{const n=getNick();if(!pending)return;if(n){const v=pending;pending=null;send(v,n)}else ask(pending,"Результат: "+U(pending)+".")};
   form.addEventListener("submit",e=>{e.preventDefault();const n=S(inp.value,30).trim().replace(/^@/,"");if(!n){say("Впишите ник.");return}setNick(n);if(pending){send(pending,n);pending=null}});
   top();setInterval(()=>{if(!document.hidden)top()},30000);
 })();
