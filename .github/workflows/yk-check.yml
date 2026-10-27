@@ -1,0 +1,13 @@
+name: "Проверка платежей ЮKassa (разовая)"
+on: { workflow_dispatch: {} }
+permissions: { contents: read }
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Последние платежи (без данных карт и покупателей)
+        env: { YK: "${{ secrets.YK_SECRET }}" }
+        run: |
+          curl -sS -u "1507601:$YK" "https://api.yookassa.ru/v3/payments?limit=10" \
+            | jq -c '.items[]? | {status, paid, amount: .amount.value, income: .income_amount.value, created: .created_at, captured: .captured_at, refunded: .refunded_amount.value, test}'
+          echo "---"; curl -sS -u "1507601:$YK" "https://api.yookassa.ru/v3/me" | jq -c '{account_id, status, test, fiscalization_enabled, payment_methods, payout_methods, name: (.name|tostring|.[0:3]+"…")}'
