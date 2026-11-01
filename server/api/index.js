@@ -107,6 +107,7 @@ async function db(ctx) {
         await T("teamacc", [["uid", Types.UTF8], ["name", Types.UTF8], ["role", Types.UTF8], ["ts", Types.UINT64]], ["uid"]);
         await T("mgames", [["uid", Types.UTF8], ["gid", Types.UTF8], ["j", Types.UTF8], ["ts", Types.UINT64]], ["uid", "gid"]);
         await T("pv", [["pid", Types.UTF8], ["day", Types.UTF8], ["dev", Types.UTF8], ["v", Types.UINT64]], ["pid", "day", "dev"]);
+        await T("rate", [["pid", Types.UTF8], ["k", Types.UTF8], ["s", Types.UINT32], ["ts", Types.UINT64]], ["pid", "k"]);
         await ensure("cfg", new TableDescription()
           .withColumn(new Column("k", Types.optional(Types.UTF8))).withColumn(new Column("v", Types.optional(Types.UTF8)))
           .withPrimaryKeys("k"));
@@ -472,7 +473,7 @@ const SMTP_PASS = env("SMTP_PASS"), SMTP_USER = env("SMTP_USER") || "askarov.dmi
 const EMAIL_RE = /^[^\s@<>"']{1,64}@[^\s@<>"']{1,190}\.[a-zа-я]{2,24}$/i;
 const normEmail = e => clean(e, 254).toLowerCase(), normPhone = p => { let d = String(p || "").replace(/\D/g, ""); if (d.length === 11 && d[0] === "8") d = "7" + d.slice(1); if (d.length === 10 && d[0] === "9") d = "7" + d; return /^\d{10,15}$/.test(d) ? "+" + d : "" };
 const mask = k => k.startsWith("e:") ? k.slice(2).replace(/^(.{2}).*(@.*)$/, "$1…$2") : k.startsWith("p:") ? k.slice(2).replace(/^(\+\d{2}).*(\d{2})$/, "$1 … $2") : "Telegram";
-let mailer = null;
+let mailer = null, gstatCache = null;
 // Пароль почты: из секрета GitHub или (если его нет) из админ-кабинета — хранится в базе зашифрованным AES-256-GCM
 const smtpKey = () => crypto.createHash("sha256").update((env("TG_BOT_TOKEN") || env("YK_SECRET")) + "|" + salt + "|smtp-key").digest();
 const smtpEnc = v => { const iv = crypto.randomBytes(12), c = crypto.createCipheriv("aes-256-gcm", smtpKey(), iv), d = Buffer.concat([c.update(v, "utf8"), c.final()]); return [iv, c.getAuthTag(), d].map(x => x.toString("base64")).join(".") };
@@ -840,6 +841,19 @@ exports.handler = async (event, ctx) => {
       for (const k of await authsOf(u.uid)) await q(`DECLARE $k AS Utf8; DELETE FROM uauth WHERE k=$k;`, { $k: u8(k) });
       await q(`DECLARE $u AS Utf8; DELETE FROM mgames WHERE uid=$u; DELETE FROM uprof WHERE uid=$u; DELETE FROM users WHERE uid=$u;`, { $u: u8(u.uid) }); return reply(200, { ok: true }, origin) }
     return reply(400, { error: "bad" }, origin) }
+  // Оценки игр (1–5 звёзд, одна на устройство, можно менять) и сводка для сортировки каталога
+  if (a === "rate" && method === "POST") { const b = parse(event) || {}, raw = String(b.d || ""), pid = String(b.pid || ""), sc = Math.round(Number(b.s));
+    if (!/^[0-9a-f]{32}$/.test(raw) || !/^[a-z0-9:_-]{1,40}$/i.test(pid) || !(sc >= 1 && sc <= 5)) return reply(400, { error: "Поставьте от 1 до 5 звёзд." }, origin);
+    const now = Date.now(), ip = ipOf(event, hd), lim = await limit("r:" + ip, now, 0, 60); if (lim.err) return reply(429, { error: "Слишком много оценок — попробуйте позже." }, origin);
+    await q(`DECLARE $ip AS Utf8; DECLARE $ts AS Uint64; DECLARE $c AS Uint64; UPSERT INTO rl (ip, ts, cnt) VALUES ($ip, $ts, $c);`, { $ip: u8("r:" + ip), $ts: u64(now), $c: u64(lim.cnt + 1) });
+    const k = crypto.createHash("sha256").update(salt + "|rate|" + raw).digest("hex").slice(0, 32);
+    await q(`DECLARE $p AS Utf8; DECLARE $k AS Utf8; DECLARE $s AS Uint32; DECLARE $t AS Uint64; UPSERT INTO rate (pid, k, s, ts) VALUES ($p, $k, $s, $t);`, { $p: u8(pid), $k: u8(k), $s: TypedValues.uint32(sc), $t: u64(now) });
+    gstatCache = null; return reply(200, { ok: true }, origin) }
+  if (a === "gstats") { if (gstatCache && gstatCache.t > Date.now()) return reply(200, gstatCache.v, origin);
+    const out = {}, o = id => out[id] || (out[id] = { r: 0, n: 0, v7: 0, v: 0 }), d7 = dayNow(6);
+    for (const x of await q(`SELECT pid, SUM(s) AS t, COUNT(*) AS n FROM rate GROUP BY pid;`)) { const g = o(x.pid); g.n = num(x.n); g.r = g.n ? Math.round(num(x.t) / g.n * 10) / 10 : 0 }
+    for (const x of await q(`SELECT pid, day, COUNT(*) AS u FROM pv GROUP BY pid, day;`)) { const g = o(x.pid); g.v += num(x.u); if (x.day >= d7) g.v7 += num(x.u) }
+    const v = { games: out }; gstatCache = { v, t: Date.now() + 60e3 }; return reply(200, v, origin) }
   if (a === "pv" && method === "POST") { const b = parse(event) || {}, raw = String(b.d || ""), pid = String(b.pid || "");
     if (!/^[0-9a-f]{32}$/.test(raw) || !/^[a-z0-9:_-]{1,40}$/i.test(pid)) return reply(400, { error: "bad" }, origin);
     const ua = String(hd["User-Agent"] || hd["user-agent"] || ""); if (!ua || /bot|crawl|spider|headless|preview|monitor|curl|python|wget/i.test(ua)) return reply(200, { ok: true }, origin);
