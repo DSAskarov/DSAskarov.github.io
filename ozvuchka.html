@@ -1,5 +1,5 @@
 <!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; font-src https://fonts.gstatic.com; img-src 'self' data: https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; connect-src https://functions.yandexcloud.net https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; frame-src https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; object-src 'none'; base-uri 'none'; form-action 'none'"><meta name="referrer" content="strict-origin-when-cross-origin">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; font-src https://fonts.gstatic.com; img-src 'self' data: https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; connect-src https://functions.yandexcloud.net https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://huggingface.co https://*.huggingface.co https://*.hf.co data: blob: https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; frame-src https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; worker-src 'self' blob:; media-src 'self' blob: data:; object-src 'none'; base-uri 'none'; form-action 'none'"><meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="description" content="Бесплатно: озвучка текста голосом и расшифровка речи в текст прямо в браузере, без регистрации."><meta property="og:title" content="Озвучка и расшифровка текста — ИИгры онлайн"><meta property="og:description" content="Бесплатно: озвучка текста голосом и расшифровка речи в текст прямо в браузере, без регистрации."><meta name="theme-color" content="#0B0A0E">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23B3141F'/%3E%3Ctext x='32' y='44' font-size='30' font-family='Arial' font-weight='700' text-anchor='middle' fill='%23F6DE8D'%3EИИ%3C/text%3E%3C/svg%3E">
 <style>*{box-sizing:border-box}html,body{margin:0}[hidden]{display:none!important}</style></head><body>
@@ -24,6 +24,7 @@ input[type=range]{padding:0;accent-color:#E7BD52;height:42px;border:0;background
 @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(232,51,63,.6)}70%{box-shadow:0 0 0 18px rgba(232,51,63,0)}100%{box-shadow:0 0 0 0 rgba(232,51,63,0)}}
 .st{min-height:1.3em;color:var(--gold);margin:0}.interim{color:var(--mu);font-style:italic;min-height:1.2em;margin:0}
 .warn{border:1px solid rgba(231,189,82,.4);background:rgba(231,189,82,.08);border-radius:12px;padding:10px 12px;margin:0;font-size:.92rem}
+.neuro{display:grid;gap:10px;border-top:1px solid var(--line);padding-top:12px}.neuro a.b{text-decoration:none}
 .prog{height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}.prog i{display:block;height:100%;width:0;background:#E7BD52;transition:width .2s}
 </style>
 <main class="oz">
@@ -41,6 +42,17 @@ input[type=range]{padding:0;accent-color:#E7BD52;height:42px;border:0;background
     <div class="prog" aria-hidden="true"><i id="bar"></i></div>
     <div class="row"><button class="b gold" id="play" type="button">▶ Озвучить</button><button class="b" id="pause" type="button" disabled>⏸ Пауза</button><button class="b" id="stop" type="button" disabled>⏹ Стоп</button></div>
     <p class="st" id="s1" aria-live="polite"></p>
+    <div class="neuro">
+      <h2 style="margin:6px 0 0;font:800 1.15rem Rubik,system-ui,sans-serif">🎧 Аудиофайл нейроголосом</h2>
+      <p class="mu">Создаёт настоящий звуковой файл, который можно скачать и отправить. Бесплатно: нейросеть работает прямо в вашем браузере. При первом запуске она скачает голос (около 60 МБ), дальше — быстро.</p>
+      <div class="row"><label class="f"><span>Нейроголос</span><select id="nv"><option value="ru_RU-irina-medium">Ирина (женский)</option><option value="ru_RU-denis-medium">Денис (мужской)</option><option value="ru_RU-dmitri-medium">Дмитрий (мужской)</option><option value="ru_RU-ruslan-medium">Руслан (мужской)</option><option value="en_US-hfc_female-medium">English — female</option><option value="en_US-ryan-medium">English — male</option></select></label>
+        <button class="b gold" id="mk" type="button">🎧 Создать аудио</button></div>
+      <div class="prog" aria-hidden="true"><i id="nbar"></i></div>
+      <p class="st" id="ns" aria-live="polite"></p>
+      <audio id="au" controls hidden style="width:100%"></audio>
+      <div class="row"><a class="b" id="dl" hidden download="ozvuchka.wav">⬇ Скачать WAV</a></div>
+      <p class="mu">⭐ Скоро: премиум-голоса Яндекса с интонациями — за ИИ-кредиты.</p>
+    </div>
     <p class="mu">Голоса берутся из вашего устройства: на телефонах и в Chrome обычно есть русские. Если голосов мало — в настройках устройства можно скачать новые (раздел «Синтез речи» или «Озвучивание»).</p>
   </section>
 
@@ -92,6 +104,26 @@ input[type=range]{padding:0;accent-color:#E7BD52;height:42px;border:0;background
  $("save").onclick=()=>{const b=new Blob([$("out").value],{type:"text/plain;charset=utf-8"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="rasshifrovka.txt";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
  $("toTts").onclick=()=>{$("txt").value=$("out").value;tab(1);$("play").click()};$("clr").onclick=()=>{if(confirm("Очистить расшифровку?"))$("out").value=""};
 })();
+</script>
+<script type="importmap">{"imports":{"onnxruntime-web":"https://cdn.jsdelivr.net/npm/onnxruntime-web@1.18.0/dist/esm/ort.min.js"}}</script>
+<script type="module">
+/* Нейроголос Piper (открытая модель, MIT) — синтез прямо в браузере, результат — WAV-файл */
+const $=id=>document.getElementById(id);let tts=null,url="";
+const wavJoin=async blobs=>{if(blobs.length===1)return blobs[0];const bufs=await Promise.all(blobs.map(b=>b.arrayBuffer()));const head=bufs[0].slice(0,44),datas=bufs.map(b=>b.slice(44)),len=datas.reduce((a,d)=>a+d.byteLength,0);
+  const h=new DataView(head.slice(0));h.setUint32(4,36+len,true);h.setUint32(40,len,true);return new Blob([h.buffer,...datas],{type:"audio/wav"})};
+const parts=t=>{const out=[];let cur="";t.replace(/\s+/g," ").trim().split(/(?<=[.!?…])\s+/).forEach(s=>{if((cur+" "+s).length>400){if(cur)out.push(cur);cur=s}else cur=cur?cur+" "+s:s});if(cur)out.push(cur);return out};
+$("mk").onclick=async()=>{const t=$("txt").value.trim();if(!t){$("ns").textContent="Сначала введите текст выше.";$("txt").focus();return}
+  if(t.length>5000){$("ns").textContent="За раз — до 5000 знаков. Разбейте текст на части.";return}
+  const b=$("mk");b.disabled=true;$("dl").hidden=true;$("au").hidden=true;$("nbar").style.width="0";
+  try{if(!tts){$("ns").textContent="Загружаем нейросеть…";tts=await import("https://cdn.jsdelivr.net/npm/@mintplex-labs/piper-tts-web@1.0.4/dist/piper-tts-web.js")}
+    const v=$("nv").value,P=parts(t),out=[];
+    for(let i=0;i<P.length;i++){$("ns").textContent=P.length>1?"Озвучиваем: часть "+(i+1)+" из "+P.length+"…":"Озвучиваем…";
+      out.push(await tts.predict({text:P[i],voiceId:v},p=>{if(p&&p.total){$("ns").textContent="Скачиваем голос (один раз): "+Math.round(p.loaded/p.total*100)+"%";$("nbar").style.width=Math.round(p.loaded/p.total*100)+"%"}}));
+      $("nbar").style.width=Math.round((i+1)/P.length*100)+"%"}
+    const wav=await wavJoin(out);if(url)URL.revokeObjectURL(url);url=URL.createObjectURL(wav);$("au").src=url;$("au").hidden=false;$("dl").href=url;$("dl").download=(t.slice(0,30).replace(/[^\wа-яё ]+/gi,"").trim().replace(/\s+/g,"-")||"ozvuchka")+".wav";$("dl").hidden=false;
+    $("ns").textContent="✅ Готово: "+(wav.size/1048576).toFixed(1)+" МБ. Послушайте и скачайте.";$("au").play().catch(()=>{})}
+  catch(e){$("ns").textContent="Не получилось: "+(e&&e.message||e)+". Попробуйте Chrome или Яндекс Браузер на компьютере."}
+  b.disabled=false};
 </script>
 <script>/* Панель навигации «ИИгр»: назад, главная, игры, мастерская, кабинет; в играх — возврат в меню игры. На телефоне — крупные значки с подписями, как в приложениях */
 (function(){if(document.getElementById("iigry-nav"))return;const P=location.pathname,inG=/\/games\//.test(P),base=inG?"../":"./",here=P.replace(/^.*\//,"")||"index.html";
