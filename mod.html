@@ -21,11 +21,13 @@ textarea{background:#0F0E13;color:var(--fg);border:1px solid var(--line);border-
 [hidden]{display:none!important}
 </style></head><body><main>
 <h1>Модерация <b>ИИгр</b></h1>
-<section class="card" id="login"><h2>Вход по коду</h2>
+<section class="card" id="login"><h2>Вход в модерацию</h2>
+<p>Если вы в команде и привязали аккаунт сайта — просто <a href="kabinet.html">войдите в кабинет</a>, и панель откроется сама, без кода.</p>
+<h3 style="margin:10px 0 4px;font-size:1rem">Или по коду</h3>
 <div class="row"><input id="key" type="password" autocomplete="off" placeholder="Код модератора или ключ админа" style="flex:1"><button class="main" id="go">Войти</button></div>
-<p class="muted">Код выдаёт админ. Не пересылайте его никому: по нему вас видно в журнале действий. Код хранится только в этом браузере.</p><p class="msg" id="lmsg"></p></section>
+<p class="muted">Код выдаёт админ. Не пересылайте его никому: по нему вас видно в журнале действий. Сам код в браузере не сохраняется — после входа выдаётся временный пропуск на 12 часов.</p><p class="msg" id="lmsg"></p></section>
 <div id="app" hidden>
-<section class="card"><div class="row" style="justify-content:space-between"><p style="margin:0">Вы вошли как <b id="who"></b></p><button id="out">Выйти</button></div><p class="muted" id="can"></p><div class="row" style="margin-top:8px"><button id="tgb">Подключить Telegram</button><span class="muted" id="tgm"></span></div></section>
+<section class="card"><div class="row" style="justify-content:space-between"><p style="margin:0">Вы вошли как <b id="who"></b></p><button id="out">Выйти</button></div><p class="muted" id="can"></p><div class="row" style="margin-top:8px"><button id="bindAcc" hidden>Привязать мой аккаунт сайта (входить без кода)</button><button id="tgb">Подключить Telegram</button><span class="muted" id="tgm"></span></div></section>
 <section class="card" id="secAll" hidden><h2>Входящие — нужен ответ</h2><div class="row"><button id="rall">Обновить</button><span class="muted" id="allSum"></span></div>
 <p class="muted">Здесь всё, что ждёт команду: срочное (жалобы и вызовы в чате) — сверху в красной рамке. Ответ на вызов в чате появится прямо в чате от имени команды; ответ на заявку увидит автор по номеру обращения.</p><div class="list" id="all" style="max-height:none"></div></section>
 <section class="card" id="secT" hidden><h2>Посещаемость за 14 дней</h2><div class="row"><button id="tU" class="main">Уникальные</button><button id="tV">Все просмотры</button><span class="muted" id="tSum"></span></div>
@@ -58,15 +60,15 @@ async function call(body){const r=await fetch(API+"?a=mod",{method:"POST",header
 const el=(tag,txt,cls)=>{const e=document.createElement(tag);if(txt!=null)e.textContent=txt;if(cls)e.className=cls;return e};
 const btn=(t,cls,fn)=>{const b=el("button",t,cls);b.type="button";b.onclick=async()=>{b.disabled=true;try{await fn()}catch(e){alertBox(e.message)}b.disabled=false};return b};
 function alertBox(t){$("lmsg").textContent=t;const m=el("p",t,"msg");document.querySelector("main").prepend(m);setTimeout(()=>m.remove(),4000)}
-async function login(k){K=k;try{if(!/^ms\./.test(K)){const t=await call({op:"login"});K=t.token}try{$("key").value=""}catch(_){}const j=await call({op:"me"});ROLE=j.role;P=j.perms||[];$("who").textContent=j.name+" — "+j.title;$("can").textContent="Вам доступно: "+P.map(x=>DESC[x]).join(", ")+".";
+async function login(k,viaAcc){K=k;try{if(!/^ms\./.test(K)){const t=await call({op:"login"});K=t.token}try{$("key").value=""}catch(_){}const j=await call({op:"me"});ROLE=j.role;P=j.perms||[];$("who").textContent=j.name+" — "+j.title;$("can").textContent="Вам доступно: "+P.map(x=>DESC[x]).join(", ")+".";
     $("login").hidden=true;$("app").hidden=false;$("secMsgs").hidden=!can("del");$("secScores").hidden=!can("score");$("adm").hidden=!can("mods");$("addBox").hidden=!can("team");$("unban").hidden=!can("unban");
     [...$("days").options].forEach(o=>{o.hidden=o.disabled=+o.value>j.ban});$("days").hidden=!can("ban");
     const ks=Object.keys(KIND).filter(k=>can("q:"+k));$("secQ").hidden=!ks.length;$("qkind").innerHTML="";ks.forEach(k=>{const o=el("option",KIND[k]);o.value=k;$("qkind").append(o)});if(ks.length)loadQ();
     $("mrole").innerHTML="";$("roleHelp").innerHTML="";Object.entries(j.roles||{}).forEach(([k,t])=>{const o=el("option",t);o.value=k;$("mrole").append(o);const li=el("li");li.append(el("b",t)," — "+(RHELP[k]||""));$("roleHelp").append(li)});{const li=el("li");li.append(el("b","Админ")," — "+RHELP.admin);$("roleHelp").append(li)}
     $("secAll").hidden=!["del","q:publish","q:complaint","q:idea","q:resume"].some(can);if(!$("secAll").hidden)loadAll();
     $("secT").hidden=!can("mods");$("admStat").hidden=!can("team");if(can("mods"))loadT();
-    st.set(K);if(can("del"))loadMsgs();if(can("score"))loadScores();loadLog();if(can("mods"))loadMods()}
-  catch(e){$("lmsg").textContent=e.message;st.set("")}}
+    st.set(K);$("bindAcc").hidden=!!viaAcc||!ACC();if(can("del"))loadMsgs();if(can("score"))loadScores();loadLog();if(can("mods"))loadMods()}
+  catch(e){st.set("");if(!viaAcc&&/^ms\./.test(k)&&ACC()&&await accLogin())return;$("lmsg").textContent=/^ms\./.test(k)?"Пропуск истёк — войдите снова.":e.message}}
 async function loadMsgs(){const box=$("msgs");box.textContent="Загрузка…";const r=await fetch(API+"?a=list&room="+$("room").value).then(r=>r.json()).catch(()=>({items:[]}));box.innerHTML="";
   (r.items||[]).slice().reverse().forEach(m=>{const it=el("div",null,"it"),tx=el("div",null,"tx");tx.append(el("b",m.n+" "),el("small",T(m.ts)),el("div",m.t));
     it.append(tx,btn("Удалить","",async()=>{await call({op:"del",room:$("room").value,ts:m.ts,id:m.id});it.remove();loadLog()}));if(can("ban"))it.append(btn("Бан","red",async()=>{await call({op:"ban",room:$("room").value,ts:m.ts,id:m.id,days:$("days").value});it.remove();loadLog()}));box.append(it)});
@@ -129,5 +131,9 @@ $("go").onclick=()=>login($("key").value.trim());$("key").onkeydown=e=>{if(e.key
 $("out").onclick=async()=>{try{await call({op:"logout"})}catch(_){}st.set("");location.reload()};$("rl").onclick=loadMsgs;$("room").onchange=loadMsgs;$("rg").onclick=loadScores;$("game").onchange=loadScores;
 $("add").onclick=async()=>{try{const j=await call({op:"add",name:$("mname").value.trim(),role:$("mrole").value});$("code").textContent=j.code;$("newcode").hidden=false;$("mname").value="";loadMods();loadLog()}catch(e){alertBox(e.message)}};
 $("unban").onclick=async()=>{if(!confirm("Снять все баны?"))return;try{await call({op:"unban"});loadLog()}catch(e){alertBox(e.message)}};
-{const saved=st.get()||st.old();if(saved)login(saved)}
+const ACC=()=>{try{return localStorage.getItem("iigry-sess")||""}catch(_){return""}};
+// Вход через аккаунт сайта: сервер узнаёт команду по привязке или по Telegram, подключённому к боту
+async function accLogin(){const t=ACC();if(!t)return false;try{const r=await fetch(API+"?a=mod",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({token:t,op:"login"})}),j=await r.json();if(r.ok&&j.token){login(j.token,true);return true}}catch(_){}return false}
+$("bindAcc").onclick=async()=>{try{const j=await call({op:"bindacc",acc:ACC()});$("bindAcc").hidden=true;alertBox("Готово: аккаунт «"+j.nick+"» привязан. Теперь панель открывается без кода, если вы вошли в кабинет.")}catch(e){alertBox(e.message)}};
+(async()=>{const saved=st.get()||st.old();if(saved)login(saved);else await accLogin()})();
 </script></body></html>

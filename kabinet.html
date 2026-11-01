@@ -111,6 +111,9 @@ async function show(){const b=$("box");
   b.innerHTML="";if(j.error){b.append(el("p",j.error));const r=el("button","Повторить","btn");r.type="button";r.onclick=show;b.append(r);return}
   const u=j.user,P=pf.prof||{av:"🎮",bg:0,c:{},show:{}};P.c=P.c||{};P.show=P.show||{};
   const pv=el("div");const rp=()=>{pv.innerHTML="";pv.append(preview(nick.value.trim()||u.nick,P))};
+  if(j.team){const t=el("div",null,"proj");t.style.borderColor="#E7BD52";t.append(el("h3",(j.team.role==="admin"?"👑 Вы — админ сайта":"🛡 Вы в команде сайта: "+j.team.title)));
+    t.append(el("p",j.team.role==="admin"?"Вам доступно всё: заявки, жалобы, модерация чата и рейтингов, команда, статистика и выгрузки. Панель открывается без ключа, пока вы вошли в аккаунт.":"Панель модерации открывается без кода, пока вы вошли в этот аккаунт.","muted"));
+    const r=el("div",null,"row"),a=el("a",j.team.role==="admin"?"Открыть панель админа →":"Открыть панель модерации →","btn gold");a.href="mod.html";r.append(a);t.append(r);b.append(t)}
   b.append(el("h2","Профиль"),pv);
   // ник
   const nick=inp(u.named?u.nick:"",30,"Ваш ник, например PixelFox"),sv=el("button","Сохранить ник","btn gold sm");sv.type="button";const nm=el("p","","muted");nick.oninput=rp;

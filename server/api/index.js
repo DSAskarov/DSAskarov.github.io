@@ -103,6 +103,7 @@ async function db(ctx) {
         await T("ucode", [["k", Types.UTF8], ["h", Types.UTF8], ["exp", Types.UINT64], ["n", Types.UINT64], ["uid", Types.UTF8]], ["k"]);
         await T("uprof", [["uid", Types.UTF8], ["j", Types.UTF8]], ["uid"]);
         await T("msess", [["h", Types.UTF8], ["name", Types.UTF8], ["role", Types.UTF8], ["exp", Types.UINT64]], ["h"]);
+        await T("teamacc", [["uid", Types.UTF8], ["name", Types.UTF8], ["role", Types.UTF8], ["ts", Types.UINT64]], ["uid"]);
         await T("mgames", [["uid", Types.UTF8], ["gid", Types.UTF8], ["j", Types.UTF8], ["ts", Types.UINT64]], ["uid", "gid"]);
         await T("pv", [["pid", Types.UTF8], ["day", Types.UTF8], ["dev", Types.UTF8], ["v", Types.UINT64]], ["pid", "day", "dev"]);
         await ensure("cfg", new TableDescription()
@@ -445,6 +446,13 @@ async function myProjects(uid, site) {
     res.push({ id: o.id, title: String(o.title || "").replace(/^Новый проект: /, ""), pid: o.pid || "", st: i ? QST[i.st] || i.st : "", check: c ? c.verdict : "", ts: num(o.ts), stat: o.pid ? await pstat(o.pid, 14) : null }) }
   if (site) for (const g of ["lovi-bagi", "pochtalyon", "bystree", "kot-na-orbite", "ferma-slov", "origami", "menu"]) res.push({ id: "g:" + g, title: "Игра сайта: " + g, pid: "g:" + g, st: "опубликовано", check: "ok", stat: await pstat("g:" + g, 14) });
   return res }
+// Команда по аккаунту сайта: привязка кодом в панели модерации или автоматически — по Telegram, подключённому к боту команды
+async function teamOfUser(u) { if (!u) return null;
+  const t = (await q(`DECLARE $u AS Utf8; SELECT name, role FROM teamacc WHERE uid=$u;`, { $u: u8(u.uid) }))[0];
+  const alive = async x => x && ROLES[x.role] && (x.role === "admin" || (await q(`DECLARE $n AS Utf8; SELECT role FROM team WHERE name=$n;`, { $n: u8(x.name) })).some(r => r.role === x.role));
+  if (await alive(t)) return { name: t.name, role: t.role, acc: u.uid };
+  if (u.chat) { const g = (await q(`DECLARE $c AS Utf8; SELECT name, role FROM tg WHERE chat=$c;`, { $c: u8(u.chat) }))[0]; if (await alive(g)) return { name: g.name, role: g.role, acc: u.uid } }
+  return null }
 async function isAdminChat(chat) { const r = (await q(`DECLARE $c AS Utf8; SELECT role FROM tg WHERE chat=$c;`, { $c: u8(chat) }))[0]; return !!(r && r.role === "admin") }
 async function tellAuthor(id, text) { try { const o = (await q(`DECLARE $id AS Utf8; SELECT uid, title FROM own WHERE id=$id;`, { $id: u8(id) }))[0]; if (!o) return;
   const u = (await q(`DECLARE $u AS Utf8; SELECT chat FROM users WHERE uid=$u;`, { $u: u8(o.uid) }))[0]; if (!u) return;
@@ -772,8 +780,8 @@ exports.handler = async (event, ctx) => {
     return reply(200, pub, origin) }
   if (a === "u" && method === "POST") { const b = parse(event) || {}, op = String(b.op || ""), u = await userOf(b.token);
     if (!u) return reply(401, { error: "Войдите заново", need: "login" }, origin);
-    if (op === "me") { const adm = await isAdminChat(u.chat); return reply(200, { user: { nick: u.nick, since: num(u.ts), named: !/^Автор-/.test(u.nick) }, admin: adm, projects: await myProjects(u.uid, adm) }, origin) }
-    if (op === "nick") { const n = clean(b.nick, 30).replace(/^@/, ""); if (nickBad(n)) return reply(400, { error: "Ник от 2 до 30 знаков, без ссылок и служебных слов" }, origin);
+    if (op === "me") { const tm = await teamOfUser(u), adm = !!(tm && tm.role === "admin") || await isAdminChat(u.chat); return reply(200, { user: { nick: u.nick, since: num(u.ts), named: !/^Автор-/.test(u.nick) }, admin: adm, team: tm ? { name: tm.name, role: tm.role, title: ROLES[tm.role].t, perms: ROLES[tm.role].p } : null, projects: await myProjects(u.uid, adm) }, origin) }
+    if (op === "nick") { const n = clean(b.nick, 30).replace(/^@/, ""), tm = await teamOfUser(u); if (tm ? (n.length < 2 || BAD.test(n) || LINK.test(n) || /^Автор-/i.test(n)) : nickBad(n)) return reply(400, { error: "Ник от 2 до 30 знаков, без ссылок и служебных слов" }, origin);
       if (!(await nickFree(n, u.uid))) return reply(400, { error: "Такой ник уже занят" }, origin);
       await q(`DECLARE $u AS Utf8; DECLARE $n AS Utf8; UPDATE users SET nick=$n WHERE uid=$u;`, { $u: u8(u.uid), $n: u8(n) }); return reply(200, { ok: true, nick: n }, origin) }
     if (op === "prof") { if (b.set) { const p = profClean(b.set); await q(`DECLARE $u AS Utf8; DECLARE $j AS Utf8; UPSERT INTO uprof (uid, j) VALUES ($u, $j);`, { $u: u8(u.uid), $j: u8(JSON.stringify(p)) }); return reply(200, { ok: true, prof: p }, origin) }
@@ -842,13 +850,16 @@ exports.handler = async (event, ctx) => {
     return reply(200, { ok: true, id }, origin);
   }
   if (a === "mod" && method === "POST") {
-    const b = parse(event) || {}, ip = ipOf(event, hd), me = await modAuth(b.k, ip);
+    const b = parse(event) || {}, ip = ipOf(event, hd), me = (b.k ? await modAuth(b.k, ip) : null) || (b.token && !b.k ? await teamOfUser(await userOf(b.token)) : null);
     if (me && me.blocked) return reply(429, { error: "Слишком много неверных кодов. Попробуйте через час." }, origin);
     if (!me) return reply(403, { error: "Неверный код модератора." }, origin);
     const op = String(b.op || ""), R0 = ROLES[me.role], who = me.name + " (" + R0.t.toLowerCase() + ")", can = x => R0.p.includes(x);
     if (op === "login") { if (me.tok) return reply(200, { token: me.tok }, origin); const tok = "ms." + crypto.randomBytes(32).toString("base64url"), exp = Date.now() + 12 * 3600e3;
       await q(`DECLARE $h AS Utf8; DECLARE $n AS Utf8; DECLARE $r AS Utf8; DECLARE $e AS Uint64; UPSERT INTO msess (h, name, role, exp) VALUES ($h, $n, $r, $e);`, { $h: TypedValues.utf8(Hs("m|" + tok)), $n: TypedValues.utf8(me.name), $r: TypedValues.utf8(me.role), $e: TypedValues.uint64(exp) });
       return reply(200, { token: tok, exp }, origin) }
+    if (op === "bindacc") { const u = await userOf(b.acc); if (!u) return reply(400, { error: "Сначала войдите в аккаунт на сайте (кабинет)" }, origin);
+      await q(`DECLARE $u AS Utf8; DECLARE $n AS Utf8; DECLARE $r AS Utf8; DECLARE $ts AS Uint64; UPSERT INTO teamacc (uid, name, role, ts) VALUES ($u, $n, $r, $ts);`, { $u: u8(u.uid), $n: u8(me.name), $r: u8(me.role), $ts: u64(Date.now()) });
+      await mlog(who, "привязал аккаунт сайта", u.nick); return reply(200, { ok: true, nick: u.nick }, origin) }
     if (op === "logout") { if (me.tok) await q(`DECLARE $h AS Utf8; DELETE FROM msess WHERE h=$h;`, { $h: TypedValues.utf8(Hs("m|" + me.tok)) }); return reply(200, { ok: true }, origin) }
     if (op === "me") return reply(200, { role: me.role, title: R0.t, name: me.name, perms: R0.p, ban: R0.ban, roles: Object.fromEntries(Object.entries(ROLES).filter(([k]) => k !== "admin").map(([k, v]) => [k, v.t])) }, origin);
     const NO = reply(403, { error: "Это не входит в ваш уровень доступа." }, origin);
@@ -939,6 +950,8 @@ exports.handler = async (event, ctx) => {
       await mlog(who, "выдал код", name + " — " + ROLES[role].t); return reply(200, { code, name, title: ROLES[role].t }, origin) }
     if (op === "rm") { const name = clean(b.name, 30);
       await q(`DECLARE $n AS Utf8; DELETE FROM team WHERE name=$n;`, { $n: TypedValues.utf8(name) });
+      for (const x of (await q(`SELECT uid, name FROM teamacc;`)).filter(x => x.name === name)) await q(`DECLARE $u AS Utf8; DELETE FROM teamacc WHERE uid=$u;`, { $u: TypedValues.utf8(x.uid) });
+      for (const x of (await q(`SELECT chat, name FROM tg;`)).filter(x => x.name === name)) await q(`DECLARE $c AS Utf8; DELETE FROM tg WHERE chat=$c;`, { $c: TypedValues.utf8(x.chat) });
       for (const x of (await q(`SELECT h, name FROM msess;`)).filter(x => x.name === name)) await q(`DECLARE $h AS Utf8; DELETE FROM msess WHERE h=$h;`, { $h: TypedValues.utf8(x.h) });
       await mlog(who, "отозвал доступ", name); return reply(200, { ok: true }, origin) }
     return reply(400, { error: "Нет такой команды" }, origin);
