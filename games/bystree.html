@@ -102,7 +102,7 @@ modes();setTimeout(()=>{modes();hist()},300);
     const a=document.createElement("a");a.href="../#t-money";a.target="_blank";a.rel="noopener";a.textContent="условия покупки";s.append(a,". Полная версия откроется в этом браузере.");
     box.append(b,s)}
   async function buy(b){b.disabled=true;b.textContent="Открываем оплату…";
-    try{const r=await fetch(API+"?a=buy",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prod})}),j=await r.json();
+    try{const r=await fetch(API+"?a=buy",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prod,token:(()=>{try{return localStorage.getItem("iigry-sess")||""}catch(_){return ""}})()})}),j=await r.json();
       if(j.url&&OK.test(j.url)){location.href=j.url;return}say(j.error||"Не получилось открыть оплату.","#E8333F")}
     catch(_){say("Нет связи с сервером. Попробуйте ещё раз.","#E8333F")}
     b.disabled=false;b.textContent="Купить полную версию — "+price+" ₽"}
@@ -118,6 +118,11 @@ modes();setTimeout(()=>{modes();hist()},300);
       if(j.ok===false){put(prod,null);draw()}else{l.chk=Date.now();put(prod,l)}}catch(_){}}
   const st=document.createElement("style");st.textContent="#buyBox .pbuy{border:0;border-radius:10px;padding:12px 18px;font:700 1rem Golos Text,system-ui,sans-serif;background:linear-gradient(135deg,#F6DE8D,#C9952A);color:#1A1306;cursor:pointer}#buyBox .pbuy:disabled{opacity:.6}#buyBox .pbuy:focus-visible{outline:2px solid #fff;outline-offset:2px}#buyBox .pnote,#buyBox .pmsg{font-size:.8rem;color:#B9B6C2;margin:6px 0 0}#buyBox .pnote a{color:#E7BD52}#buyBox .pok{color:#4ADE95;font-weight:600;margin:0}";document.head.append(st);
   draw();const id=new URLSearchParams(location.search).get("order");if(id&&/^[0-9a-f]{24}$/.test(id))back(id);else verify();
+  // Покупки, привязанные к аккаунту: открываем полную версию на любом устройстве после входа
+  (async()=>{let t="";try{t=localStorage.getItem("iigry-sess")||""}catch(_){}if(!/^[A-Za-z0-9_-]{43}$/.test(t))return;
+    const claim=[];try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.indexOf(K)===0){const v=JSON.parse(localStorage.getItem(k)||"null");if(v&&v.id)claim.push({id:v.id})}}}catch(_){}
+    try{const r=await fetch(API+"?a=u",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({op:"purch",token:t,claim})}),j=await r.json();
+      let ch=false;(j.items||[]).forEach(x=>{const l=get(x.prod);if(!l||!l.lic){put(x.prod,{id:x.id,lic:x.lic,ts:Date.now()});ch=true}});if(ch&&!/order=/.test(location.search))draw()}catch(_){}})();
 })();
 </script><script>/* Панель навигации «ИИгр»: назад, главная, игры, мастерская, кабинет; в играх — возврат в меню игры. На телефоне — крупные значки с подписями, как в приложениях */
 (function(){if(document.getElementById("iigry-nav"))return;const P=location.pathname,inG=/\/games\//.test(P),base=inG?"../":"./",here=P.replace(/^.*\//,"")||"index.html";

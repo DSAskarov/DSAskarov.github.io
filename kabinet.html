@@ -109,7 +109,7 @@ function inp(v,max,ph,type){const i=el("input");i.value=v==null?"":v;i.maxLength
 function cb(v,t){const l=el("label",null,"ck"),c=el("input");c.type="checkbox";c.checked=!!v;l.append(c,el("span",t));l.c=c;return l}
 function preview(nick,P){const c=el("div",null,"card");c.style.background=BG[P.bg]||BG[0];const a=el("div",P.av,"av");a.setAttribute("aria-hidden","true");const t=el("div");t.append(el("b",nick),el("p",P.about||"Пока ничего о себе не рассказал(а)"));c.append(a,t);return c}
 function tabify(b){const G=[];let cur=null;[...b.children].forEach(k=>{if(k.tagName==="H2"||!cur){cur={h:k.tagName==="H2"?k.textContent:"Команда",els:[]};G.push(cur)}cur.els.push(k)});if(G.length<2)return;
-  const N={"Профиль":"👤 Профиль","Мои проекты":"🎮 Мои проекты","Способы входа":"🔐 Вход","Выплаты":"💳 Выплаты","Команда":"🛡 Админ"},KEY={"Профиль":"profile","Мои проекты":"projects","Способы входа":"login","Выплаты":"pay","Команда":"admin"};
+  const N={"Профиль":"👤 Профиль","Мои проекты":"🎮 Мои проекты","Способы входа":"🔐 Вход","Выплаты":"💳 Выплаты","Мои покупки":"🛒 Покупки","Команда":"🛡 Админ"},KEY={"Профиль":"profile","Мои проекты":"projects","Способы входа":"login","Выплаты":"pay","Мои покупки":"purchases","Команда":"admin"};
   const bar=el("div",null,"ktabs");bar.setAttribute("role","tablist");const pan=G.map(g=>{const d=el("section",null,"kpane");g.els.forEach(e=>d.append(e));return d});
   const pick=n=>{pan.forEach((d,i)=>d.hidden=i!==n);[...bar.children].forEach((x,i)=>x.setAttribute("aria-selected",i===n));try{history.replaceState(null,"","#"+(KEY[G[n].h]||n))}catch(_){}};
   G.forEach((g,i)=>{const t=el("button",N[g.h]||g.h,"ktab");t.type="button";t.setAttribute("role","tab");t.onclick=()=>pick(i);bar.append(t)});
@@ -187,6 +187,13 @@ async function show(){const b=$("box");
   const r2=el("div",null,"row"),np=el("a","Опубликовать новый проект","btn");np.href="kak-opublikovat.html";
   const out=mb("Выйти",async()=>{await A.out();show()});
   const del=mb("Удалить аккаунт",async()=>{if(!confirm("Удалить аккаунт? Ник, профиль и все способы входа будут стёрты. Уже опубликованные проекты останутся в каталоге под прежним ником."))return;const r=await A.call("delete");if(r.ok){A.drop();show()}else alert(r.error||"Не получилось")});
+  const pc=el("div");pc.append(el("p","Загружаем покупки…","muted"));b.append(el("h2","Мои покупки"),pc);
+  (async()=>{const claim=[];try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.indexOf("iigry-lic-")===0){const v=JSON.parse(localStorage.getItem(k)||"null");if(v&&v.id)claim.push({id:v.id})}}}catch(_){}
+    const r=await A.call("purch",{claim});pc.innerHTML="";const it=(r&&r.items)||[];
+    if(!it.length){pc.append(el("p","Покупок пока нет. Полные версии игр можно купить в каталоге — после входа они будут доступны на любом устройстве.","muted"));const a=el("a","Открыть каталог →","btn");a.href="./#catalog";pc.append(a);return}
+    it.forEach(x=>{try{localStorage.setItem("iigry-lic-"+x.prod,JSON.stringify({id:x.id,lic:x.lic,ts:Date.now()}))}catch(_){}
+      const c=el("div",null,"card");c.style.cssText="display:grid;gap:6px;margin:8px 0";c.append(el("b",x.title.replace(/^Полная версия игры /,"")),el("span","Куплено "+new Date(x.ts).toLocaleDateString("ru-RU")+" · полная версия","muted"));
+      const a=el("a","▶ Играть","btn gold");a.href="games/"+x.game+".html";a.style.justifySelf="start";c.append(a);pc.append(c)})})();
   r2.append(np,out,del);b.append(el("h2","Выплаты"),el("p","Деньги за продажи получают только зарегистрированные авторы. Реквизиты для выплат запросим отдельно, когда появятся первые продажи.","muted"),r2);tabify(b)}
 show();
 </script><script>/* Панель навигации «ИИгр»: назад, главная, игры, мастерская, кабинет; в играх — возврат в меню игры. На телефоне — крупные значки с подписями, как в приложениях */

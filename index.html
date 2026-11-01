@@ -174,6 +174,7 @@ footer{padding-block:76px 44px;color:var(--muted);font-size:.86rem;display:grid;
 @keyframes nfloat{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-10px) rotate(4deg)}}
 @media (prefers-reduced-motion:reduce){.npic .nsc span{animation:none}}
 .sortbox select{min-height:40px;border-radius:10px;border:1px solid var(--line);background:var(--solid);color:var(--fg);font:inherit;padding:0 10px}
+.tag.mine{background:rgba(74,222,149,.15);color:#4ADE95;border-color:rgba(74,222,149,.4)}
 .gstat{display:flex;gap:10px;flex-wrap:wrap;font-size:.82rem;color:var(--muted);margin:4px 0}.gst{color:#E7BD52;font-weight:700}.gst small{color:var(--muted);font-weight:400}
 .rate{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0}.stars{display:flex;gap:2px}
 .star{border:0;background:transparent;font-size:28px;line-height:1;cursor:pointer;color:rgba(160,155,175,.45);padding:4px;min-width:40px;min-height:40px;transition:transform .15s,color .15s}
@@ -579,6 +580,7 @@ html.tilt .card:hover{transform:perspective(900px) rotateX(var(--rx,0deg)) rotat
         <div class="fgroup"><span>Как запустить</span><div class="seg" data-k="fmt">
           <button data-v="any" aria-pressed="true">Любой способ</button><button data-v="demo" aria-pressed="false">В браузере</button><button data-v="dl" aria-pressed="false">Скачать</button></div></div>
         <label class="toggle"><input type="checkbox" id="remixOnly"> Только доработки</label>
+        <label class="toggle" hidden><input type="checkbox" id="myOnly"> 🛒 Мои покупки</label>
         <label class="fgroup sortbox"><span>Сортировка</span><select id="sortSel" aria-label="Сортировка каталога"><option value="def">Рекомендуем</option><option value="hot">Популярные за неделю</option><option value="views">Больше всего игроков</option><option value="rate">Лучшие оценки</option><option value="nrate">Больше всего оценок</option><option value="new">Сначала новые</option><option value="cheap">Сначала дешёвые</option></select></label>
         <label class="search"><input id="q" maxlength="80" type="search" placeholder="Название или автор" aria-label="Поиск"></label>
       </div>
@@ -1155,6 +1157,11 @@ async function buyNow(btn){const t=btn.textContent;btn.disabled=true;btn.textCon
   try{const r=await fetch("https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av?a=buy",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prod:btn.dataset.prod})}),j=await r.json().catch(()=>({}));
     if(j.url&&/^https:\/\/[\w.-]*(yoomoney|yookassa)\.ru\//.test(j.url)){location.href=j.url;return}toast(j.error||"Не получилось открыть оплату. Попробуйте через минуту.")}catch(_){toast("Нет связи с сервером. Попробуйте ещё раз.")}
   btn.disabled=false;btn.textContent=t}
+let MYP=new Set();
+async function loadMyP(){let t="";try{t=localStorage.getItem("iigry-sess")||""}catch(_){}if(!/^[A-Za-z0-9_-]{43}$/.test(t))return;
+  try{const r=await fetch("https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av?a=u",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({op:"purch",token:t,claim:[]})});const j=await r.json();
+    (j.items||[]).forEach(x=>{MYP.add(x.game);try{localStorage.setItem("iigry-lic-"+x.prod,JSON.stringify({id:x.id,lic:x.lic,ts:Date.now()}))}catch(_){}});if(MYP.size){const l=$("myOnly");if(l)l.closest("label").hidden=false;render()}}catch(_){}}
+const gslug=g=>(/games\/([\w-]+)\.html/.exec(g.demoUrl||"")||[])[1]||"";
 let GS={};
 function GSof(id){const g=byId[id]||{},a=GS[id]||{},m=/games\/([\w-]+)\.html/.exec(g.demoUrl||""),b=m?GS["g:"+m[1]]||{}:{};return{r:a.r||0,n:a.n||0,v7:(a.v7||0)+(b.v7||0),v:(a.v||0)+(b.v||0)}}
 const plural=(n,a,b,c)=>{const m=n%10,h=n%100;return n+" "+(m===1&&h!==11?a:m>=2&&m<=4&&(h<10||h>=20)?b:c)};
@@ -1166,7 +1173,7 @@ async function loadGS(){try{const r=await fetch("https://functions.yandexcloud.n
 function cardHtml(g){const par=byId[g.par],co=coOf(g);return `<button class="card" data-id="${esc(g.id)}">
   <div class="cover cv${Number(g.cv)||0}">${COV[g.id]?`<img class="cimg" src="${COV[g.id]}" alt="" loading="lazy">`:`<span>${esc(String(g.t||"?")[0])}</span>`}</div>
   <div class="info"><h3>${esc(g.t)}</h3><div class="author">@${esc(g.a)}${co.length?" и ещё "+co.length:""}</div>
-  ${g.soon||g.dl||g.ex?`<div class="tags">${g.ex?'<span class="tag soon">пример</span>':''}${g.soon?'<span class="tag soon">скоро</span>':''}${g.dl?'<span class="tag dl">можно скачать</span>':''}</div>`:''}
+  ${MYP.has(gslug(g))?'<div class="tags"><span class="tag mine">✓ куплено</span></div>':""}${g.soon||g.dl||g.ex?`<div class="tags">${g.ex?'<span class="tag soon">пример</span>':''}${g.soon?'<span class="tag soon">скоро</span>':''}${g.dl?'<span class="tag dl">можно скачать</span>':''}</div>`:''}
   ${par?`<div class="lineage">↳ доработка «${esc(par.t)}»</div>`:''}${descCount(g.id)?`<div class="lineage">Доработок: ${descCount(g.id)}</div>`:''}
   ${statLine(g.id)}<div class="row"><span class="price ${g.soon?'soon':g.p?'':'free'}">${priceLabel(g)}</span><span class="genre">${hl(ONE[g.c]||"")} · ${gl(g)}</span></div></div></button>`}
 function setData(list){G=list.filter(g=>g&&g.id).map(g=>Object.assign({},g,{p:NUM(g.p),cv:Math.floor(NUM(g.cv))%24,order:Number(g.order)||0})).sort((a,b)=>(a.order??0)-(b.order??0));byId=Object.fromEntries(G.map(g=>[g.id,g]));render();if(typeof renderMe==="function")renderMe();if($("admin").open)renderAdmin()}
@@ -1183,6 +1190,7 @@ function render(){
     if(st.fmt==="demo"&&!g.demo)return false;
     if(st.fmt==="dl"&&!g.dl)return false;
     if(st.remix&&!byId[g.par])return false;
+    if(st.my&&!MYP.has(gslug(g)))return false;
     return !st.q||String(g.t).toLowerCase().includes(st.q)||chainOf(g).concat(coOf(g).map(a=>({a}))).some(x=>String(x.a).toLowerCase().includes(st.q));
   });
   const gs=GSof,bay=(r,n)=>(r*n+3.5*3)/(n+3);
@@ -1254,6 +1262,7 @@ function openGame(id){window.__gid=id;
   track("ev","open");
 }
 if($("homeNews")){$("homeNews").addEventListener("click",e=>{const a=e.target.closest(".nhome");if(a)goNews(a.dataset.nid)});$("homeNews").addEventListener("keydown",e=>{const a=e.target.closest(".nhome");if(a&&(e.key==="Enter"||e.key===" ")){e.preventDefault();goNews(a.dataset.nid)}})}
+$("myOnly").onchange=e=>{st.my=e.target.checked;render()};loadMyP();
 $("sortSel").onchange=e=>{st.sort=e.target.value;render()};
 body.addEventListener("click",async e=>{const b=e.target.closest("[data-star]");if(!b)return;const box=b.closest("[data-rid]"),id=box.dataset.rid,s=+b.dataset.star,d=didOf();if(!d)return;
   box.querySelectorAll(".star").forEach(x=>x.classList.toggle("on",+x.dataset.star<=s));const info=box.querySelector(".rinfo");info.textContent="Сохраняем…";

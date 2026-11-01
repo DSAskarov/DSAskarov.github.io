@@ -109,6 +109,7 @@ async function db(ctx) {
         await T("pv", [["pid", Types.UTF8], ["day", Types.UTF8], ["dev", Types.UTF8], ["v", Types.UINT64]], ["pid", "day", "dev"]);
         await T("rate", [["pid", Types.UTF8], ["k", Types.UTF8], ["s", Types.UINT32], ["ts", Types.UINT64]], ["pid", "k"]);
         await T("mgon", [["d", Types.UTF8], ["ts", Types.UINT64]], ["d"]);
+        await T("purch", [["uid", Types.UTF8], ["id", Types.UTF8], ["prod", Types.UTF8], ["ts", Types.UINT64]], ["uid", "id"]);
         await ensure("cfg", new TableDescription()
           .withColumn(new Column("k", Types.optional(Types.UTF8))).withColumn(new Column("v", Types.optional(Types.UTF8)))
           .withPrimaryKeys("k"));
@@ -809,6 +810,15 @@ exports.handler = async (event, ctx) => {
     if (op === "prof") { if (b.set) { const p = profClean(b.set); await q(`DECLARE $u AS Utf8; DECLARE $j AS Utf8; UPSERT INTO uprof (uid, j) VALUES ($u, $j);`, { $u: u8(u.uid), $j: u8(JSON.stringify(p)) }); return reply(200, { ok: true, prof: p }, origin) }
       return reply(200, { prof: await profOf(u.uid) || profClean({}) }, origin) }
     if (op === "ways") { const ks = await authsOf(u.uid); return reply(200, { tg: !!u.chat, email: ks.filter(k => k.startsWith("e:")).map(mask), phone: ks.filter(k => k.startsWith("p:")).map(mask), keys: ks.filter(k => !k.startsWith("t:")).map(k => ({ id: Hs("k|" + k).slice(0, 16), t: k[0], m: mask(k) })) }, origin) }
+    if (op === "purch") { // мои покупки: привязать оплаченные в этом браузере заказы и вернуть список
+      for (const c of (Array.isArray(b.claim) ? b.claim : []).slice(0, 20)) { const id = String(c && c.id || ""); if (!ORDER_ID.test(id)) continue;
+        const o = await syncOrder(id, await getOrder(id)); if (!o || o.st !== "succeeded" || !PRODUCTS[o.prod]) continue;
+        if ((await q(`DECLARE $id AS Utf8; SELECT uid FROM purch WHERE id=$id;`, { $id: u8(id) })).some(x => x.uid !== u.uid)) continue;
+        await q(`DECLARE $u AS Utf8; DECLARE $id AS Utf8; DECLARE $p AS Utf8; DECLARE $t AS Uint64; UPSERT INTO purch (uid, id, prod, ts) VALUES ($u, $id, $p, $t);`, { $u: u8(u.uid), $id: u8(id), $p: u8(o.prod), $t: u64(Date.now()) }) }
+      const out = []; for (const x of await q(`DECLARE $u AS Utf8; SELECT id, prod, ts FROM purch WHERE uid=$u;`, { $u: u8(u.uid) })) {
+        let o = await getOrder(x.id); if (o && o.st === "pending") o = await syncOrder(x.id, o); if (!o || o.st !== "succeeded" || !PRODUCTS[x.prod]) continue;
+        out.push({ id: x.id, prod: x.prod, title: PRODUCTS[x.prod].title, game: PRODUCTS[x.prod].game, lic: licOf(x.id, x.prod), ts: num(x.ts) }) }
+      return reply(200, { items: out }, origin) }
     if (op === "linkemail") { const e = normEmail(b.email); if (!EMAIL_RE.test(e)) return reply(400, { error: "Проверьте адрес почты" }, origin);
       if (!(await smtpPass())) return reply(503, { error: "Привязка почты включится в ближайшие дни." }, origin);
       if ((await authsOf(u.uid)).filter(k => k.startsWith("e:")).length >= 2) return reply(400, { error: "К аккаунту можно привязать не больше двух почт. Отвяжите одну, чтобы добавить другую." }, origin);
@@ -1040,6 +1050,7 @@ exports.handler = async (event, ctx) => {
       UPSERT INTO orders (id, prod, pid, st, ts) VALUES ($id, $p, $pid, $st, $ts); UPSERT INTO rl (ip, ts, cnt) VALUES ($ip, $ts, $c);`,
       { $id: TypedValues.utf8(id), $p: TypedValues.utf8(b.prod), $pid: TypedValues.utf8(p.id), $st: TypedValues.utf8(p.status || "pending"), $ts: TypedValues.uint64(now),
         $ip: TypedValues.utf8("b:" + ip), $c: TypedValues.uint64(lim.cnt + 1) });
+    const bu = await userOf(b.token).catch(() => null); if (bu) await q(`DECLARE $u AS Utf8; DECLARE $id AS Utf8; DECLARE $p AS Utf8; DECLARE $t AS Uint64; UPSERT INTO purch (uid, id, prod, ts) VALUES ($u, $id, $p, $t);`, { $u: u8(bu.uid), $id: u8(id), $p: u8(b.prod), $t: u64(now) }).catch(() => {});
     return reply(200, { url: p.confirmation.confirmation_url, order: id }, origin);
   }
   if (a === "order" && method === "GET") {
