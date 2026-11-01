@@ -108,6 +108,7 @@ async function db(ctx) {
         await T("mgames", [["uid", Types.UTF8], ["gid", Types.UTF8], ["j", Types.UTF8], ["ts", Types.UINT64]], ["uid", "gid"]);
         await T("pv", [["pid", Types.UTF8], ["day", Types.UTF8], ["dev", Types.UTF8], ["v", Types.UINT64]], ["pid", "day", "dev"]);
         await T("rate", [["pid", Types.UTF8], ["k", Types.UTF8], ["s", Types.UINT32], ["ts", Types.UINT64]], ["pid", "k"]);
+        await T("mgon", [["d", Types.UTF8], ["ts", Types.UINT64]], ["d"]);
         await ensure("cfg", new TableDescription()
           .withColumn(new Column("k", Types.optional(Types.UTF8))).withColumn(new Column("v", Types.optional(Types.UTF8)))
           .withPrimaryKeys("k"));
@@ -843,6 +844,18 @@ exports.handler = async (event, ctx) => {
       for (const k of await authsOf(u.uid)) await q(`DECLARE $k AS Utf8; DELETE FROM uauth WHERE k=$k;`, { $k: u8(k) });
       await q(`DECLARE $u AS Utf8; DELETE FROM mgames WHERE uid=$u; DELETE FROM uprof WHERE uid=$u; DELETE FROM users WHERE uid=$u;`, { $u: u8(u.uid) }); return reply(200, { ok: true }, origin) }
     return reply(400, { error: "bad" }, origin) }
+  // Мини-игра на время технических работ: общая копилка звёзд, кто сейчас на сайте и короткие реакции
+  if (a === "mg" && method === "POST") { const b = parse(event) || {}, raw = String(b.d || ""); if (!/^[0-9a-f]{32}$/.test(raw)) return reply(400, { error: "bad" }, origin);
+    const now = Date.now(), ip = ipOf(event, hd), lim = await limit("mg:" + ip, now, 0, 120); if (lim.err) return reply(429, { error: "Слишком часто" }, origin);
+    await q(`DECLARE $ip AS Utf8; DECLARE $ts AS Uint64; DECLARE $c AS Uint64; UPSERT INTO rl (ip, ts, cnt) VALUES ($ip, $ts, $c);`, { $ip: u8("mg:" + ip), $ts: u64(now), $c: u64(lim.cnt + 1) });
+    const dh = crypto.createHash("sha256").update(salt + "|mg|" + raw).digest("hex").slice(0, 24), add = Math.max(0, Math.min(50, Math.floor(Number(b.add) || 0)));
+    await q(`DECLARE $d AS Utf8; DECLARE $t AS Uint64; UPSERT INTO mgon (d, ts) VALUES ($d, $t);`, { $d: u8(dh), $t: u64(now) });
+    let total = num(await cfgGet("mg_total")); if (add) { total += add; await cfgSet("mg_total", String(total)) }
+    let feed = []; try { feed = JSON.parse(await cfgGet("mg_feed") || "[]") } catch (_) {}
+    const RE = ["👋", "😂", "🔥", "❤️", "🚀", "⭐"], ri = Math.floor(Number(b.r));
+    if (ri >= 0 && ri < RE.length) { const n = clean(String(b.n || "Гость"), 20).replace(LINK, "") || "Гость"; feed.push({ n: BAD.test(n) ? "Гость" : n, e: RE[ri], t: now }); feed = feed.slice(-10); await cfgSet("mg_feed", JSON.stringify(feed)) }
+    const online = num(((await q(`DECLARE $t AS Uint64; SELECT COUNT(*) AS c FROM mgon WHERE ts > $t;`, { $t: u64(now - 60e3) }))[0] || {}).c);
+    return reply(200, { total, online: Math.max(1, online), feed: feed.filter(x => now - x.t < 15 * 60e3).map(x => ({ n: x.n, e: x.e })) }, origin) }
   // Оценки игр (1–5 звёзд, одна на устройство, можно менять) и сводка для сортировки каталога
   if (a === "rate" && method === "POST") { const b = parse(event) || {}, raw = String(b.d || ""), pid = String(b.pid || ""), sc = Math.round(Number(b.s));
     if (!/^[0-9a-f]{32}$/.test(raw) || !/^[a-z0-9:_-]{1,40}$/i.test(pid) || !(sc >= 1 && sc <= 5)) return reply(400, { error: "Поставьте от 1 до 5 звёзд." }, origin);

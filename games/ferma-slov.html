@@ -118,13 +118,29 @@ drawAll();
  setTimeout(()=>{document.visibilityState==="visible"?go():document.addEventListener("visibilitychange",go)},2500)}catch(_){}})();
 /* Технические работы: пока сайт обновляется, показываем понятное предупреждение и сами обновляем страницу, когда всё готово */
 (function(){const API="https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av?a=status";let shown=null,was=false;
- function show(j){if(shown)return;const d=document.createElement("div");d.setAttribute("role","alertdialog");d.setAttribute("aria-live","assertive");
-  d.style.cssText="position:fixed;inset:0;z-index:2147483000;background:rgba(11,10,14,.88);display:grid;place-items:center;padding:16px;font-family:Golos Text,system-ui,sans-serif";
-  const c=document.createElement("div");c.style.cssText="max-width:440px;background:#16141B;border:1px solid #E7BD52;border-radius:16px;padding:22px;color:#F4F4F6;text-align:center;display:grid;gap:10px";
-  const h=document.createElement("b");h.style.cssText="font:800 1.3rem Rubik,system-ui,sans-serif;color:#E7BD52";h.textContent="🛠 Идут технические работы";
-  const p=document.createElement("p");p.style.margin="0";const left=Math.max(1,Math.round((j.until-Date.now())/60000));p.textContent=(j.text||"Сайт обновляется — добавляем новое.")+" Обычно это пара минут (не дольше "+left+" мин). Страница обновится сама, когда всё будет готово.";
-  const b=document.createElement("button");b.type="button";b.textContent="Понятно, подожду";b.style.cssText="border:0;border-radius:10px;padding:10px 16px;font:700 1rem inherit;background:linear-gradient(135deg,#FF4A55,#A3101C);color:#fff;cursor:pointer;justify-self:center";
-  b.onclick=()=>{d.remove();shown=null;bar()};c.append(h,p,b);d.append(c);document.body.append(d);shown=d}
+ function show(j){if(shown)return;const d=document.createElement("div");d.setAttribute("role","alertdialog");d.setAttribute("aria-live","assertive");d.setAttribute("aria-label","Технические работы");
+  d.style.cssText="position:fixed;inset:0;z-index:2147483000;background:rgba(11,10,14,.92);display:grid;place-items:center;padding:12px;font-family:Golos Text,system-ui,sans-serif;overflow:auto";
+  const c=document.createElement("div");c.style.cssText="width:min(460px,100%);background:#16141B;border:1px solid #E7BD52;border-radius:16px;padding:18px;color:#F4F4F6;text-align:center;display:grid;gap:10px;box-sizing:border-box";
+  const E=(t,x,css)=>{const e=document.createElement(t);if(x!=null)e.textContent=x;if(css)e.style.cssText=css;return e};
+  const left=Math.max(1,Math.round((j.until-Date.now())/60000));
+  const h=E("b","🛠 Идут технические работы","font:800 1.25rem Rubik,system-ui,sans-serif;color:#E7BD52");
+  const p=E("p",(j.text||"Сайт обновляется — добавляем новое.")+" Обычно это пара минут (не дольше "+left+" мин). Страница обновится сама.","margin:0");
+  const w=E("p","⚠️ Пока идут работы, то, что вы вводите на сайте (тексты, профиль, результаты), может не сохраниться. Лучше подождите — а пока сыграйте с другими посетителями:","margin:0;font-size:.9rem;color:#FFD98A");
+  // мини-игра «Звездопад»: все, кто сейчас на сайте, ловят звёзды в общую копилку
+  const st=E("div",null,"display:flex;justify-content:space-between;gap:8px;font-size:.9rem;flex-wrap:wrap");const tot=E("span","⭐ Вместе: …"),me=E("span","Вы: 0"),on=E("span","👥 …");st.append(tot,me,on);
+  const f=E("div",null,"position:relative;height:190px;border-radius:12px;overflow:hidden;background:radial-gradient(1px 1px at 20% 30%,#fff,transparent),radial-gradient(1px 1px at 70% 60%,#fff,transparent),radial-gradient(1.5px 1.5px at 40% 80%,#fff,transparent),linear-gradient(160deg,#1B1546,#3B2A7A);touch-action:manipulation;user-select:none");
+  const feed=E("div",null,"min-height:22px;font-size:.88rem;color:#C9C6D2");const rx=E("div",null,"display:flex;gap:6px;justify-content:center;flex-wrap:wrap");
+  const R=["👋","😂","🔥","❤️","🚀","⭐"];let mine=0,pend=0,react=-1,alive=true;
+  const did=(()=>{let v="";try{v=localStorage.getItem("iigry-did")||""}catch(_){}if(!/^[0-9a-f]{32}$/.test(v)){const a=new Uint8Array(16);crypto.getRandomValues(a);v=[...a].map(x=>x.toString(16).padStart(2,"0")).join("")}return v})(),nick=(()=>{try{return (localStorage.getItem("iigry-nick")||"").slice(0,20)}catch(_){return ""}})()||"Гость";
+  R.forEach((e,i)=>{const b=E("button",e,"border:1px solid rgba(255,255,255,.15);background:#0F0E13;border-radius:10px;min-width:44px;min-height:40px;font-size:20px;cursor:pointer");b.type="button";b.setAttribute("aria-label","Отправить "+e);b.onclick=()=>{react=i;sync()};rx.append(b)});
+  function spawn(){if(!alive)return;const s=E("button",Math.random()<.15?"🌟":"⭐","position:absolute;border:0;background:transparent;cursor:pointer;font-size:30px;padding:6px;transition:transform .2s,opacity .2s;left:"+(5+Math.random()*80)+"%;top:-40px");s.type="button";s.setAttribute("aria-label","Поймать звезду");
+   const big=s.textContent==="🌟",dur=2600+Math.random()*1800;f.append(s);s.animate([{top:"-40px"},{top:"200px"}],{duration:dur,easing:"linear"}).onfinish=()=>s.remove();
+   s.onpointerdown=e=>{e.preventDefault();const v=big?5:1;mine+=v;pend+=v;me.textContent="Вы: "+mine;s.style.transform="scale(1.8)";s.style.opacity="0";s.onpointerdown=null;setTimeout(()=>s.remove(),200)};setTimeout(spawn,500+Math.random()*500)}
+  async function sync(){if(!did)return;const add=Math.min(pend,50),r=react;pend-=add;react=-1;
+   try{const x=await (await fetch(API.replace("a=status","a=mg"),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({d:did,add,r,n:nick})})).json();
+    if(x.total!=null){tot.textContent="⭐ Вместе: "+x.total.toLocaleString("ru-RU");on.textContent="👥 Сейчас здесь: "+x.online;feed.textContent=(x.feed||[]).slice(-4).map(z=>z.n+" "+z.e).join("  ·  ")||"Отправьте привет другим посетителям 👇"}}catch(_){pend+=add}}
+  const b=E("button","Закрыть и подождать","border:0;border-radius:10px;padding:10px 16px;font:700 1rem inherit;background:linear-gradient(135deg,#FF4A55,#A3101C);color:#fff;cursor:pointer;justify-self:center");b.type="button";
+  b.onclick=()=>{alive=false;clearInterval(t);d.remove();shown=null;bar()};c.append(h,p,w,st,f,feed,rx,b);d.append(c);document.body.append(d);shown=d;spawn();sync();const t=setInterval(()=>{if(document.body.contains(d))sync();else clearInterval(t)},3000)}
  function bar(){if(document.getElementById("iigry-maint-bar"))return;const s=document.createElement("div");s.id="iigry-maint-bar";s.textContent="🛠 Идут технические работы — возможны недолгие сбои";s.style.cssText="position:fixed;left:0;right:0;bottom:0;z-index:2147482999;background:#E7BD52;color:#1A1306;font:700 .9rem Golos Text,system-ui,sans-serif;text-align:center;padding:6px";document.body.append(s)}
  async function check(){try{const j=await (await fetch(API,{cache:"no-store"})).json();
    if(j.maint){was=true;if(!document.getElementById("iigry-maint-bar"))show(j)}else if(was){location.reload()}}catch(_){} }

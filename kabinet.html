@@ -70,6 +70,8 @@ h1{font:900 clamp(1.5rem,6vw,2.2rem)/1.1 Rubik,sans-serif;margin:6px 0 0}h1 b{co
 .nav span.cur{border-color:var(--gold);color:var(--gold)}.nav span.ok{border-color:rgba(74,222,149,.6);color:var(--fg)}.nav span.ok::before{content:"✓ ";color:var(--green)}
 .step{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;display:grid;gap:12px}
 label.f{display:grid;gap:4px;font-weight:600;font-size:.92rem}
+.ktabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 0 14px;padding-bottom:2px}.ktabs::-webkit-scrollbar{display:none}.ktab{flex:none;min-height:42px;padding:0 14px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:#16141B;color:#F4F4F6;font:600 14px/1 inherit;cursor:pointer}.ktab[aria-selected=true]{border-color:#E7BD52;color:#E7BD52;background:rgba(231,189,82,.1)}
+.psave{position:sticky;bottom:12px;z-index:5;box-shadow:0 8px 24px rgba(0,0,0,.45);margin-top:10px}
 details.more{border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:0 14px;margin:6px 0}details.more[open]{padding-bottom:12px}details.more>summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:700;list-style:none}details.more>summary::before{content:"▸";margin-right:8px;transition:transform .2s}details.more[open]>summary::before{transform:rotate(90deg)}details.more>summary::-webkit-details-marker{display:none}
 input,select,textarea{background:#0F0E13;color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:10px;font:400 1rem "Golos Text";width:100%}
 textarea{min-height:90px;resize:vertical}
@@ -106,6 +108,12 @@ function lab(t,c){const l=el("label",null,"f");l.append(t,c);return l}
 function inp(v,max,ph,type){const i=el("input");i.value=v==null?"":v;i.maxLength=max;if(ph)i.placeholder=ph;if(type)i.type=type;return i}
 function cb(v,t){const l=el("label",null,"ck"),c=el("input");c.type="checkbox";c.checked=!!v;l.append(c,el("span",t));l.c=c;return l}
 function preview(nick,P){const c=el("div",null,"card");c.style.background=BG[P.bg]||BG[0];const a=el("div",P.av,"av");a.setAttribute("aria-hidden","true");const t=el("div");t.append(el("b",nick),el("p",P.about||"Пока ничего о себе не рассказал(а)"));c.append(a,t);return c}
+function tabify(b){const G=[];let cur=null;[...b.children].forEach(k=>{if(k.tagName==="H2"||!cur){cur={h:k.tagName==="H2"?k.textContent:"Команда",els:[]};G.push(cur)}cur.els.push(k)});if(G.length<2)return;
+  const N={"Профиль":"👤 Профиль","Мои проекты":"🎮 Мои проекты","Способы входа":"🔐 Вход","Выплаты":"💳 Выплаты","Команда":"🛡 Админ"},KEY={"Профиль":"profile","Мои проекты":"projects","Способы входа":"login","Выплаты":"pay","Команда":"admin"};
+  const bar=el("div",null,"ktabs");bar.setAttribute("role","tablist");const pan=G.map(g=>{const d=el("section",null,"kpane");g.els.forEach(e=>d.append(e));return d});
+  const pick=n=>{pan.forEach((d,i)=>d.hidden=i!==n);[...bar.children].forEach((x,i)=>x.setAttribute("aria-selected",i===n));try{history.replaceState(null,"","#"+(KEY[G[n].h]||n))}catch(_){}};
+  G.forEach((g,i)=>{const t=el("button",N[g.h]||g.h,"ktab");t.type="button";t.setAttribute("role","tab");t.onclick=()=>pick(i);bar.append(t)});
+  b.innerHTML="";b.append(bar,...pan);const h=location.hash.slice(1),k=G.findIndex(g=>KEY[g.h]===h);pick(k>=0?k:Math.max(0,G.findIndex(g=>g.h==="Профиль")))}
 async function show(){const b=$("box");
   if(!A.tok()){b.innerHTML="";const nt=el("p","Входя, вы принимаете ","muted"),l1=el("a","условия"),l2=el("a","политику данных");l1.href="./#terms";l2.href="./#privacy";nt.append(l1," и ",l2,".");b.append(el("h2","Вход и регистрация"),A.login(show),nt);return}
   const [j,pf,w]=await Promise.all([A.call("me"),A.call("prof"),A.call("ways")]);if(j.need||pf.need){show();return}
@@ -143,7 +151,7 @@ async function show(){const b=$("box");
   dt.append(el("p","Контакты — видны другим, только если включено «Показывать»","sub"));
   const C=[["phone","Телефон","+7 900 123-45-67"],["email","Почта","you@mail.ru"],["tg","Telegram","@username"],["vk","VK","id или короткое имя"],["other","Другая соцсеть","https://…"]],ci={},cs={};
   const g2=el("div",null,"two");C.forEach(([k,t,ph])=>{ci[k]=inp(P.c[k],k==="other"?200:k==="email"?254:70,ph);cs[k]=cb(P.show[k],"Показывать");const d=el("div");d.append(lab(t,ci[k]),cs[k]);g2.append(d)});dt.append(g2);
-  const ps=el("button","Сохранить профиль","btn");ps.type="button";const pm=el("p","","muted");pm.setAttribute("aria-live","polite");
+  const ps=el("button","💾 Сохранить профиль","btn gold psave");ps.type="button";const pm=el("p","","muted");pm.setAttribute("aria-live","polite");
   ps.onclick=async()=>{ps.disabled=true;const set={av:P.av,bg:P.bg,about:about.value,age:age.value,city:city.value,hob:hob.value,genres:gen.value,role:role.value,link:link.value,c:{},show:{age:ageS.c.checked,city:cityS.c.checked}};
     C.forEach(([k])=>{set.c[k]=ci[k].value;set.show[k]=cs[k].c.checked});const r=await A.call("prof",{set});ps.disabled=false;
     if(r.prof){const bad=C.filter(([k])=>ci[k].value.trim()&&!r.prof.c[k]).map(x=>x[1]).concat(link.value.trim()&&!r.prof.link?["Ссылка"]:[]);pm.textContent=bad.length?"Сохранено, но не приняты поля: "+bad.join(", ")+" — проверьте формат.":"✅ Профиль сохранён"}else pm.textContent=r.error||"Не получилось"};
@@ -180,6 +188,7 @@ async function show(){const b=$("box");
   const out=mb("Выйти",async()=>{await A.out();show()});
   const del=mb("Удалить аккаунт",async()=>{if(!confirm("Удалить аккаунт? Ник, профиль и все способы входа будут стёрты. Уже опубликованные проекты останутся в каталоге под прежним ником."))return;const r=await A.call("delete");if(r.ok){A.drop();show()}else alert(r.error||"Не получилось")});
   r2.append(np,out,del);b.append(el("h2","Выплаты"),el("p","Деньги за продажи получают только зарегистрированные авторы. Реквизиты для выплат запросим отдельно, когда появятся первые продажи.","muted"),r2)}
+  tabify(b)
 show();
 </script><script>/* Панель навигации «ИИгр»: назад, главная, игры, мастерская, кабинет; в играх — возврат в меню игры. На телефоне — крупные значки с подписями, как в приложениях */
 (function(){if(document.getElementById("iigry-nav"))return;const P=location.pathname,inG=/\/games\//.test(P),base=inG?"../":"./",here=P.replace(/^.*\//,"")||"index.html";
@@ -222,13 +231,29 @@ show();
  setTimeout(()=>{document.visibilityState==="visible"?go():document.addEventListener("visibilitychange",go)},2500)}catch(_){}})();
 /* Технические работы: пока сайт обновляется, показываем понятное предупреждение и сами обновляем страницу, когда всё готово */
 (function(){const API="https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av?a=status";let shown=null,was=false;
- function show(j){if(shown)return;const d=document.createElement("div");d.setAttribute("role","alertdialog");d.setAttribute("aria-live","assertive");
-  d.style.cssText="position:fixed;inset:0;z-index:2147483000;background:rgba(11,10,14,.88);display:grid;place-items:center;padding:16px;font-family:Golos Text,system-ui,sans-serif";
-  const c=document.createElement("div");c.style.cssText="max-width:440px;background:#16141B;border:1px solid #E7BD52;border-radius:16px;padding:22px;color:#F4F4F6;text-align:center;display:grid;gap:10px";
-  const h=document.createElement("b");h.style.cssText="font:800 1.3rem Rubik,system-ui,sans-serif;color:#E7BD52";h.textContent="🛠 Идут технические работы";
-  const p=document.createElement("p");p.style.margin="0";const left=Math.max(1,Math.round((j.until-Date.now())/60000));p.textContent=(j.text||"Сайт обновляется — добавляем новое.")+" Обычно это пара минут (не дольше "+left+" мин). Страница обновится сама, когда всё будет готово.";
-  const b=document.createElement("button");b.type="button";b.textContent="Понятно, подожду";b.style.cssText="border:0;border-radius:10px;padding:10px 16px;font:700 1rem inherit;background:linear-gradient(135deg,#FF4A55,#A3101C);color:#fff;cursor:pointer;justify-self:center";
-  b.onclick=()=>{d.remove();shown=null;bar()};c.append(h,p,b);d.append(c);document.body.append(d);shown=d}
+ function show(j){if(shown)return;const d=document.createElement("div");d.setAttribute("role","alertdialog");d.setAttribute("aria-live","assertive");d.setAttribute("aria-label","Технические работы");
+  d.style.cssText="position:fixed;inset:0;z-index:2147483000;background:rgba(11,10,14,.92);display:grid;place-items:center;padding:12px;font-family:Golos Text,system-ui,sans-serif;overflow:auto";
+  const c=document.createElement("div");c.style.cssText="width:min(460px,100%);background:#16141B;border:1px solid #E7BD52;border-radius:16px;padding:18px;color:#F4F4F6;text-align:center;display:grid;gap:10px;box-sizing:border-box";
+  const E=(t,x,css)=>{const e=document.createElement(t);if(x!=null)e.textContent=x;if(css)e.style.cssText=css;return e};
+  const left=Math.max(1,Math.round((j.until-Date.now())/60000));
+  const h=E("b","🛠 Идут технические работы","font:800 1.25rem Rubik,system-ui,sans-serif;color:#E7BD52");
+  const p=E("p",(j.text||"Сайт обновляется — добавляем новое.")+" Обычно это пара минут (не дольше "+left+" мин). Страница обновится сама.","margin:0");
+  const w=E("p","⚠️ Пока идут работы, то, что вы вводите на сайте (тексты, профиль, результаты), может не сохраниться. Лучше подождите — а пока сыграйте с другими посетителями:","margin:0;font-size:.9rem;color:#FFD98A");
+  // мини-игра «Звездопад»: все, кто сейчас на сайте, ловят звёзды в общую копилку
+  const st=E("div",null,"display:flex;justify-content:space-between;gap:8px;font-size:.9rem;flex-wrap:wrap");const tot=E("span","⭐ Вместе: …"),me=E("span","Вы: 0"),on=E("span","👥 …");st.append(tot,me,on);
+  const f=E("div",null,"position:relative;height:190px;border-radius:12px;overflow:hidden;background:radial-gradient(1px 1px at 20% 30%,#fff,transparent),radial-gradient(1px 1px at 70% 60%,#fff,transparent),radial-gradient(1.5px 1.5px at 40% 80%,#fff,transparent),linear-gradient(160deg,#1B1546,#3B2A7A);touch-action:manipulation;user-select:none");
+  const feed=E("div",null,"min-height:22px;font-size:.88rem;color:#C9C6D2");const rx=E("div",null,"display:flex;gap:6px;justify-content:center;flex-wrap:wrap");
+  const R=["👋","😂","🔥","❤️","🚀","⭐"];let mine=0,pend=0,react=-1,alive=true;
+  const did=(()=>{let v="";try{v=localStorage.getItem("iigry-did")||""}catch(_){}if(!/^[0-9a-f]{32}$/.test(v)){const a=new Uint8Array(16);crypto.getRandomValues(a);v=[...a].map(x=>x.toString(16).padStart(2,"0")).join("")}return v})(),nick=(()=>{try{return (localStorage.getItem("iigry-nick")||"").slice(0,20)}catch(_){return ""}})()||"Гость";
+  R.forEach((e,i)=>{const b=E("button",e,"border:1px solid rgba(255,255,255,.15);background:#0F0E13;border-radius:10px;min-width:44px;min-height:40px;font-size:20px;cursor:pointer");b.type="button";b.setAttribute("aria-label","Отправить "+e);b.onclick=()=>{react=i;sync()};rx.append(b)});
+  function spawn(){if(!alive)return;const s=E("button",Math.random()<.15?"🌟":"⭐","position:absolute;border:0;background:transparent;cursor:pointer;font-size:30px;padding:6px;transition:transform .2s,opacity .2s;left:"+(5+Math.random()*80)+"%;top:-40px");s.type="button";s.setAttribute("aria-label","Поймать звезду");
+   const big=s.textContent==="🌟",dur=2600+Math.random()*1800;f.append(s);s.animate([{top:"-40px"},{top:"200px"}],{duration:dur,easing:"linear"}).onfinish=()=>s.remove();
+   s.onpointerdown=e=>{e.preventDefault();const v=big?5:1;mine+=v;pend+=v;me.textContent="Вы: "+mine;s.style.transform="scale(1.8)";s.style.opacity="0";s.onpointerdown=null;setTimeout(()=>s.remove(),200)};setTimeout(spawn,500+Math.random()*500)}
+  async function sync(){if(!did)return;const add=Math.min(pend,50),r=react;pend-=add;react=-1;
+   try{const x=await (await fetch(API.replace("a=status","a=mg"),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({d:did,add,r,n:nick})})).json();
+    if(x.total!=null){tot.textContent="⭐ Вместе: "+x.total.toLocaleString("ru-RU");on.textContent="👥 Сейчас здесь: "+x.online;feed.textContent=(x.feed||[]).slice(-4).map(z=>z.n+" "+z.e).join("  ·  ")||"Отправьте привет другим посетителям 👇"}}catch(_){pend+=add}}
+  const b=E("button","Закрыть и подождать","border:0;border-radius:10px;padding:10px 16px;font:700 1rem inherit;background:linear-gradient(135deg,#FF4A55,#A3101C);color:#fff;cursor:pointer;justify-self:center");b.type="button";
+  b.onclick=()=>{alive=false;clearInterval(t);d.remove();shown=null;bar()};c.append(h,p,w,st,f,feed,rx,b);d.append(c);document.body.append(d);shown=d;spawn();sync();const t=setInterval(()=>{if(document.body.contains(d))sync();else clearInterval(t)},3000)}
  function bar(){if(document.getElementById("iigry-maint-bar"))return;const s=document.createElement("div");s.id="iigry-maint-bar";s.textContent="🛠 Идут технические работы — возможны недолгие сбои";s.style.cssText="position:fixed;left:0;right:0;bottom:0;z-index:2147482999;background:#E7BD52;color:#1A1306;font:700 .9rem Golos Text,system-ui,sans-serif;text-align:center;padding:6px";document.body.append(s)}
  async function check(){try{const j=await (await fetch(API,{cache:"no-store"})).json();
    if(j.maint){was=true;if(!document.getElementById("iigry-maint-bar"))show(j)}else if(was){location.reload()}}catch(_){} }
