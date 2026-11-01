@@ -70,6 +70,7 @@ h1{font:900 clamp(1.5rem,6vw,2.2rem)/1.1 Rubik,sans-serif;margin:6px 0 0}h1 b{co
 .nav span.cur{border-color:var(--gold);color:var(--gold)}.nav span.ok{border-color:rgba(74,222,149,.6);color:var(--fg)}.nav span.ok::before{content:"✓ ";color:var(--green)}
 .step{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;display:grid;gap:12px}
 label.f{display:grid;gap:4px;font-weight:600;font-size:.92rem}
+details.more{border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:0 14px;margin:6px 0}details.more[open]{padding-bottom:12px}details.more>summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:700;list-style:none}details.more>summary::before{content:"▸";margin-right:8px;transition:transform .2s}details.more[open]>summary::before{transform:rotate(90deg)}details.more>summary::-webkit-details-marker{display:none}
 input,select,textarea{background:#0F0E13;color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:10px;font:400 1rem "Golos Text";width:100%}
 textarea{min-height:90px;resize:vertical}
 .ck{display:flex;gap:10px;align-items:flex-start;font-size:.92rem}.ck input{width:20px;height:20px;flex:none;accent-color:#E7BD52;margin-top:2px}
@@ -132,15 +133,16 @@ async function show(){const b=$("box");
   const about=el("textarea");about.maxLength=500;about.value=P.about||"";about.placeholder="Пара слов о себе и своих проектах";about.oninput=()=>{P.about=about.value;rp()};
   b.append(lab("Аватар",pa),lab("Фон карточки",pb),lab("О себе (до 500 знаков)",about));
   // дополнительно
-  b.append(el("p","Дополнительно — по желанию","sub"));
+  const dt=el("details",null,"more"),sm=el("summary","Дополнительно: возраст, город, увлечения, контакты");dt.append(sm);b.append(dt);
+  dt.append(el("p","Всё по желанию","sub"));
   const age=inp(P.age,3,"Например, 25","number"),ageS=cb(P.show.age,"Показывать в профиле"),city=inp(P.city,60,"Например, Тверь"),cityS=cb(P.show.city,"Показывать в профиле");
   const hob=inp(P.hob,200,"Музыка, моддинг, пиксель-арт"),gen=inp(P.genres,200,"Платформеры, головоломки"),link=inp(P.link,200,"https://…"),role=el("select");
   Object.entries(ROLE).forEach(([v,t])=>{const o=el("option",t);o.value=v;role.append(o)});role.value=P.role||"";
-  const g1=el("div",null,"two"),ga=el("div"),gc=el("div");ga.append(lab("Возраст",age),ageS);gc.append(lab("Город",city),cityS);g1.append(ga,gc,lab("Увлечения",hob),lab("Любимые жанры",gen),lab("Кто вы на сайте",role),lab("Ссылка (портфолио, канал)",link));b.append(g1);
+  const g1=el("div",null,"two"),ga=el("div"),gc=el("div");ga.append(lab("Возраст",age),ageS);gc.append(lab("Город",city),cityS);g1.append(ga,gc,lab("Увлечения",hob),lab("Любимые жанры",gen),lab("Кто вы на сайте",role),lab("Ссылка (портфолио, канал)",link));dt.append(g1);
   // контакты
-  b.append(el("p","Контакты — видны другим, только если включено «Показывать»","sub"));
+  dt.append(el("p","Контакты — видны другим, только если включено «Показывать»","sub"));
   const C=[["phone","Телефон","+7 900 123-45-67"],["email","Почта","you@mail.ru"],["tg","Telegram","@username"],["vk","VK","id или короткое имя"],["other","Другая соцсеть","https://…"]],ci={},cs={};
-  const g2=el("div",null,"two");C.forEach(([k,t,ph])=>{ci[k]=inp(P.c[k],k==="other"?200:k==="email"?254:70,ph);cs[k]=cb(P.show[k],"Показывать");const d=el("div");d.append(lab(t,ci[k]),cs[k]);g2.append(d)});b.append(g2);
+  const g2=el("div",null,"two");C.forEach(([k,t,ph])=>{ci[k]=inp(P.c[k],k==="other"?200:k==="email"?254:70,ph);cs[k]=cb(P.show[k],"Показывать");const d=el("div");d.append(lab(t,ci[k]),cs[k]);g2.append(d)});dt.append(g2);
   const ps=el("button","Сохранить профиль","btn");ps.type="button";const pm=el("p","","muted");pm.setAttribute("aria-live","polite");
   ps.onclick=async()=>{ps.disabled=true;const set={av:P.av,bg:P.bg,about:about.value,age:age.value,city:city.value,hob:hob.value,genres:gen.value,role:role.value,link:link.value,c:{},show:{age:ageS.c.checked,city:cityS.c.checked}};
     C.forEach(([k])=>{set.c[k]=ci[k].value;set.show[k]=cs[k].c.checked});const r=await A.call("prof",{set});ps.disabled=false;

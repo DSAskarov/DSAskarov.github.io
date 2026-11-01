@@ -810,11 +810,13 @@ exports.handler = async (event, ctx) => {
     if (op === "ways") { const ks = await authsOf(u.uid); return reply(200, { tg: !!u.chat, email: ks.filter(k => k.startsWith("e:")).map(mask), phone: ks.filter(k => k.startsWith("p:")).map(mask), keys: ks.filter(k => !k.startsWith("t:")).map(k => ({ id: Hs("k|" + k).slice(0, 16), t: k[0], m: mask(k) })) }, origin) }
     if (op === "linkemail") { const e = normEmail(b.email); if (!EMAIL_RE.test(e)) return reply(400, { error: "Проверьте адрес почты" }, origin);
       if (!(await smtpPass())) return reply(503, { error: "Привязка почты включится в ближайшие дни." }, origin);
+      if ((await authsOf(u.uid)).filter(k => k.startsWith("e:")).length >= 2) return reply(400, { error: "К аккаунту можно привязать не больше двух почт. Отвяжите одну, чтобы добавить другую." }, origin);
       const au = await authOf("e:" + e); if (au) return reply(400, { error: au.uid === u.uid ? "Эта почта уже привязана" : "Эта почта уже привязана к другому аккаунту" }, origin);
       const c = await codeMake("le:" + u.uid + ":" + e, u.uid); if (c.err) return reply(429, { error: c.err }, origin);
       if (!(await sendMail(e, "Код привязки почты: " + c.code, "Код, чтобы привязать эту почту к аккаунту «" + u.nick + "»: " + c.code + "\nДействует 10 минут."))) return reply(502, { error: "Не получилось отправить письмо" }, origin);
       return reply(200, { ok: true }, origin) }
     if (op === "linkemail2") { const e = normEmail(b.email), r = await codeCheck("le:" + u.uid + ":" + e, b.code); if (r.err) return reply(400, { error: r.err }, origin);
+      if ((await authsOf(u.uid)).filter(k => k.startsWith("e:")).length >= 2) return reply(400, { error: "К аккаунту можно привязать не больше двух почт. Отвяжите одну, чтобы добавить другую." }, origin);
       if (await authOf("e:" + e)) return reply(400, { error: "Эта почта уже привязана" }, origin);
       await q(`DECLARE $k AS Utf8; DECLARE $u AS Utf8; DECLARE $ts AS Uint64; UPSERT INTO uauth (k, uid, ts) VALUES ($k, $u, $ts);`, { $k: u8("e:" + e), $u: u8(u.uid), $ts: u64(Date.now()) }); return reply(200, { ok: true }, origin) }
     if (op === "linktg") { if (u.chat) return reply(400, { error: "Telegram уже привязан" }, origin);
