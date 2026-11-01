@@ -1756,6 +1756,7 @@ $("lcMsgs").onclick=async e=>{const b=e.target.closest("[data-ldel]");if(!b||!is
   try{await db.collection("live").doc(u).set(Object.assign({},d,{msgs:ARR(d.msgs).filter(m=>m&&String(TS(m.ts))!==ts)}))}catch(_){toast("Не удалось удалить.")}};
 
 /* Перезагрузка страницы — всегда с начала; «назад» и свайпы закрывают всплывающие окна */
+setTimeout(()=>{if(!document.getElementById("ytWidget"))return;const s=document.createElement("script");s.src="https://translate.yandex.net/website-widget/v1/widget.js?widgetId=ytWidget&pageLang=ru&widgetTheme=dark&autoMode=false";s.async=true;document.body.append(s)},800);
 try{if("scrollRestoration" in history)history.scrollRestoration="manual"}catch(_){}
 (function(){const D=HTMLDialogElement.prototype,orig=D.showModal;let skip=0;
   D.showModal=function(){orig.call(this);const d=this;try{history.pushState({dlg:1},"")}catch(_){}
