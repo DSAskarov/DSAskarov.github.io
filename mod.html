@@ -30,8 +30,8 @@ textarea{background:#0F0E13;color:var(--fg);border:1px solid var(--line);border-
 <section class="card"><div class="row" style="justify-content:space-between"><p style="margin:0">Вы вошли как <b id="who"></b></p><button id="out">Выйти</button></div><p class="muted" id="can"></p><div class="row" style="margin-top:8px"><button id="bindAcc" hidden>Привязать мой аккаунт сайта (входить без кода)</button><button id="tgb">Подключить Telegram</button><span class="muted" id="tgm"></span></div></section>
 <section class="card" id="secAll" hidden><h2>Входящие — нужен ответ</h2><div class="row"><button id="rall">Обновить</button><span class="muted" id="allSum"></span></div>
 <p class="muted">Здесь всё, что ждёт команду: срочное (жалобы и вызовы в чате) — сверху в красной рамке. Ответ на вызов в чате появится прямо в чате от имени команды; ответ на заявку увидит автор по номеру обращения.</p><div class="list" id="all" style="max-height:none"></div></section>
-<section class="card" id="secT" hidden><h2>Посещаемость за 14 дней</h2><div class="row"><button id="tU" class="main">Уникальные</button><button id="tV">Все просмотры</button><span class="muted" id="tSum"></span></div>
-<div id="tBars" style="display:flex;gap:4px;align-items:flex-end;height:140px;margin-top:12px"></div><div id="tDays" style="display:flex;gap:4px;margin-top:4px"></div>
+<section class="card" id="secT" hidden><h2>Посещаемость</h2><div class="row"><button id="tU" class="main">Уникальные</button><button id="tV">Все просмотры</button><select id="tP" aria-label="Период"><option value="7">7 дней</option><option value="14" selected>14 дней</option><option value="30">30 дней</option></select></div>
+<p class="muted" id="tSum" style="margin:8px 0 0"></p><div id="tChart" style="margin-top:8px"></div><p class="muted" style="margin:4px 0 0">Нажмите на столбик дня — откроется подробная разбивка.</p><div id="tDay"></div>
 <div class="row" id="admStat" hidden style="margin-top:10px"><button id="sNow">📊 Сводка сейчас</button><button id="sCsv">📥 Скачать таблицу (CSV)</button></div><div id="sBox" class="muted" style="margin-top:8px;white-space:pre-line"></div>
 <p class="muted">Уникальные — разные устройства (браузеры) за день: номер устройства хранится в браузере, поэтому смена IP или VPN не создаёт нового посетителя. Боты и команда сайта не считаются.</p></section>
 <section class="card" id="secQ" hidden><h2>Заявки</h2><div class="row"><select id="qkind"></select><select id="qst"><option value="">Все статусы</option><option value="new">Новые</option><option value="work">В работе</option><option value="ok">Принятые</option><option value="no">Отклонённые</option></select><button id="rq">Обновить</button></div>
@@ -110,12 +110,53 @@ async function loadAll(){const box=$("all");box.textContent="Загрузка…
   if(!box.children.length)box.textContent="Нет обращений, которые ждут ответа."}
 $("rall").onclick=loadAll;addEventListener("hashchange",loadAll);
 let TR=[],TM="uniq";
-async function loadT(){try{TR=(await call({op:"traffic",days:14})).items||[]}catch(_){TR=[]}drawT()}
-function drawT(){const b=$("tBars"),d=$("tDays");b.innerHTML="";d.innerHTML="";const mx=Math.max(1,...TR.map(x=>x[TM]));
-  TR.forEach(x=>{const c=el("div");c.title=x.day+": "+x.uniq+" уникальных, "+x.views+" просмотров, новых "+x.fresh;c.style.cssText="flex:1;min-width:0;border-radius:4px 4px 0 0;background:"+(TM==="uniq"?"#E7BD52":"#E8333F")+";height:"+Math.max(2,x[TM]/mx*130)+"px";b.append(c);
-    const l=el("div",x.day.slice(8));l.style.cssText="flex:1;min-width:0;text-align:center;font-size:.7rem;color:#B9B6C2";d.append(l)});
-  const t=TR[TR.length-1]||{uniq:0,views:0,fresh:0},S=TR.reduce((a,x)=>a+x[TM],0);$("tSum").textContent="Сегодня: "+t.uniq+" уникальных (новых "+t.fresh+"), "+t.views+" просмотров · за 14 дней: "+S+(TM==="uniq"?" уникальных по дням":" просмотров");
+async function loadT(){try{TR=(await call({op:"traffic",days:+$("tP").value||14})).items||[]}catch(_){TR=[]}drawT()}
+const NS="http://www.w3.org/2000/svg",sv=(t,a,txt)=>{const e=document.createElementNS(NS,t);Object.entries(a||{}).forEach(([k,v])=>e.setAttribute(k,v));if(txt!=null)e.textContent=txt;return e};
+const MON=["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"],WD=["вс","пн","вт","ср","чт","пт","сб"];
+const dLab=d=>{const [y,m,dd]=d.split("-").map(Number);return dd+" "+MON[m-1]},wd=d=>WD[new Date(d+"T12:00:00Z").getUTCDay()];
+const nice=v=>{if(v<=4)return 4;const p=Math.pow(10,Math.floor(Math.log10(v))),f=v/p;return(f<=1?1:f<=2?2:f<=2.5?2.5:f<=5?5:10)*p};
+let TSEL="";
+function drawT(){const box=$("tChart");box.innerHTML="";const W=720,H=260,L=44,B=34,T=16,R=8,n=TR.length||1,mx=nice(Math.max(1,...TR.map(x=>x[TM]))),col=TM==="uniq"?"#E7BD52":"#E8333F";
+  const g=sv("svg",{viewBox:"0 0 "+W+" "+H,role:"img","aria-label":"График посещаемости по дням",style:"width:100%;height:auto;display:block;overflow:visible"}),ch=H-B-T,cw=(W-L-R)/n;
+  for(let i=0;i<=4;i++){const v=mx*i/4,y=T+ch-ch*i/4;g.append(sv("line",{x1:L,x2:W-R,y1:y,y2:y,stroke:"rgba(255,255,255,"+(i?.1:.3)+")","stroke-width":1}));g.append(sv("text",{x:L-6,y:y+4,"text-anchor":"end","font-size":11,fill:"#B9B6C2"},Math.round(v).toLocaleString("ru-RU")))}
+  g.append(sv("text",{x:4,y:10,"font-size":10,fill:"#8E8A98"},TM==="uniq"?"чел.":"просм."));
+  TR.forEach((x,i)=>{const v=x[TM],h=Math.max(v?2:0,v/mx*ch),bx=L+i*cw+cw*.15,bw=cw*.7,y=T+ch-h,sel=x.day===TSEL;
+    const grp=sv("g",{tabindex:0,role:"button","aria-label":dLab(x.day)+": "+x.uniq+" уникальных, "+x.views+" просмотров. Открыть разбивку",style:"cursor:pointer;outline:none"});
+    grp.append(sv("rect",{x:L+i*cw,y:T,width:cw,height:ch,fill:sel?"rgba(231,189,82,.1)":"transparent"}));
+    grp.append(sv("rect",{x:bx,y,width:bw,height:h,rx:Math.min(4,bw/2),fill:col,opacity:TSEL&&!sel?.55:1}));
+    grp.append(sv("title",{},dLab(x.day)+" ("+wd(x.day)+"): "+x.uniq+" уникальных, новых "+x.fresh+", "+x.views+" просмотров"));
+    if(n<=14&&v)grp.append(sv("text",{x:bx+bw/2,y:y-4,"text-anchor":"middle","font-size":11,"font-weight":700,fill:"#F4F4F6"},v));
+    if(n<=14||i%3===0||i===n-1){grp.append(sv("text",{x:L+i*cw+cw/2,y:H-B+14,"text-anchor":"middle","font-size":11,fill:sel?"#E7BD52":"#B9B6C2"},x.day.slice(8)+"."+x.day.slice(5,7)));if(n<=14)grp.append(sv("text",{x:L+i*cw+cw/2,y:H-B+27,"text-anchor":"middle","font-size":9,fill:"#8E8A98"},wd(x.day)))}
+    const go=()=>{TSEL=x.day;drawT();showDay(x.day)};grp.onclick=go;grp.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go()}};g.append(grp)});
+  box.append(g);const t=TR[TR.length-1]||{uniq:0,views:0,fresh:0},S=TR.reduce((a,x)=>a+x[TM],0);
+  $("tSum").textContent="Сегодня: "+t.uniq+" уникальных (новых "+t.fresh+"), "+t.views+" просмотров · за "+n+" дн.: "+S.toLocaleString("ru-RU")+(TM==="uniq"?" уникальных по дням":" просмотров");
   $("tU").className=TM==="uniq"?"main":"";$("tV").className=TM==="views"?"main":""}
+$("tP").onchange=()=>{TSEL="";$("tDay").innerHTML="";loadT()};
+// Подробная разбивка выбранного дня
+const PG={"/":"Главная","/index.html":"Главная","/kabinet.html":"Кабинет","/kak-opublikovat.html":"Публикация проекта","/otvet.html":"Ответы на обращения","/avtor.html":"Профиль автора","/masterskaya.html":"Мастерская игр","/igra.html":"Игра из Мастерской","/mod.html":"Модерация"};
+const GN={"lovi-bagi":"Лови баги","pochtalyon":"Звёздный почтальон","bystree":"Быстрее нейросети","kot-na-orbite":"Кот на орбите","ferma-slov":"Ферма слов","origami":"Оригами","menu":"Меню","bugs":"Лови баги","post":"Звёздный почтальон","react":"Быстрее нейросети","cat":"Кот на орбите","words":"Ферма слов"},gName=k=>GN[k]||k;
+const pgName=p=>PG[p]||(/^\/games\/(.+)\.html$/.test(p)?"Игра «"+gName(p.replace(/^\/games\/|\.html$/g,""))+"»":p);
+function hbars(title,obj,nameF,unit){const ent=Object.entries(obj).filter(x=>x[1]).sort((a,b)=>b[1]-a[1]),d=el("div");d.append(el("h3",title));d.querySelector("h3").style.cssText="margin:12px 0 6px;font-size:1rem";
+  if(!ent.length){d.append(el("p","Нет данных","muted"));return d}const mx=Math.max(...ent.map(x=>x[1])),sum=ent.reduce((a,x)=>a+x[1],0);
+  ent.slice(0,12).forEach(([k,v])=>{const r=el("div");r.style.cssText="display:grid;grid-template-columns:minmax(90px,36%) 1fr auto;gap:8px;align-items:center;font-size:.88rem;margin:3px 0";
+    const bar=el("div");bar.style.cssText="height:10px;border-radius:5px;background:rgba(255,255,255,.08);overflow:hidden";const i=el("div");i.style.cssText="height:100%;border-radius:5px;background:#E7BD52;width:"+Math.max(2,v/mx*100)+"%";bar.append(i);
+    const nm=el("span",nameF?nameF(k):k);nm.style.cssText="overflow:hidden;text-overflow:ellipsis;white-space:nowrap";r.append(nm,bar,el("span",v+" "+(unit||"")+" · "+Math.round(v/sum*100)+"%","muted"));d.append(r)});return d}
+async function showDay(day){const box=$("tDay");box.innerHTML="";box.append(el("p","Загрузка разбивки…","muted"));let j;try{j=await call({op:"trafday",day})}catch(e){box.innerHTML="";box.append(el("p",e.message,"msg"));return}
+  box.innerHTML="";const w=el("div");w.style.cssText="border:1px solid rgba(231,189,82,.4);border-radius:12px;padding:12px;margin-top:10px";
+  const hd=el("div",null,"row");hd.style.justifyContent="space-between";hd.append(el("h3",dLab(day)+", "+wd(day)));hd.firstChild.style.margin="0";const cl=el("button","✕ Закрыть");cl.type="button";cl.onclick=()=>{TSEL="";box.innerHTML="";drawT()};hd.append(cl);w.append(hd);
+  const tiles=el("div");tiles.style.cssText="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:10px";
+  [["Уникальные",j.uniq],["Новые",j.fresh],["Вернулись",Math.max(0,j.uniq-j.fresh)],["Просмотры",j.views],["На посетителя",j.uniq?(j.views/j.uniq).toFixed(1):"—"],["Продажи",j.sales.n+" · "+j.sales.sum+" ₽"]].forEach(([k,v])=>{const t=el("div");t.style.cssText="background:rgba(255,255,255,.05);border-radius:10px;padding:8px 10px";const b=el("b",String(v));b.style.cssText="display:block;font-size:1.25rem";t.append(b,el("span",k,"muted"));tiles.append(t)});w.append(tiles);
+  // по часам
+  const hh=el("div");hh.append(el("h3","Просмотры по часам (МСК)"));hh.querySelector("h3").style.cssText="margin:12px 0 6px;font-size:1rem";const hv=Array.from({length:24},(_,i)=>+(j.hours[i]||0)),hm=Math.max(...hv);
+  if(!hm)hh.append(el("p","Почасовая разбивка, устройства и источники собираются с 1 ноября 2026.","muted"));else{const W=720,H=120,c=sv("svg",{viewBox:"0 0 "+W+" "+H,style:"width:100%;height:auto",role:"img","aria-label":"Просмотры по часам"}),bw=(W-30)/24;
+    for(let i=0;i<=2;i++){const y=8+(H-30)*(1-i/2);c.append(sv("line",{x1:26,x2:W,y1:y,y2:y,stroke:"rgba(255,255,255,.1)"}));c.append(sv("text",{x:22,y:y+4,"text-anchor":"end","font-size":10,fill:"#B9B6C2"},Math.round(hm*i/2)))}
+    hv.forEach((v,i)=>{const h=v/hm*(H-30),r=sv("rect",{x:28+i*bw+1,y:8+(H-30)-h,width:bw-2,height:h,rx:2,fill:"#E8333F"});r.append(sv("title",{},i+":00 — "+v+" просмотров"));c.append(r);if(i%3===0)c.append(sv("text",{x:28+i*bw+bw/2,y:H-6,"text-anchor":"middle","font-size":10,fill:"#B9B6C2"},i+":00"))});hh.append(c)}
+  w.append(hh);
+  const two=el("div");two.style.cssText="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:0 18px";
+  two.append(hbars("Устройства",j.dev,k=>({phone:"📱 Телефон",tablet:"📲 Планшет",pc:"💻 Компьютер"})[k]||k,"просм."),hbars("Откуда пришли",j.ref,k=>k==="direct"?"Прямой заход / закладка":k,"просм."),
+    hbars("Страницы",j.pages,pgName,"просм."),hbars("Игры: игроки",Object.fromEntries(j.plays.map(x=>[x.pid,x.u])),k=>gName(k.replace(/^g:/,"")),"чел."),
+    hbars("Визиты",j.visit,k=>({new:"Новые посетители",back:"Вернулись (первый визит за день)",repeat:"Повторные просмотры"})[k]||k,""),hbars("Сообщения в чате и обсуждениях",j.msgs,k=>({live:"Живой чат","talk-site":"Обсуждения: сайт","talk-industry":"Обсуждения: индустрия","talk-wishes":"Обсуждения: пожелания"})[k]||k,"шт."),
+    hbars("Рекорды в играх",j.scores,gName,"шт."),hbars("Обращения и заявки",j.inbox,null,"шт."));w.append(two);box.append(w);w.scrollIntoView({behavior:"smooth",block:"nearest"})}
 $("sNow").onclick=async()=>{try{const j=await call({op:"summary"});$("sBox").textContent=j.lines.join("\n")}catch(e){alertBox(e.message)}};
 $("sCsv").onclick=async()=>{try{const j=await call({op:"export"}),a=document.createElement("a");a.href=URL.createObjectURL(new Blob([j.csv],{type:"text/csv;charset=utf-8"}));a.download="iigry-stat-"+new Date().toISOString().slice(0,10)+".csv";document.body.append(a);a.click();a.remove()}catch(e){alertBox(e.message)}};
 $("tU").onclick=()=>{TM="uniq";drawT()};$("tV").onclick=()=>{TM="views";drawT()};

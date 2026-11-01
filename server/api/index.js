@@ -103,6 +103,7 @@ async function db(ctx) {
         await T("ucode", [["k", Types.UTF8], ["h", Types.UTF8], ["exp", Types.UINT64], ["n", Types.UINT64], ["uid", Types.UTF8]], ["k"]);
         await T("uprof", [["uid", Types.UTF8], ["j", Types.UTF8]], ["uid"]);
         await T("msess", [["h", Types.UTF8], ["name", Types.UTF8], ["role", Types.UTF8], ["exp", Types.UINT64]], ["h"]);
+        await T("hstat", [["day", Types.UTF8], ["k", Types.UTF8], ["cnt", Types.UINT64]], ["day", "k"]);
         await T("teamacc", [["uid", Types.UTF8], ["name", Types.UTF8], ["role", Types.UTF8], ["ts", Types.UINT64]], ["uid"]);
         await T("mgames", [["uid", Types.UTF8], ["gid", Types.UTF8], ["j", Types.UTF8], ["ts", Types.UINT64]], ["uid", "gid"]);
         await T("pv", [["pid", Types.UTF8], ["day", Types.UTF8], ["dev", Types.UTF8], ["v", Types.UINT64]], ["pid", "day", "dev"]);
@@ -704,6 +705,15 @@ exports.handler = async (event, ctx) => {
     if (cur[0]) await q(`DECLARE $d AS Utf8; DECLARE $v AS Utf8; UPDATE hits SET views = views + 1u WHERE day=$d AND dev=$v;`, { $d: TypedValues.utf8(day), $v: TypedValues.utf8(dev) });
     else await q(`DECLARE $d AS Utf8; DECLARE $v AS Utf8; DECLARE $n AS Uint64; UPSERT INTO hits (day, dev, views, isnew) VALUES ($d, $v, 1u, $n);`, { $d: TypedValues.utf8(day), $v: TypedValues.utf8(dev), $n: TypedValues.uint64(isnew) });
     await visitPing(b, ua, isnew, cur[0] ? num(cur[0].views) + 1 : 1);
+    try { const hr = new Date(Date.now() + 3 * 3600e3).getUTCHours(), path = String(b.p || "/").slice(0, 60).replace(/[^\w\/.\-]/g, "") || "/";
+      let ref = "direct"; try { const h = new URL(String(b.r || "")).hostname.replace(/^www\./, ""); if (h && !/dsaskarov\.github\.io$/.test(h)) ref = h.slice(0, 60) } catch (_) {}
+      const dv = /iPhone|Android.+Mobile|Mobile/i.test(ua) ? "phone" : /iPad|Tablet|Android/i.test(ua) ? "tablet" : "pc";
+      const ks = ["h:" + hr, "d:" + dv, "r:" + ref, "p:" + path, isnew ? "v:new" : cur[0] ? "v:repeat" : "v:back"];
+      // сначала читаем текущие счётчики, потом записываем (YDB не разрешает читать таблицу после записи в одном запросе)
+      const P = Object.assign({ $d: TypedValues.utf8(day) }, Object.fromEntries(ks.map((k, i) => ["$k" + i, TypedValues.utf8(k)]))), D = ks.map((_, i) => `DECLARE $k${i} AS Utf8;`).join(" ") + " DECLARE $d AS Utf8; ";
+      const cur2 = Object.fromEntries((await q(D + `SELECT k, cnt FROM hstat WHERE day = $d AND (` + ks.map((_, i) => `k = $k${i}`).join(" OR ") + `);`, P)).map(x => [x.k, num(x.cnt)]));
+      ks.forEach((k, i) => P["$c" + i] = TypedValues.uint64((cur2[k] || 0) + 1));
+      await q(D + ks.map((_, i) => `DECLARE $c${i} AS Uint64;`).join(" ") + " UPSERT INTO hstat (day, k, cnt) VALUES " + ks.map((_, i) => `($d, $k${i}, $c${i})`).join(", ") + ";", P) } catch (e) { console.error("hstat", e && e.message) }
     return reply(200, { ok: true }, origin);
   }
   if (a === "ticket" && method === "GET") {
@@ -931,6 +941,20 @@ exports.handler = async (event, ctx) => {
       await q(`DECLARE $id AS Utf8; DECLARE $st AS Utf8; DECLARE $w AS Utf8; DECLARE $n AS Utf8; UPDATE inbox SET st=$st, who=$w, note=$n WHERE id=$id;`, { $id: TypedValues.utf8(id), $st: TypedValues.utf8(st), $w: TypedValues.utf8(me.name), $n: TypedValues.utf8(note) });
       if (r[0].kind === "publish") await tellAuthor(id, "Статус заявки: <b>" + esc(QST[st]) + "</b>" + (note ? "\n" + esc(note) : ""));
       await mlog(who, "заявка «" + QST[st] + "»", KINDS[r[0].kind] + ": " + (r[0].subj || id) + (note ? " — " + note : "")); return reply(200, { ok: true }, origin) }
+    if (op === "trafday") { if (!can("mods")) return NO; const day = String(b.day || ""); if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return reply(400, { error: "bad" }, origin);
+      const h = (await q(`DECLARE $d AS Utf8; SELECT COUNT(*) AS u, SUM(views) AS v, SUM(isnew) AS n FROM hits WHERE day=$d;`, { $d: TypedValues.utf8(day) }))[0] || {};
+      const st = await q(`DECLARE $d AS Utf8; SELECT k, cnt FROM hstat WHERE day=$d;`, { $d: TypedValues.utf8(day) }), G = {}; st.forEach(x => { const [g, ...r] = String(x.k).split(":"); (G[g] = G[g] || {})[r.join(":")] = num(x.cnt) });
+      const pv = await q(`DECLARE $d AS Utf8; SELECT pid, COUNT(*) AS u, SUM(v) AS v FROM pv WHERE day=$d GROUP BY pid;`, { $d: TypedValues.utf8(day) });
+      const dayOf = t => new Date(num(t) + 3 * 3600e3).toISOString().slice(0, 10), t0 = Date.parse(day + "T00:00:00+03:00") - 864e5, t1 = t0 + 3 * 864e5;
+      const rng = { $a: TypedValues.uint64(t0), $b: TypedValues.uint64(t1) };
+      const ord = (await q(`SELECT prod, st, ts FROM orders;`)).filter(o => o.st === "succeeded" && dayOf(o.ts) === day);
+      const msgs = (await q(`DECLARE $a AS Uint64; DECLARE $b AS Uint64; SELECT room, ts FROM msgs WHERE ts >= $a AND ts < $b;`, rng)).filter(x => dayOf(x.ts) === day && x.room !== "test");
+      const sc = (await q(`DECLARE $a AS Uint64; DECLARE $b AS Uint64; SELECT game, ts FROM scores WHERE ts >= $a AND ts < $b;`, rng)).filter(x => dayOf(x.ts) === day);
+      const inb = (await q(`DECLARE $a AS Uint64; DECLARE $b AS Uint64; SELECT kind, ts FROM inbox WHERE ts >= $a AND ts < $b;`, rng)).filter(x => dayOf(x.ts) === day && x.kind !== "call");
+      const cnt = (a, f) => a.reduce((o, x) => (o[f(x)] = (o[f(x)] || 0) + 1, o), {});
+      return reply(200, { day, uniq: num(h.u), views: num(h.v), fresh: num(h.n), hours: G.h || {}, dev: G.d || {}, ref: G.r || {}, pages: G.p || {}, visit: G.v || {},
+        plays: pv.map(x => ({ pid: x.pid, u: num(x.u), v: num(x.v) })), sales: { n: ord.length, sum: ord.reduce((a, o) => a + Number((PRODUCTS[o.prod] || {}).price || 0), 0) },
+        msgs: cnt(msgs, x => x.room), scores: cnt(sc, x => x.game), inbox: cnt(inb, x => KINDS[x.kind] || x.kind) }, origin) }
     if (op === "traffic") { if (!can("mods")) return NO; return reply(200, { items: await traffic(Math.min(31, Math.max(1, Math.round(Number(b.days)) || 14))) }, origin) }
     if (op === "summary" || op === "export") { if (!can("team")) return NO;
       if (op === "export") return reply(200, { csv: await exportCsv() }, origin);
