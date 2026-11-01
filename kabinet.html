@@ -69,6 +69,11 @@ h1{font:900 clamp(1.5rem,6vw,2.2rem)/1.1 Rubik,sans-serif;margin:6px 0 0}h1 b{co
 .nav{display:flex;gap:6px;flex-wrap:wrap}.nav span{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:4px 10px;font:600 .8rem "Golos Text";color:var(--muted)}
 .nav span.cur{border-color:var(--gold);color:var(--gold)}.nav span.ok{border-color:rgba(74,222,149,.6);color:var(--fg)}.nav span.ok::before{content:"✓ ";color:var(--green)}
 .step{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;display:grid;gap:12px}
+.kload{display:grid;gap:12px;justify-items:center;padding:18px 0}.kspin{width:44px;height:44px;border-radius:50%;border:4px solid rgba(231,189,82,.2);border-top-color:#E7BD52;animation:kspin .8s linear infinite}
+.kmsg{margin:0;color:#C9C6D2;animation:kfade 1.6s ease-in-out infinite}.sk{width:100%;border-radius:12px;background:linear-gradient(90deg,rgba(255,255,255,.05) 25%,rgba(255,255,255,.12) 50%,rgba(255,255,255,.05) 75%);background-size:200% 100%;animation:kshim 1.3s linear infinite}
+.sk1{height:42px;max-width:420px}.sk2{height:120px}.sk3{height:70px}
+@keyframes kspin{to{transform:rotate(360deg)}}@keyframes kshim{from{background-position:200% 0}to{background-position:-200% 0}}@keyframes kfade{50%{opacity:.5}}
+@media (prefers-reduced-motion:reduce){.kspin,.sk,.kmsg{animation:none}}
 label.f{display:grid;gap:4px;font-weight:600;font-size:.92rem}
 .ktabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 0 14px;padding-bottom:2px}.ktabs::-webkit-scrollbar{display:none}.ktab{flex:none;min-height:42px;padding:0 14px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:#16141B;color:#F4F4F6;font:600 14px/1 inherit;cursor:pointer}.ktab[aria-selected=true]{border-color:#E7BD52;color:#E7BD52;background:rgba(231,189,82,.1)}
 .psave{position:sticky;bottom:12px;z-index:5;box-shadow:0 8px 24px rgba(0,0,0,.45);margin-top:10px}
@@ -97,7 +102,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 <main>
 <h1>Личный <b>кабинет</b></h1>
 <p class="lead">Профиль, способы входа, ваши проекты и статистика игроков. Ответы модераторов и та же статистика приходят в Telegram-бот @iigry_bot (команда /my) или на привязанную почту.</p>
-<section class="step" id="box" aria-live="polite"><p class="muted">Загрузка…</p></section>
+<section class="step" id="box" aria-live="polite"><div class="kload" role="status"><div class="kspin" aria-hidden="true"></div><p class="kmsg">Открываем кабинет…</p><div class="sk sk1"></div><div class="sk sk2"></div><div class="sk sk3"></div></div></section>
 </main>
 <script>
 const $=id=>document.getElementById(id),el=(t,x,c)=>{const e=document.createElement(t);if(x!=null)e.textContent=x;if(c)e.className=c;return e};
@@ -116,7 +121,8 @@ function tabify(b){const G=[];let cur=null;[...b.children].forEach(k=>{if(k.tagN
   b.innerHTML="";b.append(bar,...pan);const h=location.hash.slice(1),k=G.findIndex(g=>KEY[g.h]===h);pick(k>=0?k:Math.max(0,G.findIndex(g=>g.h==="Профиль")))}
 async function show(){const b=$("box");
   if(!A.tok()){b.innerHTML="";const nt=el("p","Входя, вы принимаете ","muted"),l1=el("a","условия"),l2=el("a","политику данных");l1.href="./#terms";l2.href="./#privacy";nt.append(l1," и ",l2,".");b.append(el("h2","Вход и регистрация"),A.login(show),nt);return}
-  const [j,pf,w]=await Promise.all([A.call("me"),A.call("prof"),A.call("ways")]);if(j.need||pf.need){show();return}
+  if(!b.querySelector(".kload")){b.innerHTML=`<div class="kload" role="status"><div class="kspin" aria-hidden="true"></div><p class="kmsg">Открываем кабинет…</p><div class="sk sk1"></div><div class="sk sk2"></div><div class="sk sk3"></div></div>`}const kM=["Открываем кабинет…","Загружаем профиль…","Считаем статистику проектов…","Почти готово…"];let kI=0;const kT=setInterval(()=>{const m=b.querySelector(".kmsg");if(!m){clearInterval(kT);return}m.textContent=kM[Math.min(++kI,kM.length-1)]},1500);
+  const [j,pf,w]=await Promise.all([A.call("me"),A.call("prof"),A.call("ways")]);clearInterval(kT);if(j.need||pf.need){show();return}
   b.innerHTML="";if(j.error){b.append(el("p",j.error));const r=el("button","Повторить","btn");r.type="button";r.onclick=show;b.append(r);return}
   const u=j.user,P=pf.prof||{av:"🎮",bg:0,c:{},show:{}};P.c=P.c||{};P.show=P.show||{};
   const pv=el("div");const rp=()=>{pv.innerHTML="";pv.append(preview(nick.value.trim()||u.nick,P))};
