@@ -473,8 +473,17 @@ const EMAIL_RE = /^[^\s@<>"']{1,64}@[^\s@<>"']{1,190}\.[a-zа-я]{2,24}$/i;
 const normEmail = e => clean(e, 254).toLowerCase(), normPhone = p => { let d = String(p || "").replace(/\D/g, ""); if (d.length === 11 && d[0] === "8") d = "7" + d.slice(1); if (d.length === 10 && d[0] === "9") d = "7" + d; return /^\d{10,15}$/.test(d) ? "+" + d : "" };
 const mask = k => k.startsWith("e:") ? k.slice(2).replace(/^(.{2}).*(@.*)$/, "$1…$2") : k.startsWith("p:") ? k.slice(2).replace(/^(\+\d{2}).*(\d{2})$/, "$1 … $2") : "Telegram";
 let mailer = null;
-async function sendMail(to, subj, text) { if (!SMTP_PASS) return false;
-  try { if (!mailer) mailer = require("nodemailer").createTransport({ host: "smtp.yandex.ru", port: 465, secure: true, auth: { user: SMTP_USER, pass: SMTP_PASS } });
+// Пароль почты: из секрета GitHub или (если его нет) из админ-кабинета — хранится в базе зашифрованным AES-256-GCM
+const smtpKey = () => crypto.createHash("sha256").update((env("TG_BOT_TOKEN") || env("YK_SECRET")) + "|" + salt + "|smtp-key").digest();
+const smtpEnc = v => { const iv = crypto.randomBytes(12), c = crypto.createCipheriv("aes-256-gcm", smtpKey(), iv), d = Buffer.concat([c.update(v, "utf8"), c.final()]); return [iv, c.getAuthTag(), d].map(x => x.toString("base64")).join(".") };
+const smtpDec = s => { try { const [iv, tag, d] = String(s).split(".").map(x => Buffer.from(x, "base64")); const c = crypto.createDecipheriv("aes-256-gcm", smtpKey(), iv); c.setAuthTag(tag); return Buffer.concat([c.update(d), c.final()]).toString("utf8") } catch (_) { return "" } };
+let smtpCache = null;
+async function smtpPass() { if (SMTP_PASS) return SMTP_PASS; if (smtpCache && smtpCache.t > Date.now()) return smtpCache.v;
+  let v = ""; try { v = smtpDec(await cfgGet("smtp_enc")) } catch (_) {} smtpCache = { v, t: Date.now() + 60e3 }; return v }
+const mkMailer = pass => require("nodemailer").createTransport({ host: "smtp.yandex.ru", port: 465, secure: true, auth: { user: SMTP_USER, pass } });
+let mailerPass = "";
+async function sendMail(to, subj, text) { const pass = await smtpPass(); if (!pass) return false;
+  try { if (!mailer || mailerPass !== pass) { mailer = mkMailer(pass); mailerPass = pass }
     await mailer.sendMail({ from: "«ИИгры онлайн» <" + SMTP_USER + ">", to, subject: subj, text: text + "\n\n— «ИИгры онлайн», https://dsaskarov.github.io\nЕсли вы ничего не запрашивали, просто удалите это письмо." }); return true } catch (e) { console.error("mail", e && e.message); return false } }
 async function authOf(k) { return (await q(`DECLARE $k AS Utf8; SELECT uid FROM uauth WHERE k=$k;`, { $k: u8(k) }))[0] || null }
 async function authsOf(uid) { const r = await q(`SELECT k, uid FROM uauth;`); return r.filter(x => x.uid === uid).map(x => x.k) }
@@ -767,7 +776,7 @@ exports.handler = async (event, ctx) => {
     const lim = await limit("C:" + ip, now, 20000, 10); if (lim.err) return reply(429, { error: lim.err }, origin);
     await q(`DECLARE $ip AS Utf8; DECLARE $ts AS Uint64; DECLARE $c AS Uint64; UPSERT INTO rl (ip, ts, cnt) VALUES ($ip, $ts, $c);`, { $ip: u8("C:" + ip), $ts: u64(now), $c: u64(lim.cnt + 1) });
     if (a === "elogin") { const e = normEmail(b.email); if (!EMAIL_RE.test(e)) return reply(400, { error: "Проверьте адрес почты" }, origin);
-      if (!SMTP_PASS) return reply(503, { error: "Вход по почте включится в ближайшие дни. Пока войдите через Telegram." }, origin);
+      if (!(await smtpPass())) return reply(503, { error: "Вход по почте включится в ближайшие дни. Пока войдите через Telegram." }, origin);
       const c = await codeMake("e:" + e); if (c.err) return reply(429, { error: c.err }, origin);
       if (!(await sendMail(e, "Код входа на «ИИгры онлайн»: " + c.code, "Ваш код для входа: " + c.code + "\nОн действует 10 минут. Никому его не сообщайте — даже команде сайта."))) return reply(502, { error: "Не получилось отправить письмо — попробуйте позже или войдите через Telegram." }, origin);
       return reply(200, { ok: true }, origin) }
@@ -799,7 +808,7 @@ exports.handler = async (event, ctx) => {
       return reply(200, { prof: await profOf(u.uid) || profClean({}) }, origin) }
     if (op === "ways") { const ks = await authsOf(u.uid); return reply(200, { tg: !!u.chat, email: ks.filter(k => k.startsWith("e:")).map(mask), phone: ks.filter(k => k.startsWith("p:")).map(mask), keys: ks.filter(k => !k.startsWith("t:")).map(k => ({ id: Hs("k|" + k).slice(0, 16), t: k[0], m: mask(k) })) }, origin) }
     if (op === "linkemail") { const e = normEmail(b.email); if (!EMAIL_RE.test(e)) return reply(400, { error: "Проверьте адрес почты" }, origin);
-      if (!SMTP_PASS) return reply(503, { error: "Привязка почты включится в ближайшие дни." }, origin);
+      if (!(await smtpPass())) return reply(503, { error: "Привязка почты включится в ближайшие дни." }, origin);
       const au = await authOf("e:" + e); if (au) return reply(400, { error: au.uid === u.uid ? "Эта почта уже привязана" : "Эта почта уже привязана к другому аккаунту" }, origin);
       const c = await codeMake("le:" + u.uid + ":" + e, u.uid); if (c.err) return reply(429, { error: c.err }, origin);
       if (!(await sendMail(e, "Код привязки почты: " + c.code, "Код, чтобы привязать эту почту к аккаунту «" + u.nick + "»: " + c.code + "\nДействует 10 минут."))) return reply(502, { error: "Не получилось отправить письмо" }, origin);
@@ -929,6 +938,11 @@ exports.handler = async (event, ctx) => {
       const r = await q(`DECLARE $k AS Utf8; SELECT id, subj, text, contact, st, who, note, ts FROM inbox WHERE kind=$k ORDER BY ts DESC LIMIT 100;`, { $k: TypedValues.utf8(kind) });
       const acc = {}; if (kind === "publish") for (const x of r) { const o = (await q(`DECLARE $id AS Utf8; SELECT o.pid AS pid, u.nick AS nick FROM own AS o LEFT JOIN users AS u ON o.uid = u.uid WHERE o.id=$id;`, { $id: u8(x.id) }))[0]; if (o) acc[x.id] = { nick: o.nick || "(аккаунт удалён)", pid: o.pid || "" } }
       return reply(200, { items: r.filter(x => !st || x.st === st).map(x => ({ acc: acc[x.id] || null, id: x.id, subj: x.subj, text: x.text, contact: can("contacts") ? x.contact : (x.contact ? "скрыто — видит только админ" : ""), st: x.st, stT: QST[x.st] || x.st, who: x.who, note: x.note, ts: num(x.ts) })) }, origin) }
+    if (op === "smtp") { if (me.role !== "admin") return NO;
+      if (b.get) return reply(200, { on: !!(await smtpPass()), src: SMTP_PASS ? "github" : "panel", user: SMTP_USER }, origin);
+      const pw = String(b.pass || "").replace(/\s+/g, ""); if (!/^[A-Za-z0-9]{8,64}$/.test(pw)) return reply(400, { error: "Вставьте пароль приложения Яндекса: 16 латинских букв без пробелов." }, origin);
+      try { await mkMailer(pw).verify() } catch (e) { return reply(400, { error: "Яндекс не принял пароль. Проверьте, что это пароль приложения (тип «Почта») и в настройках почты включён IMAP с паролями приложений." }, origin) }
+      await cfgSet("smtp_enc", smtpEnc(pw)); smtpCache = null; await mlog(who, "обновил пароль почты для писем", ""); return reply(200, { ok: true }, origin) }
     if (op === "setpid") { const id = clean(b.id, 120), pid = String(b.pid || "").trim(); if (!can("q:publish")) return NO;
       if (!/^[a-z0-9:_-]{1,40}$/i.test(pid)) return reply(400, { error: "ID карточки: латиница, цифры, - и _" }, origin);
       const o = (await q(`DECLARE $id AS Utf8; SELECT uid FROM own WHERE id=$id;`, { $id: u8(id) }))[0]; if (!o) return reply(404, { error: "У заявки нет аккаунта автора" }, origin);
