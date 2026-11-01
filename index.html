@@ -441,7 +441,6 @@ html.tilt .card:hover{transform:perspective(900px) rotateX(var(--rx,0deg)) rotat
     <div class="ctl"><span class="lbl vid">Вид</span><div class="useg" id="lookSeg" role="group" aria-label="Тема"><button data-l="auto">Авто</button><button data-l="light" aria-label="Светлый"><span class="lg-only">Светлый</span><span class="sm-only" aria-hidden="true">☀</span></button><button data-l="dark" aria-label="Тёмный"><span class="lg-only">Тёмный</span><span class="sm-only" aria-hidden="true">☾</span></button></div></div>
     <label class="ctl"><span class="lbl">Эффекты</span><input type="checkbox" class="sw" id="fxSw" role="switch" aria-label="Визуальные эффекты"></label>
     <button class="ubtn" id="simpleBtn">Простая версия</button>
-    <div class="ctl ytw"><div id="ytWidget" aria-label="Язык сайта"></div></div>
   </div>
 </div></div>
 
@@ -1756,7 +1755,6 @@ $("lcMsgs").onclick=async e=>{const b=e.target.closest("[data-ldel]");if(!b||!is
   try{await db.collection("live").doc(u).set(Object.assign({},d,{msgs:ARR(d.msgs).filter(m=>m&&String(TS(m.ts))!==ts)}))}catch(_){toast("Не удалось удалить.")}};
 
 /* Перезагрузка страницы — всегда с начала; «назад» и свайпы закрывают всплывающие окна */
-setTimeout(()=>{if(!document.getElementById("ytWidget"))return;const s=document.createElement("script");s.src="https://translate.yandex.net/website-widget/v1/widget.js?widgetId=ytWidget&pageLang=ru&widgetTheme=dark&autoMode=false";s.async=true;document.body.append(s)},800);
 try{if("scrollRestoration" in history)history.scrollRestoration="manual"}catch(_){}
 (function(){const D=HTMLDialogElement.prototype,orig=D.showModal;let skip=0;
   D.showModal=function(){orig.call(this);const d=this;try{history.pushState({dlg:1},"")}catch(_){}
