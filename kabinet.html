@@ -187,8 +187,7 @@ async function show(){const b=$("box");
   const r2=el("div",null,"row"),np=el("a","Опубликовать новый проект","btn");np.href="kak-opublikovat.html";
   const out=mb("Выйти",async()=>{await A.out();show()});
   const del=mb("Удалить аккаунт",async()=>{if(!confirm("Удалить аккаунт? Ник, профиль и все способы входа будут стёрты. Уже опубликованные проекты останутся в каталоге под прежним ником."))return;const r=await A.call("delete");if(r.ok){A.drop();show()}else alert(r.error||"Не получилось")});
-  r2.append(np,out,del);b.append(el("h2","Выплаты"),el("p","Деньги за продажи получают только зарегистрированные авторы. Реквизиты для выплат запросим отдельно, когда появятся первые продажи.","muted"),r2)}
-  tabify(b)
+  r2.append(np,out,del);b.append(el("h2","Выплаты"),el("p","Деньги за продажи получают только зарегистрированные авторы. Реквизиты для выплат запросим отдельно, когда появятся первые продажи.","muted"),r2);tabify(b)}
 show();
 </script><script>/* Панель навигации «ИИгр»: назад, главная, игры, мастерская, кабинет; в играх — возврат в меню игры. На телефоне — крупные значки с подписями, как в приложениях */
 (function(){if(document.getElementById("iigry-nav"))return;const P=location.pathname,inG=/\/games\//.test(P),base=inG?"../":"./",here=P.replace(/^.*\//,"")||"index.html";
