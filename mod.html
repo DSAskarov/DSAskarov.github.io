@@ -216,11 +216,11 @@ $("bindAcc").onclick=async()=>{try{const j=await call({op:"bindacc",acc:ACC()});
 (function(){const KEY="iigry-mod-shut";let S={};try{S=JSON.parse(localStorage.getItem(KEY)||"{}")}catch(_){}
  const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(_){}};
  document.querySelectorAll("section.card[id]:not(#login)").forEach(sec=>{const h=sec.querySelector(":scope>h2");if(!h)return;h.classList.add("fold");h.tabIndex=0;h.setAttribute("role","button");
+  let sig="",t=null;const body=()=>[...sec.children].filter(x=>x!==h).reduce((n,x)=>n+x.querySelectorAll("*").length,0);
   const d=document.createElement("span");d.className="dot";d.setAttribute("aria-label","есть новое");h.append(d);
-  const set=v=>{sec.classList.toggle("shut",v);h.setAttribute("aria-expanded",!v);if(!v)h.classList.remove("new");S[sec.id]=v;save()};
+  const set=v=>{sec.classList.toggle("shut",v);h.setAttribute("aria-expanded",!v);if(!v){h.classList.remove("new");sig=String(body())}S[sec.id]=v;save()};
   set(S[sec.id]===undefined?["secMsgs","secScores","adm"].includes(sec.id):!!S[sec.id]);
   h.onclick=()=>set(!sec.classList.contains("shut"));h.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();h.click()}};
-  let sig="",t=null;const body=()=>[...sec.children].filter(x=>x!==h).map(x=>x.textContent).join("").length;
-  new MutationObserver(()=>{clearTimeout(t);t=setTimeout(()=>{const n=String(body());if(sig&&n!==sig&&sec.classList.contains("shut"))h.classList.add("new");sig=n},400)}).observe(sec,{childList:true,subtree:true,characterData:true})})})();
+  new MutationObserver(()=>{clearTimeout(t);t=setTimeout(()=>{const n=String(body());if(sig&&+n>+sig&&sec.classList.contains("shut"))h.classList.add("new");sig=n},400)}).observe(sec,{childList:true,subtree:true,characterData:true})})})();
 </script>
 </body></html>
