@@ -19,7 +19,16 @@ textarea{background:#0F0E13;color:var(--fg);border:1px solid var(--line);border-
 .badge{display:inline-block;border-radius:999px;padding:1px 8px;font-size:.75rem;font-weight:700;margin-right:6px}
 .msg{min-height:1.3em;color:var(--gold);margin:6px 0 0}.code{font:600 1rem ui-monospace,monospace;background:#0F0E13;border:1px dashed var(--gold);padding:8px;border-radius:8px;overflow-wrap:anywhere}
 [hidden]{display:none!important}
+#tChart .tg .tb{transform-box:fill-box;transform-origin:50% 100%;transition:transform .2s ease,filter .2s ease,opacity .2s ease;animation:tgrow .5s ease-out both}
+#tChart .tg .hl{transition:fill .15s ease}#tChart .tg:hover .hl:not(.on),#tChart .tg:focus .hl:not(.on){fill:rgba(255,255,255,.07)}
+#tChart .tg:hover .tb,#tChart .tg:focus .tb{transform:scaleY(1.06) scaleX(1.12);filter:brightness(1.25) drop-shadow(0 0 6px rgba(231,189,82,.55))}
+#tChart svg:hover .tg:not(:hover) .tb{opacity:.4}#tChart .tg:hover .dl{fill:#F4F4F6;font-weight:700}
+@keyframes tgrow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+@media (prefers-reduced-motion:reduce){#tChart .tg .tb{animation:none;transition:none}}
+.back{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 10px}.back a{display:inline-flex;align-items:center;gap:6px;min-height:38px;padding:0 14px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:#16141B;color:#F4F4F6;text-decoration:none;font-weight:600;font-size:14px}.back a:hover{border-color:#E7BD52;color:#E7BD52}
+
 </style></head><body><main>
+<nav class="back" aria-label="Назад на сайт"><a href="kabinet.html">← В кабинет</a><a href="./">🏠 На сайт</a></nav>
 <h1>Модерация <b>ИИгр</b></h1>
 <section class="card" id="login"><h2>Вход в модерацию</h2>
 <p>Если вы в команде и привязали аккаунт сайта — просто <a href="kabinet.html">войдите в кабинет</a>, и панель откроется сама, без кода.</p>
@@ -129,12 +138,12 @@ function drawT(){tip();const box=$("tChart");box.innerHTML="";const W=720,H=260,
   for(let i=0;i<=4;i++){const v=mx*i/4,y=T+ch-ch*i/4;g.append(sv("line",{x1:L,x2:W-R,y1:y,y2:y,stroke:"rgba(255,255,255,"+(i?.1:.3)+")","stroke-width":1}));g.append(sv("text",{x:L-6,y:y+4,"text-anchor":"end","font-size":11,fill:"#B9B6C2"},Math.round(v).toLocaleString("ru-RU")))}
   g.append(sv("text",{x:4,y:10,"font-size":10,fill:"#8E8A98"},TM==="uniq"?"чел.":"просм."));
   TR.forEach((x,i)=>{const v=x[TM],h=Math.max(v?2:0,v/mx*ch),bx=L+i*cw+cw*.15,bw=cw*.7,y=T+ch-h,sel=x.day===TSEL;
-    const grp=sv("g",{tabindex:0,role:"button","aria-label":dLab(x.day)+": "+x.uniq+" уникальных, "+x.views+" просмотров. Открыть разбивку",style:"cursor:pointer;outline:none"});
-    grp.append(sv("rect",{x:L+i*cw,y:T,width:cw,height:ch,fill:sel?"rgba(231,189,82,.1)":"transparent"}));
-    grp.append(sv("rect",{x:bx,y,width:bw,height:h,rx:Math.min(4,bw/2),fill:col,opacity:TSEL&&!sel?.55:1}));
+    const grp=sv("g",{tabindex:0,role:"button","aria-label":dLab(x.day)+": "+x.uniq+" уникальных, "+x.views+" просмотров. Открыть разбивку",style:"cursor:pointer;outline:none",class:"tg"});
+    grp.append(sv("rect",{x:L+i*cw,y:T,width:cw,height:ch,fill:sel?"rgba(231,189,82,.1)":"transparent",class:"hl"+(sel?" on":"")}));if(i)g.append(sv("line",{x1:L+i*cw,x2:L+i*cw,y1:T,y2:T+ch,stroke:"rgba(255,255,255,.06)","stroke-width":1}));
+    grp.append(sv("rect",{x:bx,y,width:bw,height:h,rx:Math.min(4,bw/2),fill:col,opacity:TSEL&&!sel?.55:1,class:"tb",style:"animation-delay:"+(i*25)+"ms"}));
     grp.onpointerenter=grp.onpointermove=e=>{if(e.pointerType==="touch")return;tip(e,x)};grp.onpointerleave=()=>tip();grp.onfocus=()=>tip(null,x,grp);grp.onblur=()=>tip();
     if(n<=14&&v)grp.append(sv("text",{x:bx+bw/2,y:y-4,"text-anchor":"middle","font-size":11,"font-weight":700,fill:"#F4F4F6"},v));
-    if(n<=14||i%3===0||i===n-1){grp.append(sv("text",{x:L+i*cw+cw/2,y:H-B+14,"text-anchor":"middle","font-size":11,fill:sel?"#E7BD52":"#B9B6C2"},x.day.slice(8)+"."+x.day.slice(5,7)));if(n<=14)grp.append(sv("text",{x:L+i*cw+cw/2,y:H-B+27,"text-anchor":"middle","font-size":9,fill:"#8E8A98"},wd(x.day)))}
+    if(n<=14||i%3===0||i===n-1){grp.append(sv("text",{x:L+i*cw+cw/2,y:H-B+14,"text-anchor":"middle","font-size":11,fill:sel?"#E7BD52":"#B9B6C2",class:"dl"},x.day.slice(8)+"."+x.day.slice(5,7)));if(n<=14)grp.append(sv("text",{x:L+i*cw+cw/2,y:H-B+27,"text-anchor":"middle","font-size":9,fill:"#8E8A98"},wd(x.day)))}
     const go=()=>{tip();TSEL=x.day;drawT();showDay(x.day)};grp.onclick=go;grp.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go()}};g.append(grp)});
   box.append(g);const t=TR[TR.length-1]||{uniq:0,views:0,fresh:0},S=TR.reduce((a,x)=>a+x[TM],0);
   $("tSum").textContent="Сегодня: "+t.uniq+" уникальных (новых "+t.fresh+"), "+t.views+" просмотров · за "+n+" дн.: "+S.toLocaleString("ru-RU")+(TM==="uniq"?" уникальных по дням":" просмотров");
