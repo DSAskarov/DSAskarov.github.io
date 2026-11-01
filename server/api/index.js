@@ -810,6 +810,7 @@ exports.handler = async (event, ctx) => {
     if (op === "prof") { if (b.set) { const p = profClean(b.set); await q(`DECLARE $u AS Utf8; DECLARE $j AS Utf8; UPSERT INTO uprof (uid, j) VALUES ($u, $j);`, { $u: u8(u.uid), $j: u8(JSON.stringify(p)) }); return reply(200, { ok: true, prof: p }, origin) }
       return reply(200, { prof: await profOf(u.uid) || profClean({}) }, origin) }
     if (op === "ways") { const ks = await authsOf(u.uid); return reply(200, { tg: !!u.chat, email: ks.filter(k => k.startsWith("e:")).map(mask), phone: ks.filter(k => k.startsWith("p:")).map(mask), keys: ks.filter(k => !k.startsWith("t:")).map(k => ({ id: Hs("k|" + k).slice(0, 16), t: k[0], m: mask(k) })) }, origin) }
+    if (op === "whoami") return reply(200, { nick: u.nick, named: !/^Автор-/.test(u.nick) }, origin);
     if (op === "purch") { // мои покупки: привязать оплаченные в этом браузере заказы и вернуть список
       for (const c of (Array.isArray(b.claim) ? b.claim : []).slice(0, 20)) { const id = String(c && c.id || ""); if (!ORDER_ID.test(id)) continue;
         const o = await syncOrder(id, await getOrder(id)); if (!o || o.st !== "succeeded" || !PRODUCTS[o.prod]) continue;
@@ -977,6 +978,17 @@ exports.handler = async (event, ctx) => {
       const r = await q(`DECLARE $k AS Utf8; SELECT id, subj, text, contact, st, who, note, ts FROM inbox WHERE kind=$k ORDER BY ts DESC LIMIT 100;`, { $k: TypedValues.utf8(kind) });
       const acc = {}; if (kind === "publish") for (const x of r) { const o = (await q(`DECLARE $id AS Utf8; SELECT o.pid AS pid, u.nick AS nick FROM own AS o LEFT JOIN users AS u ON o.uid = u.uid WHERE o.id=$id;`, { $id: u8(x.id) }))[0]; if (o) acc[x.id] = { nick: o.nick || "(аккаунт удалён)", pid: o.pid || "" } }
       return reply(200, { items: r.filter(x => !st || x.st === st).map(x => ({ acc: acc[x.id] || null, id: x.id, subj: x.subj, text: x.text, contact: can("contacts") ? x.contact : (x.contact ? "скрыто — видит только админ" : ""), st: x.st, stT: QST[x.st] || x.st, who: x.who, note: x.note, ts: num(x.ts) })) }, origin) }
+    if (op === "orders") { if (me.role !== "admin") return NO; // последние заказы и чьи они — чтобы вручную привязать покупку к аккаунту
+      const r = await q(`SELECT id, prod, st, ts FROM orders ORDER BY ts DESC LIMIT 30;`), out = [];
+      for (const o of r) { const p = (await q(`DECLARE $id AS Utf8; SELECT p.uid AS uid, u.nick AS nick FROM purch AS p LEFT JOIN users AS u ON p.uid = u.uid WHERE p.id=$id;`, { $id: u8(o.id) }))[0];
+        out.push({ id: o.id, prod: o.prod, title: (PRODUCTS[o.prod] || {}).title || o.prod, st: o.st, ts: num(o.ts), nick: p ? p.nick || "(без ника)" : "" }) }
+      return reply(200, { items: out }, origin) }
+    if (op === "giveorder") { if (me.role !== "admin") return NO; const id = String(b.id || ""), nick = clean(b.nick, 30); if (!ORDER_ID.test(id)) return reply(400, { error: "Неверный номер заказа" }, origin);
+      const o = await syncOrder(id, await getOrder(id)); if (!o || o.st !== "succeeded") return reply(400, { error: "Заказ не оплачен или не найден" }, origin);
+      const usr = (await q(`SELECT uid, nick FROM users;`)).find(x => String(x.nick || "").toLowerCase() === nick.toLowerCase()); if (!usr) return reply(400, { error: "Нет аккаунта с ником «" + nick + "»" }, origin);
+      await q(`DECLARE $id AS Utf8; DELETE FROM purch WHERE id=$id;`, { $id: u8(id) }).catch(() => {});
+      await q(`DECLARE $u AS Utf8; DECLARE $id AS Utf8; DECLARE $p AS Utf8; DECLARE $t AS Uint64; UPSERT INTO purch (uid, id, prod, ts) VALUES ($u, $id, $p, $t);`, { $u: u8(usr.uid), $id: u8(id), $p: u8(o.prod), $t: u64(Date.now()) });
+      await mlog(who, "привязал покупку к аккаунту", usr.nick + ": " + ((PRODUCTS[o.prod] || {}).title || o.prod)); return reply(200, { ok: true }, origin) }
     if (op === "smtp") { if (me.role !== "admin") return NO;
       if (b.get) return reply(200, { on: !!(await smtpPass()), src: SMTP_PASS ? "github" : "panel", user: SMTP_USER }, origin);
       const pw = String(b.pass || "").replace(/\s+/g, ""); if (!/^[A-Za-z0-9]{8,64}$/.test(pw)) return reply(400, { error: "Вставьте пароль приложения Яндекса: 16 латинских букв без пробелов." }, origin);
