@@ -3,7 +3,7 @@
 <meta name="description" content="Маркетплейс игр, приложений, модов и серверов, сделанных с ИИ. Без рекламы, с демо до покупки."><meta property="og:title" content="ИИгры онлайн"><meta property="og:description" content="Маркетплейс игр, приложений, модов и серверов, сделанных с ИИ. Без рекламы, с демо до покупки."><meta name="theme-color" content="#0B0A0E">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23B3141F'/%3E%3Ctext x='32' y='44' font-size='30' font-family='Arial' font-weight='700' text-anchor='middle' fill='%23F6DE8D'%3EИИ%3C/text%3E%3C/svg%3E">
 <style>*{box-sizing:border-box}html,body{margin:0}[hidden]{display:none!important}</style></head><body>
-<script>try{var l=localStorage.getItem("look");if(!l||l==="dark")document.documentElement.setAttribute("data-look","dark")}catch(e){document.documentElement.setAttribute("data-look","dark")}</script><title>ИИгры онлайн</title>
+<script>try{var l=localStorage.getItem("look2");if(!l||l==="dark")document.documentElement.setAttribute("data-look","dark")}catch(e){document.documentElement.setAttribute("data-look","dark")}</script><title>ИИгры онлайн</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;700;800;900&family=Golos+Text:wght@400;500;600;700&display=swap">
 <style>
@@ -1088,10 +1088,10 @@ const FXN=["Выкл","Мягко","Обычно","Максимум"];
 const fine=matchMedia("(hover:hover) and (pointer:fine)").matches;
 function isDark(){const l=R.getAttribute("data-look");if(l)return l==="dark";const t=R.getAttribute("data-theme");if(t)return t==="dark";return matchMedia("(prefers-color-scheme: dark)").matches}
 function applyFx(){const on=R.dataset.fx==="2"&&!R.classList.contains("simple");R.classList.toggle("torch",fine&&on&&isDark());R.classList.toggle("tilt",fine&&on&&!isDark())}
-function setLook(l){if(l==="auto")R.removeAttribute("data-look");else R.setAttribute("data-look",l);$("lookSeg").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.l===l));store.set("look",l);applyFx()}
+function setLook(l){if(l==="auto")R.removeAttribute("data-look");else R.setAttribute("data-look",l);$("lookSeg").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.l===l));store.set("look2",l);applyFx()}
 function setFx(on){R.dataset.fx=on?"2":"1";$("fxSw").checked=on;store.set("fx2",on?"1":"0");applyFx()}
 function setSimple(on){R.classList.toggle("simple",on);$("simpleBtn").innerHTML=on?'<span class="lg-only">Полная версия</span><span class="sm-only">Полная</span>':'<span class="lg-only">Простая версия</span><span class="sm-only">Простая</span>';store.set("simple",on?"1":"0");applyFx()}
-const look0=store.get("look","dark");setLook(LOOK[look0]?look0:"auto");
+const look0=store.get("look2","dark");setLook(LOOK[look0]?look0:"auto");
 setFx(store.get("fx2",matchMedia("(prefers-reduced-motion: reduce)").matches?"0":"1")==="1");
 setSimple(store.get("simple","0")==="1");
 $("lookSeg").onclick=e=>{const b=e.target.closest("[data-l]");if(b)setLook(b.dataset.l)};
