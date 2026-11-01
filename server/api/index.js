@@ -453,7 +453,7 @@ async function teamOfUser(u) { if (!u) return null;
   const t = (await q(`DECLARE $u AS Utf8; SELECT name, role FROM teamacc WHERE uid=$u;`, { $u: u8(u.uid) }))[0];
   const alive = async x => x && ROLES[x.role] && (x.role === "admin" || (await q(`DECLARE $n AS Utf8; SELECT role FROM team WHERE name=$n;`, { $n: u8(x.name) })).some(r => r.role === x.role));
   if (await alive(t)) return { name: t.name, role: t.role, acc: u.uid };
-  if (u.chat) { const g = (await q(`DECLARE $c AS Utf8; SELECT name, role FROM tg WHERE chat=$c;`, { $c: u8(u.chat) }))[0]; if (await alive(g)) return { name: g.name, role: g.role, acc: u.uid } }
+  if (u.chat) { const g = (await q(`DECLARE $c AS Utf8; SELECT name, role FROM tg WHERE chat=$c;`, { $c: u8(u.chat) }))[0]; if (await alive(g)) { if (!t) await q(`DECLARE $u AS Utf8; DECLARE $n AS Utf8; DECLARE $r AS Utf8; DECLARE $t AS Uint64; UPSERT INTO teamacc (uid,name,role,ts) VALUES ($u,$n,$r,$t);`, { $u: u8(u.uid), $n: u8(g.name), $r: u8(g.role), $t: TypedValues.uint64(Date.now()) }).catch(() => {}); return { name: g.name, role: g.role, acc: u.uid } } }
   return null }
 async function isAdminChat(chat) { const r = (await q(`DECLARE $c AS Utf8; SELECT role FROM tg WHERE chat=$c;`, { $c: u8(chat) }))[0]; return !!(r && r.role === "admin") }
 async function tellAuthor(id, text) { try { const o = (await q(`DECLARE $id AS Utf8; SELECT uid, title FROM own WHERE id=$id;`, { $id: u8(id) }))[0]; if (!o) return;
