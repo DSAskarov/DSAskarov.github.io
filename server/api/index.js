@@ -110,6 +110,7 @@ async function db(ctx) {
         await T("rate", [["pid", Types.UTF8], ["k", Types.UTF8], ["s", Types.UINT32], ["ts", Types.UINT64]], ["pid", "k"]);
         await T("mgon", [["d", Types.UTF8], ["ts", Types.UINT64]], ["d"]);
         await T("purch", [["uid", Types.UTF8], ["id", Types.UTF8], ["prod", Types.UTF8], ["ts", Types.UINT64]], ["uid", "id"]);
+        await T("dlscan", [["h", Types.UTF8], ["url", Types.UTF8], ["st", Types.UTF8], ["why", Types.UTF8], ["au", Types.UTF8], ["pid", Types.UTF8], ["ts", Types.UINT64]], ["h"]);
         await ensure("cfg", new TableDescription()
           .withColumn(new Column("k", Types.optional(Types.UTF8))).withColumn(new Column("v", Types.optional(Types.UTF8)))
           .withPrimaryKeys("k"));
@@ -288,6 +289,15 @@ async function sendMy(chat) { const u = await userByChat(chat), kb = { inline_ke
     (p.stat ? "\n   за 7 дней: " + p.stat.days.slice(-7).reduce((a, x) => a + x.u, 0) + " игроков, " + p.stat.days.slice(-7).reduce((a, x) => a + x.v, 0) + " запусков · сегодня " + p.stat.days[13].u : "\n   статистика появится после публикации"));
   return tgApi("sendMessage", { chat_id: chat, parse_mode: "HTML", disable_web_page_preview: true, text: "📊 <b>Мои проекты</b> (" + esc(u.nick) + ")\n\n" + (L.length ? L.join("\n") : "Пока нет проектов. Опубликовать: dsaskarov.github.io/kak-opublikovat.html"), reply_markup: kb }) }
 async function tgUpdate(u) {
+      if (u.callback_query && /^U[BA]:[0-9a-f]{32}$/.test(String(u.callback_query.data || ""))) { const cq = u.callback_query, chat = String(cq.message && cq.message.chat && cq.message.chat.id || ""), [k, h] = cq.data.split(":");
+        let t = "Нет доступа.";
+        if (await isAdminChat(chat)) { const row = (await q(`DECLARE $h AS Utf8; SELECT au, url FROM dlscan WHERE h=$h;`, { $h: u8(h) }))[0];
+          if (!row) t = "Запись не найдена.";
+          else if (k === "UA") { await q(`DECLARE $h AS Utf8; DECLARE $s AS Utf8; UPDATE dlscan SET st=$s WHERE h=$h;`, { $h: u8(h), $s: u8("ok") }); t = "✅ Ссылка разрешена вручную — скачивание снова работает." }
+          else { const usr = (await q(`SELECT uid, nick FROM users;`)).find(x => String(x.nick || "").toLowerCase() === String(row.au || "").toLowerCase());
+            if (!usr) t = "Аккаунт автора «" + esc(row.au || "—") + "» не найден — забаньте вручную в панели.";
+            else { await cfgSet("ban:" + usr.uid, "1"); await q(`DECLARE $u AS Utf8; DELETE FROM usess WHERE uid=$u;`, { $u: u8(usr.uid) }).catch(() => {}); t = "🚫 Автор «" + esc(usr.nick) + "» заблокирован: вход и публикация закрыты." } } }
+        await tgApi("answerCallbackQuery", { callback_query_id: cq.id, text: t.replace(/<[^>]+>/g, "").slice(0, 190) }); await tgApi("sendMessage", { chat_id: chat, text: t, parse_mode: "HTML" }); return }
       if (u.callback_query && String(u.callback_query.data || "") === "s:now") { const cq = u.callback_query, chat = String(cq.message && cq.message.chat && cq.message.chat.id || "");
         const me = (await q(`DECLARE $c AS Utf8; SELECT name, role FROM tg WHERE chat=$c;`, { $c: TypedValues.utf8(chat) }))[0]; if (me) await sendStats(chat, me);
         await tgApi("answerCallbackQuery", { callback_query_id: cq.id }); return }
@@ -436,8 +446,24 @@ async function visitPing(b, ua, isnew, views) { try { if (Date.now() > VISITS_UN
 const u8 = v => TypedValues.utf8(String(v)), u64 = v => TypedValues.uint64(v);
 const Hs = s => crypto.createHash("sha256").update(salt + "|acc|" + s).digest("hex");
 const dayNow = (o = 0) => new Date(Date.now() + 3 * 3600e3 - o * 864e5).toISOString().slice(0, 10);
+
+// Проверка ссылок на скачивание: VirusTotal (70+ антивирусов, нужен ключ) и база вредоносных ссылок URLhaus
+const VT_ENV = env("VT_API_KEY");
+async function vtKey() { if (VT_ENV) return VT_ENV; try { return smtpDec(await cfgGet("vt_enc")) } catch (_) { return "" } }
+async function scanUrl(url) { const why = []; let bad = false, checked = 0, pending = false; const to = () => AbortSignal.timeout(6000);
+  const k = await vtKey();
+  if (k) try { const id = Buffer.from(url).toString("base64url"), r = await fetch("https://www.virustotal.com/api/v3/urls/" + id, { headers: { "x-apikey": k }, signal: to() });
+    if (r.status === 404) { await fetch("https://www.virustotal.com/api/v3/urls", { method: "POST", headers: { "x-apikey": k, "Content-Type": "application/x-www-form-urlencoded" }, body: "url=" + encodeURIComponent(url), signal: to() }); pending = true }
+    else if (r.ok) { const j = await r.json(), st = (j.data && j.data.attributes && j.data.attributes.last_analysis_stats) || {}, m = (st.malicious || 0) + (st.suspicious || 0); checked++;
+      if (m > 0) { bad = true; why.push("VirusTotal: угрозу нашли " + m + " из " + (m + (st.harmless || 0) + (st.undetected || 0)) + " антивирусов") } } } catch (_) {}
+  try { const r = await fetch("https://urlhaus-api.abuse.ch/v1/url/", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "url=" + encodeURIComponent(url), signal: to() });
+    if (r.ok) { const j = await r.json(); if (j.query_status === "ok") { bad = true; why.push("URLhaus: ссылка в базе вредоносных") } else if (j.query_status === "no_results") checked++ } } catch (_) {}
+  return { st: bad ? "bad" : pending ? "pending" : checked ? "clean" : "unknown", why: why.join("; ") } }
+async function adminChats() { return (await q(`SELECT chat, role FROM tg;`)).filter(r => r.role === "admin").map(r => r.chat) }
+async function isBanned(uid) { return (await cfgGet("ban:" + uid)) === "1" }
 async function userOf(tok) { tok = String(tok || ""); if (!/^[A-Za-z0-9_-]{43}$/.test(tok)) return null;
   const s = (await q(`DECLARE $h AS Utf8; SELECT uid, exp FROM usess WHERE h=$h;`, { $h: u8(Hs("s|" + tok)) }))[0]; if (!s || num(s.exp) < Date.now()) return null;
+  if (await isBanned(s.uid)) return null;
   return (await q(`DECLARE $u AS Utf8; SELECT uid, chat, nick, ts FROM users WHERE uid=$u;`, { $u: u8(s.uid) }))[0] || null }
 async function userByChat(chat) { return (await q(`DECLARE $c AS Utf8; SELECT uid, chat, nick, ts FROM users WHERE chat=$c;`, { $c: u8(chat) }))[0] || null }
 async function pstat(pid, days) { const out = []; let u = 0, v = 0;
@@ -856,6 +882,21 @@ exports.handler = async (event, ctx) => {
       await q(`DECLARE $u AS Utf8; DELETE FROM mgames WHERE uid=$u; DELETE FROM uprof WHERE uid=$u; DELETE FROM users WHERE uid=$u;`, { $u: u8(u.uid) }); return reply(200, { ok: true }, origin) }
     return reply(400, { error: "bad" }, origin) }
   // Мини-игра на время технических работ: общая копилка звёзд, кто сейчас на сайте и короткие реакции
+  if (a === "dlcheck" && method === "POST") { const b = parse(event) || {}, url = String(b.url || "").trim(), pid = clean(b.pid, 40), au = clean(b.author, 40);
+    if (!/^https:\/\/[^\s"'<>`]{4,490}$/i.test(url)) return reply(400, { error: "Некорректная ссылка на файл" }, origin);
+    const now = Date.now(), h = crypto.createHash("sha256").update(url).digest("hex").slice(0, 32);
+    let row = (await q(`DECLARE $h AS Utf8; SELECT st, why, ts FROM dlscan WHERE h=$h;`, { $h: u8(h) }))[0];
+    const fresh = row && (row.st === "bad" || row.st === "ok" || (row.st === "clean" && num(row.ts) > now - 7 * 864e5));
+    if (!fresh) { const ip = ipOf(event, hd), lim = await limit("dl:" + ip, now, 0, 30); if (lim.err) return reply(429, { error: "Слишком много проверок — подождите минуту." }, origin);
+      await q(`DECLARE $ip AS Utf8; DECLARE $ts AS Uint64; DECLARE $c AS Uint64; UPSERT INTO rl (ip, ts, cnt) VALUES ($ip, $ts, $c);`, { $ip: u8("dl:" + ip), $ts: u64(now), $c: u64(lim.cnt + 1) });
+      const r = await scanUrl(url); row = { st: r.st, why: r.why, ts: now };
+      await q(`DECLARE $h AS Utf8; DECLARE $url AS Utf8; DECLARE $st AS Utf8; DECLARE $why AS Utf8; DECLARE $au AS Utf8; DECLARE $pid AS Utf8; DECLARE $ts AS Uint64; UPSERT INTO dlscan (h, url, st, why, au, pid, ts) VALUES ($h, $url, $st, $why, $au, $pid, $ts);`, { $h: u8(h), $url: u8(url), $st: u8(r.st), $why: u8(r.why), $au: u8(au), $pid: u8(pid), $ts: u64(now) });
+      if (r.st === "bad" && TG) for (const c of await adminChats()) await tgApi("sendMessage", { chat_id: c, parse_mode: "HTML", disable_web_page_preview: true,
+        text: "🦠 <b>Заблокировано скачивание</b>\nПроект: " + esc(pid || "—") + " · автор: @" + esc(au || "—") + "\nСсылка: <code>" + esc(url.slice(0, 300)) + "</code>\n" + esc(r.why),
+        reply_markup: { inline_keyboard: [[{ text: "🚫 Забанить автора", callback_data: "UB:" + h }], [{ text: "✅ Ложная тревога — разрешить", callback_data: "UA:" + h }]] } }).catch(() => {}) }
+    if (row.st === "bad") return reply(200, { ok: false, error: "Скачивание заблокировано: антивирусы нашли угрозу в этом файле. Команда уже проверяет." }, origin);
+    if (row.st === "pending") return reply(200, { ok: false, error: "Файл впервые проверяется антивирусами — это около минуты. Нажмите «Скачать» ещё раз чуть позже." }, origin);
+    return reply(200, { ok: true, note: row.st === "unknown" ? "Антивирусная проверка сейчас недоступна — будьте осторожны с файлом." : "" }, origin) }
   if (a === "mg" && method === "POST") { const b = parse(event) || {}, raw = String(b.d || ""); if (!/^[0-9a-f]{32}$/.test(raw)) return reply(400, { error: "bad" }, origin);
     const now = Date.now(), ip = ipOf(event, hd), lim = await limit("mg:" + ip, now, 0, 120); if (lim.err) return reply(429, { error: "Слишком часто" }, origin);
     await q(`DECLARE $ip AS Utf8; DECLARE $ts AS Uint64; DECLARE $c AS Uint64; UPSERT INTO rl (ip, ts, cnt) VALUES ($ip, $ts, $c);`, { $ip: u8("mg:" + ip), $ts: u64(now), $c: u64(lim.cnt + 1) });
@@ -989,6 +1030,11 @@ exports.handler = async (event, ctx) => {
       await q(`DECLARE $id AS Utf8; DELETE FROM purch WHERE id=$id;`, { $id: u8(id) }).catch(() => {});
       await q(`DECLARE $u AS Utf8; DECLARE $id AS Utf8; DECLARE $p AS Utf8; DECLARE $t AS Uint64; UPSERT INTO purch (uid, id, prod, ts) VALUES ($u, $id, $p, $t);`, { $u: u8(usr.uid), $id: u8(id), $p: u8(o.prod), $t: u64(Date.now()) });
       await mlog(who, "привязал покупку к аккаунту", usr.nick + ": " + ((PRODUCTS[o.prod] || {}).title || o.prod)); return reply(200, { ok: true }, origin) }
+    if (op === "vtkey") { if (me.role !== "admin") return NO;
+      if (b.get) return reply(200, { on: !!(await vtKey()) }, origin);
+      const k = String(b.key || "").trim(); if (!/^[0-9a-f]{64}$/.test(k)) return reply(400, { error: "Ключ VirusTotal — 64 символа (цифры и буквы a–f)." }, origin);
+      try { const r = await fetch("https://www.virustotal.com/api/v3/urls/" + Buffer.from("https://example.com/").toString("base64url"), { headers: { "x-apikey": k }, signal: AbortSignal.timeout(8000) }); if (r.status === 401 || r.status === 403) return reply(400, { error: "VirusTotal не принял ключ." }, origin) } catch (_) {}
+      await cfgSet("vt_enc", smtpEnc(k)); await mlog(who, "обновил ключ VirusTotal", ""); return reply(200, { ok: true }, origin) }
     if (op === "smtp") { if (me.role !== "admin") return NO;
       if (b.get) return reply(200, { on: !!(await smtpPass()), src: SMTP_PASS ? "github" : "panel", user: SMTP_USER }, origin);
       const pw = String(b.pass || "").replace(/\s+/g, ""); if (!/^[A-Za-z0-9]{8,64}$/.test(pw)) return reply(400, { error: "Вставьте пароль приложения Яндекса: 16 латинских букв без пробелов." }, origin);

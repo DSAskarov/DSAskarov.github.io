@@ -1,0 +1,147 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; font-src https://fonts.gstatic.com; img-src 'self' data: https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; connect-src https://functions.yandexcloud.net https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; frame-src https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; object-src 'none'; base-uri 'none'; form-action 'none'"><meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="description" content="Бесплатно: озвучка текста голосом и расшифровка речи в текст прямо в браузере, без регистрации."><meta property="og:title" content="Озвучка и расшифровка текста — ИИгры онлайн"><meta property="og:description" content="Бесплатно: озвучка текста голосом и расшифровка речи в текст прямо в браузере, без регистрации."><meta name="theme-color" content="#0B0A0E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23B3141F'/%3E%3Ctext x='32' y='44' font-size='30' font-family='Arial' font-weight='700' text-anchor='middle' fill='%23F6DE8D'%3EИИ%3C/text%3E%3C/svg%3E">
+<style>*{box-sizing:border-box}html,body{margin:0}[hidden]{display:none!important}</style></head><body>
+<style>
+:root{--bg:#0B0A0E;--card:#16141B;--line:rgba(255,255,255,.12);--fg:#F4F4F6;--mu:#B9B6C2;--gold:#E7BD52}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:"Golos Text",system-ui,sans-serif}
+.oz{max-width:860px;margin:0 auto;padding:16px;display:grid;gap:14px}
+.oz h1{margin:0;font:800 clamp(1.5rem,4vw,2.2rem) Rubik,system-ui,sans-serif}.oz h1 b{color:var(--gold)}
+.mu{color:var(--mu);margin:0;font-size:.95rem}
+.tabs{display:flex;gap:8px;flex-wrap:wrap}.tb{min-height:44px;padding:0 16px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--fg);font:700 15px/1 inherit;cursor:pointer}
+.tb[aria-selected=true]{border-color:var(--gold);color:var(--gold);background:rgba(231,189,82,.1)}
+.pane{display:grid;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px}.pane[hidden]{display:none}
+textarea{width:100%;box-sizing:border-box;min-height:180px;border-radius:12px;border:1px solid var(--line);background:#0F0E13;color:var(--fg);font:16px/1.5 inherit;padding:12px;resize:vertical}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+label.f{display:grid;gap:4px;font-size:.9rem;color:var(--mu);min-width:150px;flex:1}
+select,input[type=range]{min-height:42px;border-radius:12px;border:1px solid var(--line);background:#0F0E13;color:var(--fg);font:16px inherit;padding:0 10px}
+input[type=range]{padding:0;accent-color:#E7BD52}
+.b{min-height:46px;padding:0 18px;border-radius:12px;border:1px solid var(--line);background:#1E1B25;color:var(--fg);font:700 15px/1 inherit;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+.b.gold{background:linear-gradient(135deg,#F2C45A,#C98E2B);color:#1A1306;border:0}.b:disabled{opacity:.45;cursor:default}
+.mic{width:96px;height:96px;border-radius:50%;font-size:40px;justify-content:center;padding:0}
+.mic.rec{background:#E8333F;border-color:#E8333F;animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(232,51,63,.6)}70%{box-shadow:0 0 0 18px rgba(232,51,63,0)}100%{box-shadow:0 0 0 0 rgba(232,51,63,0)}}
+.st{min-height:1.3em;color:var(--gold);margin:0}.interim{color:var(--mu);font-style:italic;min-height:1.2em;margin:0}
+.warn{border:1px solid rgba(231,189,82,.4);background:rgba(231,189,82,.08);border-radius:12px;padding:10px 12px;margin:0;font-size:.92rem}
+.prog{height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}.prog i{display:block;height:100%;width:0;background:#E7BD52;transition:width .2s}
+</style>
+<main class="oz">
+  <h1>Озвучка <b>и расшифровка</b></h1>
+  <p class="mu">Бесплатное приложение «ИИгр»: превращает текст в речь и речь в текст прямо в браузере. Без регистрации и без отправки текста нам на сервер.</p>
+  <div class="tabs" role="tablist"><button class="tb" role="tab" id="t1" aria-selected="true">🔊 Текст → речь</button><button class="tb" role="tab" id="t2" aria-selected="false">🎙 Речь → текст</button></div>
+
+  <section class="pane" id="p1" role="tabpanel" aria-labelledby="t1">
+    <textarea id="txt" maxlength="20000" placeholder="Вставьте или напишите текст, который нужно озвучить…" aria-label="Текст для озвучки"></textarea>
+    <div class="row">
+      <label class="f">Голос<select id="voice"></select></label>
+      <label class="f">Скорость: <span id="rv">1.0</span><input type="range" id="rate" min="0.5" max="2" step="0.1" value="1"></label>
+      <label class="f">Высота: <span id="pv">1.0</span><input type="range" id="pitch" min="0.5" max="2" step="0.1" value="1"></label>
+    </div>
+    <div class="prog" aria-hidden="true"><i id="bar"></i></div>
+    <div class="row"><button class="b gold" id="play" type="button">▶ Озвучить</button><button class="b" id="pause" type="button" disabled>⏸ Пауза</button><button class="b" id="stop" type="button" disabled>⏹ Стоп</button></div>
+    <p class="st" id="s1" aria-live="polite"></p>
+    <p class="mu">Голоса берутся из вашего устройства: на телефонах и в Chrome обычно есть русские. Если голосов мало — в настройках устройства можно скачать новые (раздел «Синтез речи» или «Озвучивание»).</p>
+  </section>
+
+  <section class="pane" id="p2" role="tabpanel" aria-labelledby="t2" hidden>
+    <p class="warn" id="noRec" hidden>Ваш браузер не умеет распознавать речь. Откройте страницу в Chrome, Яндекс Браузере или Edge — на компьютере или Android.</p>
+    <div class="row" style="justify-content:center;gap:18px"><button class="b mic" id="mic" type="button" aria-label="Начать запись">🎙</button>
+      <label class="f" style="max-width:240px">Язык речи<select id="lang"><option value="ru-RU">Русский</option><option value="en-US">English</option><option value="uk-UA">Українська</option><option value="be-BY">Беларуская</option><option value="kk-KZ">Қазақша</option><option value="de-DE">Deutsch</option><option value="fr-FR">Français</option><option value="es-ES">Español</option><option value="it-IT">Italiano</option><option value="tr-TR">Türkçe</option><option value="zh-CN">中文</option></select></label></div>
+    <p class="st" id="s2" aria-live="polite">Нажмите на микрофон и говорите. Знаки препинания можно говорить словами: «точка», «запятая», «новая строка».</p>
+    <p class="interim" id="interim" aria-live="polite"></p>
+    <textarea id="out" placeholder="Здесь появится расшифровка — её можно править вручную" aria-label="Расшифровка"></textarea>
+    <div class="row"><button class="b gold" id="copy" type="button">📋 Копировать</button><button class="b" id="save" type="button">💾 Скачать .txt</button><button class="b" id="toTts" type="button">🔊 Озвучить расшифровку</button><button class="b" id="clr" type="button">🗑 Очистить</button></div>
+    <p class="mu">Распознавание делает сам браузер: в Chrome и Яндекс Браузере звук обрабатывают их собственные серверы распознавания. Мы запись не получаем и не храним.</p>
+  </section>
+</main>
+<script>
+(function(){const $=id=>document.getElementById(id),S=window.speechSynthesis;
+ const tab=n=>{[1,2].forEach(i=>{$("t"+i).setAttribute("aria-selected",i===n);$("p"+i).hidden=i!==n})};$("t1").onclick=()=>tab(1);$("t2").onclick=()=>tab(2);
+ // ---- текст → речь
+ let voices=[];function fill(){voices=S?S.getVoices():[];const v=$("voice"),old=v.value;v.innerHTML="";
+   const sorted=voices.slice().sort((a,b)=>(b.lang.startsWith("ru")-a.lang.startsWith("ru"))||a.name.localeCompare(b.name));
+   sorted.forEach(x=>{const o=document.createElement("option");o.value=x.name;o.textContent=x.name+" ("+x.lang+")";v.append(o)});if(old)v.value=old;
+   if(!voices.length){const o=document.createElement("option");o.textContent="Голоса загружаются…";v.append(o)}}
+ if(S){fill();S.onvoiceschanged=fill}else{$("s1").textContent="Ваш браузер не умеет озвучивать текст — попробуйте Chrome, Яндекс Браузер, Edge или Safari.";$("play").disabled=true}
+ $("rate").oninput=e=>$("rv").textContent=(+e.target.value).toFixed(1);$("pitch").oninput=e=>$("pv").textContent=(+e.target.value).toFixed(1);
+ const chunks=t=>{const out=[];t.replace(/\s+/g," ").trim().split(/(?<=[.!?…;:])\s+/).forEach(s=>{while(s.length>220){let k=s.lastIndexOf(" ",220);if(k<60)k=220;out.push(s.slice(0,k));s=s.slice(k).trim()}if(s)out.push(s)});return out};
+ let queue=[],idx=0,total=0;const ui=on=>{$("pause").disabled=$("stop").disabled=!on;$("play").disabled=on&&!S.paused};
+ function speakNext(){if(idx>=queue.length){ui(false);$("bar").style.width="100%";$("s1").textContent="✅ Готово";return}
+   const u=new SpeechSynthesisUtterance(queue[idx]),vv=voices.find(x=>x.name===$("voice").value);if(vv){u.voice=vv;u.lang=vv.lang}else u.lang="ru-RU";u.rate=+$("rate").value;u.pitch=+$("pitch").value;
+   u.onend=()=>{idx++;$("bar").style.width=Math.round(idx/total*100)+"%";speakNext()};u.onerror=e=>{if(e.error!=="interrupted"&&e.error!=="canceled"){$("s1").textContent="Не получилось озвучить: "+e.error;ui(false)}};S.speak(u)}
+ $("play").onclick=()=>{if(S.paused){S.resume();$("pause").textContent="⏸ Пауза";$("s1").textContent="🔊 Говорю…";ui(true);return}
+   const t=$("txt").value.trim();if(!t){$("s1").textContent="Сначала введите текст.";$("txt").focus();return}S.cancel();queue=chunks(t);idx=0;total=queue.length;$("bar").style.width="0";$("s1").textContent="🔊 Говорю…";ui(true);speakNext()};
+ $("pause").onclick=()=>{if(S.paused){S.resume();$("pause").textContent="⏸ Пауза";$("s1").textContent="🔊 Говорю…"}else{S.pause();$("pause").textContent="▶ Дальше";$("s1").textContent="⏸ Пауза";$("play").disabled=false}};
+ $("stop").onclick=()=>{idx=queue.length;S.cancel();ui(false);$("pause").textContent="⏸ Пауза";$("s1").textContent="Остановлено";$("bar").style.width="0"};
+ addEventListener("pagehide",()=>S&&S.cancel());
+ // ---- речь → текст
+ const SR=window.SpeechRecognition||window.webkitSpeechRecognition;let rec=null,on=false;
+ const P=[[/\s*точка с запятой/gi,";"],[/\s*точка/gi,"."],[/\s*запятая/gi,","],[/\s*вопросительный знак/gi,"?"],[/\s*восклицательный знак/gi,"!"],[/\s*двоеточие/gi,":"],[/\s*тире/gi," —"],[/\s*(новая строка|с новой строки)\s*/gi,"\n"]];
+ const tidy=t=>{P.forEach(([r,s])=>t=t.replace(r,s));return t.replace(/(^|[.!?\n]\s*)([а-яёa-z])/g,(m,a,b)=>a+b.toUpperCase())};
+ if(!SR){$("noRec").hidden=false;$("mic").disabled=true}
+ function start(){rec=new SR();rec.lang=$("lang").value;rec.continuous=true;rec.interimResults=true;
+   rec.onresult=e=>{let fin="",tmp="";for(let i=e.resultIndex;i<e.results.length;i++){const r=e.results[i];if(r.isFinal)fin+=r[0].transcript;else tmp+=r[0].transcript}
+     if(fin){const o=$("out"),sep=o.value&&!/[\s\n]$/.test(o.value)?" ":"";o.value=tidy(o.value+sep+fin.trim());o.scrollTop=o.scrollHeight}$("interim").textContent=tmp};
+   rec.onerror=e=>{const M={"not-allowed":"Разрешите доступ к микрофону в настройках браузера (значок замка у адреса сайта).","no-speech":"Ничего не слышно — говорите ближе к микрофону.","network":"Нет связи с сервером распознавания — проверьте интернет.","audio-capture":"Микрофон не найден."};$("s2").textContent=M[e.error]||"Ошибка: "+e.error;if(e.error==="not-allowed")stop()};
+   rec.onend=()=>{if(on){try{rec.start()}catch(_){}}else{$("interim").textContent=""}};
+   try{rec.start();on=true;$("mic").classList.add("rec");$("mic").textContent="⏹";$("mic").setAttribute("aria-label","Остановить запись");$("s2").textContent="🔴 Слушаю… Нажмите ещё раз, чтобы остановить."}catch(e){$("s2").textContent="Не удалось включить микрофон."}}
+ function stop(){on=false;if(rec)try{rec.stop()}catch(_){}$("mic").classList.remove("rec");$("mic").textContent="🎙";$("mic").setAttribute("aria-label","Начать запись");$("s2").textContent="Запись остановлена. Текст можно поправить, скопировать или скачать."}
+ $("mic").onclick=()=>on?stop():start();$("lang").onchange=()=>{if(on){stop();start()}};
+ $("copy").onclick=async()=>{try{await navigator.clipboard.writeText($("out").value);$("s2").textContent="📋 Скопировано"}catch(_){$("out").select();document.execCommand("copy")}};
+ $("save").onclick=()=>{const b=new Blob([$("out").value],{type:"text/plain;charset=utf-8"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="rasshifrovka.txt";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
+ $("toTts").onclick=()=>{$("txt").value=$("out").value;tab(1);$("play").click()};$("clr").onclick=()=>{if(confirm("Очистить расшифровку?"))$("out").value=""};
+})();
+</script>
+<script>/* Панель навигации «ИИгр»: назад, главная, игры, мастерская, кабинет; в играх — возврат в меню игры. На телефоне — крупные значки с подписями, как в приложениях */
+(function(){if(document.getElementById("iigry-nav"))return;const P=location.pathname,inG=/\/games\//.test(P),base=inG?"../":"./",here=P.replace(/^.*\//,"")||"index.html";
+ const st=document.createElement("style");st.textContent="#iigry-nav{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:8px 12px;box-sizing:border-box;background:rgba(11,10,14,.94);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:1px solid rgba(255,255,255,.1)}#iigry-nav::-webkit-scrollbar{display:none}"+
+  "#iigry-nav a,#iigry-nav button{flex:none;display:inline-flex;align-items:center;gap:5px;border:1px solid rgba(255,255,255,.14);background:#16141B;color:#F4F4F6;border-radius:999px;padding:0 14px;min-height:38px;font:600 13px/1.2 'Golos Text',system-ui,sans-serif;text-decoration:none;cursor:pointer;white-space:nowrap;-webkit-tap-highlight-color:transparent}"+
+  "#iigry-nav a[aria-current=page]{border-color:#E7BD52;color:#E7BD52}#iigry-nav .gm{border-color:rgba(231,189,82,.6)}#iigry-nav a:focus-visible,#iigry-nav button:focus-visible{outline:2px solid #E7BD52;outline-offset:2px}#iigry-nav .s{display:none}"+
+  "@media(max-width:600px){#iigry-nav{gap:2px;padding:4px 4px;justify-content:space-between}#iigry-nav a,#iigry-nav button{flex:1 1 0;min-width:0;flex-direction:column;justify-content:center;gap:2px;border:0;background:transparent;border-radius:12px;padding:4px 2px;min-height:50px;font-size:10.5px;color:#C9C6D2}"+
+  "#iigry-nav .i{font-size:20px;line-height:1}#iigry-nav .l{display:none}#iigry-nav .s{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis}#iigry-nav a[aria-current=page]{background:rgba(231,189,82,.14)}#iigry-nav .gm{background:rgba(231,189,82,.1);color:#E7BD52}#iigry-nav a:active,#iigry-nav button:active{background:rgba(255,255,255,.08)}}";
+ document.head.append(st);const n=document.createElement("nav");n.id="iigry-nav";n.setAttribute("aria-label","Навигация по сайту");
+ const fill=(el,i,l,s)=>{const a=document.createElement("span"),b=document.createElement("span"),c=document.createElement("span");a.className="i";a.textContent=i;a.setAttribute("aria-hidden","true");b.className="l";b.textContent=l;c.className="s";c.textContent=s;c.setAttribute("aria-hidden","true");el.append(a,b,c);el.setAttribute("aria-label",l)};
+ const b=document.createElement("button");b.type="button";fill(b,"←","Назад","Назад");b.onclick=()=>{if(document.referrer.indexOf(location.origin)===0&&history.length>1)history.back();else location.href=base};n.append(b);
+ if(inG||/igra\.html$/.test(P)){const m=document.createElement("button");m.type="button";m.className="gm";fill(m,"↩","В меню игры","В меню");m.title="Вернуться в начальное меню игры";m.onclick=()=>{if(window.IIGRY_TO_MENU)window.IIGRY_TO_MENU();else location.reload()};n.append(m)}
+ [["🏠","Главная","Главная",""],["🎮","Игры","Игры","#catalog"],["🛠","Мастерская","Создать","masterskaya.html"],["👤","Кабинет","Кабинет","kabinet.html"]].forEach(([i,l,s,h])=>{const a=document.createElement("a");fill(a,i,l,s);a.href=base+h;if(h&&h===here)a.setAttribute("aria-current","page");n.append(a)});
+ document.body.prepend(n);const pad=()=>{document.body.style.paddingTop="";const pt=parseFloat(getComputedStyle(document.body).paddingTop)||0;document.body.style.paddingTop=(pt+n.offsetHeight+6)+"px";document.documentElement.style.scrollPaddingTop=(n.offsetHeight+8)+"px"};pad();addEventListener("resize",pad)})();
+</script><script>/* Счётчик посещений «ИИгр»: случайный номер устройства хранится только в этом браузере; без cookie и слежки на других сайтах. Команда сайта не считается. */
+(function(){try{if(navigator.webdriver||localStorage.getItem("iigry-team")||localStorage.getItem("iigry-mod"))return;let d=localStorage.getItem("iigry-did");
+ if(!/^[0-9a-f]{32}$/.test(d||"")){const a=new Uint8Array(16);crypto.getRandomValues(a);d=[...a].map(x=>x.toString(16).padStart(2,"0")).join("");localStorage.setItem("iigry-did",d)}
+ const go=()=>{if(document.visibilityState!=="visible")return;document.removeEventListener("visibilitychange",go);fetch("https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av?a=hit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({d,p:location.pathname,r:document.referrer}),keepalive:true}).catch(()=>{})};
+ setTimeout(()=>{document.visibilityState==="visible"?go():document.addEventListener("visibilitychange",go)},2500)}catch(_){}})();
+/* Технические работы: пока сайт обновляется, показываем понятное предупреждение и сами обновляем страницу, когда всё готово */
+(function(){const API="https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av?a=status";let shown=null,was=false;
+ function show(j){if(shown)return;const d=document.createElement("div");d.setAttribute("role","alertdialog");d.setAttribute("aria-live","assertive");d.setAttribute("aria-label","Технические работы");
+  d.style.cssText="position:fixed;inset:0;z-index:2147483000;background:rgba(11,10,14,.92);display:grid;place-items:center;padding:12px;font-family:Golos Text,system-ui,sans-serif;overflow:auto";
+  const c=document.createElement("div");c.style.cssText="width:min(460px,100%);background:#16141B;border:1px solid #E7BD52;border-radius:16px;padding:18px;color:#F4F4F6;text-align:center;display:grid;gap:10px;box-sizing:border-box";
+  const E=(t,x,css)=>{const e=document.createElement(t);if(x!=null)e.textContent=x;if(css)e.style.cssText=css;return e};
+  const left=Math.max(1,Math.round((j.until-Date.now())/60000));
+  const h=E("b","🛠 Идут технические работы","font:800 1.25rem Rubik,system-ui,sans-serif;color:#E7BD52");
+  const p=E("p",(j.text||"Сайт обновляется — добавляем новое.")+" Обычно это пара минут (не дольше "+left+" мин). Страница обновится сама.","margin:0");
+  const w=E("p","⚠️ Пока идут работы, то, что вы вводите на сайте (тексты, профиль, результаты), может не сохраниться. Лучше подождите — а пока сыграйте с другими посетителями:","margin:0;font-size:.9rem;color:#FFD98A");
+  // мини-игра «Звездопад»: все, кто сейчас на сайте, ловят звёзды в общую копилку
+  const st=E("div",null,"display:flex;justify-content:space-between;gap:8px;font-size:.9rem;flex-wrap:wrap");const tot=E("span","⭐ Вместе: …"),me=E("span","Вы: 0"),on=E("span","👥 …");st.append(tot,me,on);
+  const f=E("div",null,"position:relative;height:190px;border-radius:12px;overflow:hidden;background:radial-gradient(1px 1px at 20% 30%,#fff,transparent),radial-gradient(1px 1px at 70% 60%,#fff,transparent),radial-gradient(1.5px 1.5px at 40% 80%,#fff,transparent),linear-gradient(160deg,#1B1546,#3B2A7A);touch-action:manipulation;user-select:none");
+  const feed=E("div",null,"min-height:22px;font-size:.88rem;color:#C9C6D2");const rx=E("div",null,"display:flex;gap:6px;justify-content:center;flex-wrap:wrap");
+  const R=["👋","😂","🔥","❤️","🚀","⭐"];let mine=0,pend=0,react=-1,alive=true;
+  const did=(()=>{let v="";try{v=localStorage.getItem("iigry-did")||""}catch(_){}if(!/^[0-9a-f]{32}$/.test(v)){const a=new Uint8Array(16);crypto.getRandomValues(a);v=[...a].map(x=>x.toString(16).padStart(2,"0")).join("")}return v})(),nick=(()=>{try{return (localStorage.getItem("iigry-nick")||"").slice(0,20)}catch(_){return ""}})()||"Гость";
+  R.forEach((e,i)=>{const b=E("button",e,"border:1px solid rgba(255,255,255,.15);background:#0F0E13;border-radius:10px;min-width:44px;min-height:40px;font-size:20px;cursor:pointer");b.type="button";b.setAttribute("aria-label","Отправить "+e);b.onclick=()=>{react=i;sync()};rx.append(b)});
+  function spawn(){if(!alive)return;const s=E("button",Math.random()<.15?"🌟":"⭐","position:absolute;border:0;background:transparent;cursor:pointer;font-size:30px;padding:6px;transition:transform .2s,opacity .2s;left:"+(5+Math.random()*80)+"%;top:-40px");s.type="button";s.setAttribute("aria-label","Поймать звезду");
+   const big=s.textContent==="🌟",dur=2600+Math.random()*1800;f.append(s);s.animate([{top:"-40px"},{top:"200px"}],{duration:dur,easing:"linear"}).onfinish=()=>s.remove();
+   s.onpointerdown=e=>{e.preventDefault();const v=big?5:1;mine+=v;pend+=v;me.textContent="Вы: "+mine;s.style.transform="scale(1.8)";s.style.opacity="0";s.onpointerdown=null;setTimeout(()=>s.remove(),200)};setTimeout(spawn,500+Math.random()*500)}
+  async function sync(){if(!did)return;const add=Math.min(pend,50),r=react;pend-=add;react=-1;
+   try{const x=await (await fetch(API.replace("a=status","a=mg"),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({d:did,add,r,n:nick})})).json();
+    if(x.total!=null){tot.textContent="⭐ Вместе: "+x.total.toLocaleString("ru-RU");on.textContent="👥 Сейчас здесь: "+x.online;feed.textContent=(x.feed||[]).slice(-4).map(z=>z.n+" "+z.e).join("  ·  ")||"Отправьте привет другим посетителям 👇"}}catch(_){pend+=add}}
+  const b=E("button","Закрыть и подождать","border:0;border-radius:10px;padding:10px 16px;font:700 1rem inherit;background:linear-gradient(135deg,#FF4A55,#A3101C);color:#fff;cursor:pointer;justify-self:center");b.type="button";
+  b.onclick=()=>{alive=false;clearInterval(t);d.remove();shown=null;bar()};c.append(h,p,w,st,f,feed,rx,b);d.append(c);document.body.append(d);shown=d;spawn();sync();const t=setInterval(()=>{if(document.body.contains(d))sync();else clearInterval(t)},3000)}
+ function bar(){if(document.getElementById("iigry-maint-bar"))return;const s=document.createElement("div");s.id="iigry-maint-bar";s.textContent="🛠 Идут технические работы — возможны недолгие сбои";s.style.cssText="position:fixed;left:0;right:0;bottom:0;z-index:2147482999;background:#E7BD52;color:#1A1306;font:700 .9rem Golos Text,system-ui,sans-serif;text-align:center;padding:6px";document.body.append(s)}
+ async function check(){try{const j=await (await fetch(API,{cache:"no-store"})).json();
+   if(j.maint){was=true;if(!document.getElementById("iigry-maint-bar"))show(j)}else if(was){location.reload()}}catch(_){} }
+ check();setInterval(check,20000)})();
+/* Ник аккаунта — один на чат и таблицы лидеров: подтягиваем его после входа, чтобы не сбивался */
+(function(){try{const t=localStorage.getItem("iigry-sess");if(!/^[A-Za-z0-9_-]{43}$/.test(t||""))return;const last=+localStorage.getItem("iigry-nick-ts")||0;if(Date.now()-last<36e5&&localStorage.getItem("iigry-nick"))return;
+ fetch("https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av?a=u",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({op:"whoami",token:t})}).then(r=>r.ok?r.json():null).then(j=>{if(j&&j.named&&j.nick){localStorage.setItem("iigry-nick",j.nick);localStorage.setItem("iigry-nick-ts",String(Date.now()))}}).catch(()=>{})}catch(_){}})();
+</script>
+</body></html>
