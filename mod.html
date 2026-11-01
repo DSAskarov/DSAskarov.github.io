@@ -19,6 +19,12 @@ textarea{background:#0F0E13;color:var(--fg);border:1px solid var(--line);border-
 .badge{display:inline-block;border-radius:999px;padding:1px 8px;font-size:.75rem;font-weight:700;margin-right:6px}
 .msg{min-height:1.3em;color:var(--gold);margin:6px 0 0}.code{font:600 1rem ui-monospace,monospace;background:#0F0E13;border:1px dashed var(--gold);padding:8px;border-radius:8px;overflow-wrap:anywhere}
 [hidden]{display:none!important}
+section.card>h2.fold{cursor:pointer;display:flex;align-items:center;gap:8px;user-select:none;margin-bottom:0}section.card>h2.fold::before{content:"▾";font-size:.8em;color:#B9B6C2;transition:transform .2s}section.card.shut>h2.fold::before{transform:rotate(-90deg)}
+section.card.shut>:not(h2){display:none!important}section.card:not(.shut)>h2.fold{margin-bottom:10px}section.card.shut{padding-top:12px;padding-bottom:12px}
+h2.fold .dot{width:10px;height:10px;border-radius:50%;background:#E7BD52;box-shadow:0 0 0 0 rgba(231,189,82,.7);animation:mdot 1.2s ease-in-out infinite;display:none}h2.fold.new .dot{display:inline-block}
+@keyframes mdot{0%{box-shadow:0 0 0 0 rgba(231,189,82,.7);opacity:1}70%{box-shadow:0 0 0 8px rgba(231,189,82,0);opacity:.6}100%{opacity:1}}
+#msgs,#ordList,#log,#scores{max-height:360px;overflow:auto;overscroll-behavior:contain}
+
 #tChart .tg .tb{transform-box:fill-box;transform-origin:50% 100%;transition:transform .2s ease,filter .2s ease,opacity .2s ease;animation:tgrow .5s ease-out both}
 #tChart .tg .hl{transition:fill .15s ease}#tChart .tg:hover .hl:not(.on),#tChart .tg:focus .hl:not(.on){fill:rgba(255,255,255,.07)}
 #tChart .tg:hover .tb,#tChart .tg:focus .tb{transform:scaleY(1.06) scaleX(1.12);filter:brightness(1.25) drop-shadow(0 0 6px rgba(231,189,82,.55))}
@@ -56,7 +62,7 @@ textarea{background:#0F0E13;color:var(--fg);border:1px solid var(--line);border-
 <ul class="muted" id="roleHelp" style="margin:8px 0 0;padding-left:18px"></ul></div>
 <div id="newcode" hidden><p class="muted">Код показывается один раз — передайте его модератору лично (не в общий чат):</p><div class="code" id="code"></div></div>
 <div class="list" id="mods"></div><div class="row" style="margin-top:10px"><button class="red" id="unban" hidden>Снять все баны</button></div></section>
-<section class="card"><h2>Журнал действий</h2><div class="list" id="log"></div></section>
+<section class="card" id="secLog"><h2>Журнал действий</h2><div class="list" id="log"></div></section>
 </div></main>
 <script>
 const API="https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av",$=id=>document.getElementById(id);
@@ -204,4 +210,15 @@ async function smtpLoad(){try{const j=await call({op:"smtp",get:1});$("smtpSt").
 $("smtpSave").onclick=async()=>{const b=$("smtpSave");b.disabled=true;$("smtpSt").textContent="— проверяем у Яндекса…";try{await call({op:"smtp",pass:$("smtpPw").value});$("smtpPw").value="";alertBox("Готово: почта подключена, коды входа будут приходить на почту.");smtpLoad()}catch(e){$("smtpSt").textContent="";alertBox(e.message)}b.disabled=false};
 $("bindAcc").onclick=async()=>{try{const j=await call({op:"bindacc",acc:ACC()});$("bindAcc").hidden=true;alertBox("Готово: аккаунт «"+j.nick+"» привязан. Теперь панель открывается без кода, если вы вошли в кабинет.")}catch(e){alertBox(e.message)}};
 (async()=>{const saved=st.get()||st.old();if(saved)login(saved);else await accLogin()})();
-</script></body></html>
+</script><script>/* Сворачиваемые разделы: состояние запоминается, а новые записи в свёрнутом разделе отмечаются мигающей жёлтой точкой */
+(function(){const KEY="iigry-mod-shut";let S={};try{S=JSON.parse(localStorage.getItem(KEY)||"{}")}catch(_){}
+ const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(_){}};
+ document.querySelectorAll("section.card[id]:not(#login)").forEach(sec=>{const h=sec.querySelector(":scope>h2");if(!h)return;h.classList.add("fold");h.tabIndex=0;h.setAttribute("role","button");
+  const d=document.createElement("span");d.className="dot";d.setAttribute("aria-label","есть новое");h.append(d);
+  const set=v=>{sec.classList.toggle("shut",v);h.setAttribute("aria-expanded",!v);if(!v)h.classList.remove("new");S[sec.id]=v;save()};
+  set(S[sec.id]===undefined?["secMsgs","secScores","adm"].includes(sec.id):!!S[sec.id]);
+  h.onclick=()=>set(!sec.classList.contains("shut"));h.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();h.click()}};
+  let sig="",t=null;const body=()=>[...sec.children].filter(x=>x!==h).map(x=>x.textContent).join("").length;
+  new MutationObserver(()=>{clearTimeout(t);t=setTimeout(()=>{const n=String(body());if(sig&&n!==sig&&sec.classList.contains("shut"))h.classList.add("new");sig=n},400)}).observe(sec,{childList:true,subtree:true,characterData:true})})})();
+</script>
+</body></html>
