@@ -102,6 +102,8 @@ async function db(ctx) {
         await T("uauth", [["k", Types.UTF8], ["uid", Types.UTF8], ["ts", Types.UINT64]], ["k"]);
         await T("ucode", [["k", Types.UTF8], ["h", Types.UTF8], ["exp", Types.UINT64], ["n", Types.UINT64], ["uid", Types.UTF8]], ["k"]);
         await T("uprof", [["uid", Types.UTF8], ["j", Types.UTF8]], ["uid"]);
+        await T("msess", [["h", Types.UTF8], ["name", Types.UTF8], ["role", Types.UTF8], ["exp", Types.UINT64]], ["h"]);
+        await T("mgames", [["uid", Types.UTF8], ["gid", Types.UTF8], ["j", Types.UTF8], ["ts", Types.UINT64]], ["uid", "gid"]);
         await T("pv", [["pid", Types.UTF8], ["day", Types.UTF8], ["dev", Types.UTF8], ["v", Types.UINT64]], ["pid", "day", "dev"]);
         await ensure("cfg", new TableDescription()
           .withColumn(new Column("k", Types.optional(Types.UTF8))).withColumn(new Column("v", Types.optional(Types.UTF8)))
@@ -253,8 +255,12 @@ const LINK_MOD = id => "https://dsaskarov.github.io/mod.html#i=" + encodeURIComp
 const QST = { new: "Новая", work: "В работе", ok: "Принято", no: "Отклонено" };
 const kh = k => crypto.createHash("sha256").update(salt + "|mod|" + k).digest("hex");
 const same = (a, b) => a.length === b.length && crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
+// Вход в модерацию: постоянный ключ вводится один раз и меняется на временный пропуск (12 часов) — в браузере ключ не хранится
 async function modAuth(k, ip) {
-  k = String(k || ""); if (k.length < 16 || k.length > 200) return null;
+  k = String(k || "");
+  if (/^ms\.[A-Za-z0-9_-]{43}$/.test(k)) { const r = (await q(`DECLARE $h AS Utf8; SELECT name, role, exp FROM msess WHERE h=$h;`, { $h: TypedValues.utf8(Hs("m|" + k)) }))[0];
+    return r && num(r.exp) > Date.now() && (r.role === "admin" || ROLES[r.role]) ? { role: r.role, name: r.name, tok: k } : null }
+  if (k.length < 16 || k.length > 200) return null;
   const fail = await q(`DECLARE $ip AS Utf8; SELECT ts, cnt FROM rl WHERE ip=$ip;`, { $ip: TypedValues.utf8("mf:" + ip) });
   if (fail[0] && Date.now() - num(fail[0].ts) < 3600e3 && num(fail[0].cnt) >= 10) return { blocked: true };
   if (ADMIN_KEY && same(k, ADMIN_KEY)) return { role: "admin", name: "Админ" };
@@ -792,11 +798,19 @@ exports.handler = async (event, ctx) => {
       if (id === "tg") { await q(`DECLARE $u AS Utf8; DECLARE $c AS Utf8; UPDATE users SET chat=$c WHERE uid=$u;`, { $u: u8(u.uid), $c: u8("") }); return reply(200, { ok: true }, origin) }
       const k = ks.find(x => Hs("k|" + x).slice(0, 16) === id); if (!k) return reply(404, { error: "Не найдено" }, origin);
       await q(`DECLARE $k AS Utf8; DELETE FROM uauth WHERE k=$k;`, { $k: u8(k) }); return reply(200, { ok: true }, origin) }
+    if (op === "games") { const r = await q(`DECLARE $u AS Utf8; SELECT gid, j, ts FROM mgames WHERE uid=$u;`, { $u: u8(u.uid) });
+      return reply(200, { games: r.map(x => ({ id: x.gid, ts: num(x.ts), cfg: (() => { try { return JSON.parse(x.j) } catch (_) { return null } })() })).filter(x => x.cfg) }, origin) }
+    if (op === "gsave") { const gid = String(b.gid || ""), j = JSON.stringify(b.cfg || null); if (!/^[a-z0-9]{6,20}$/.test(gid) || !b.cfg || typeof b.cfg !== "object" || j.length > 40000) return reply(400, { error: "Игра слишком большая или повреждена" }, origin);
+      const n = (await q(`DECLARE $u AS Utf8; SELECT gid FROM mgames WHERE uid=$u;`, { $u: u8(u.uid) })); if (n.length >= 50 && !n.some(x => x.gid === gid)) return reply(400, { error: "В аккаунте уже 50 игр — удалите ненужные" }, origin);
+      const ts = Math.min(Date.now(), Math.max(0, Math.round(Number(b.ts)) || Date.now()));
+      await q(`DECLARE $u AS Utf8; DECLARE $g AS Utf8; DECLARE $j AS Utf8; DECLARE $t AS Uint64; UPSERT INTO mgames (uid, gid, j, ts) VALUES ($u, $g, $j, $t);`, { $u: u8(u.uid), $g: u8(gid), $j: u8(j), $t: u64(ts) }); return reply(200, { ok: true }, origin) }
+    if (op === "gdel") { const gid = String(b.gid || ""); if (!/^[a-z0-9]{6,20}$/.test(gid)) return reply(400, { error: "bad" }, origin);
+      await q(`DECLARE $u AS Utf8; DECLARE $g AS Utf8; DELETE FROM mgames WHERE uid=$u AND gid=$g;`, { $u: u8(u.uid), $g: u8(gid) }); return reply(200, { ok: true }, origin) }
     if (op === "out") { await q(`DECLARE $h AS Utf8; DELETE FROM usess WHERE h=$h;`, { $h: u8(Hs("s|" + b.token)) }); return reply(200, { ok: true }, origin) }
     if (op === "delete") { const ss = await q(`DECLARE $u AS Utf8; SELECT h FROM usess WHERE uid=$u;`, { $u: u8(u.uid) });
       for (const x of ss) await q(`DECLARE $h AS Utf8; DELETE FROM usess WHERE h=$h;`, { $h: u8(x.h) });
       for (const k of await authsOf(u.uid)) await q(`DECLARE $k AS Utf8; DELETE FROM uauth WHERE k=$k;`, { $k: u8(k) });
-      await q(`DECLARE $u AS Utf8; DELETE FROM uprof WHERE uid=$u; DELETE FROM users WHERE uid=$u;`, { $u: u8(u.uid) }); return reply(200, { ok: true }, origin) }
+      await q(`DECLARE $u AS Utf8; DELETE FROM mgames WHERE uid=$u; DELETE FROM uprof WHERE uid=$u; DELETE FROM users WHERE uid=$u;`, { $u: u8(u.uid) }); return reply(200, { ok: true }, origin) }
     return reply(400, { error: "bad" }, origin) }
   if (a === "pv" && method === "POST") { const b = parse(event) || {}, raw = String(b.d || ""), pid = String(b.pid || "");
     if (!/^[0-9a-f]{32}$/.test(raw) || !/^[a-z0-9:_-]{1,40}$/i.test(pid)) return reply(400, { error: "bad" }, origin);
@@ -832,6 +846,10 @@ exports.handler = async (event, ctx) => {
     if (me && me.blocked) return reply(429, { error: "Слишком много неверных кодов. Попробуйте через час." }, origin);
     if (!me) return reply(403, { error: "Неверный код модератора." }, origin);
     const op = String(b.op || ""), R0 = ROLES[me.role], who = me.name + " (" + R0.t.toLowerCase() + ")", can = x => R0.p.includes(x);
+    if (op === "login") { if (me.tok) return reply(200, { token: me.tok }, origin); const tok = "ms." + crypto.randomBytes(32).toString("base64url"), exp = Date.now() + 12 * 3600e3;
+      await q(`DECLARE $h AS Utf8; DECLARE $n AS Utf8; DECLARE $r AS Utf8; DECLARE $e AS Uint64; UPSERT INTO msess (h, name, role, exp) VALUES ($h, $n, $r, $e);`, { $h: TypedValues.utf8(Hs("m|" + tok)), $n: TypedValues.utf8(me.name), $r: TypedValues.utf8(me.role), $e: TypedValues.uint64(exp) });
+      return reply(200, { token: tok, exp }, origin) }
+    if (op === "logout") { if (me.tok) await q(`DECLARE $h AS Utf8; DELETE FROM msess WHERE h=$h;`, { $h: TypedValues.utf8(Hs("m|" + me.tok)) }); return reply(200, { ok: true }, origin) }
     if (op === "me") return reply(200, { role: me.role, title: R0.t, name: me.name, perms: R0.p, ban: R0.ban, roles: Object.fromEntries(Object.entries(ROLES).filter(([k]) => k !== "admin").map(([k, v]) => [k, v.t])) }, origin);
     const NO = reply(403, { error: "Это не входит в ваш уровень доступа." }, origin);
     if (op === "tglink") { if (!TG) return reply(503, { error: "Бот ещё не подключён." }, origin);
@@ -920,7 +938,9 @@ exports.handler = async (event, ctx) => {
       await q(`DECLARE $n AS Utf8; DECLARE $h AS Utf8; DECLARE $r AS Utf8; DECLARE $ts AS Uint64; UPSERT INTO team (name, h, role, ts) VALUES ($n, $h, $r, $ts);`, { $n: TypedValues.utf8(name), $h: TypedValues.utf8(kh(code)), $r: TypedValues.utf8(role), $ts: TypedValues.uint64(Date.now()) });
       await mlog(who, "выдал код", name + " — " + ROLES[role].t); return reply(200, { code, name, title: ROLES[role].t }, origin) }
     if (op === "rm") { const name = clean(b.name, 30);
-      await q(`DECLARE $n AS Utf8; DELETE FROM team WHERE name=$n;`, { $n: TypedValues.utf8(name) }); await mlog(who, "отозвал доступ", name); return reply(200, { ok: true }, origin) }
+      await q(`DECLARE $n AS Utf8; DELETE FROM team WHERE name=$n;`, { $n: TypedValues.utf8(name) });
+      for (const x of (await q(`SELECT h, name FROM msess;`)).filter(x => x.name === name)) await q(`DECLARE $h AS Utf8; DELETE FROM msess WHERE h=$h;`, { $h: TypedValues.utf8(x.h) });
+      await mlog(who, "отозвал доступ", name); return reply(200, { ok: true }, origin) }
     return reply(400, { error: "Нет такой команды" }, origin);
   }
   if (a === "buy" && method === "POST") {

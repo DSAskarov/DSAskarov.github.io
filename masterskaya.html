@@ -3,7 +3,62 @@
 <meta name="description" content="Соберите свою игру без программирования: ловилка, бегалка, кликер, викторина. Бесплатно, прямо в браузере."><meta property="og:title" content="Мастерская игр — ИИгры онлайн"><meta property="og:description" content="Соберите свою игру без программирования: ловилка, бегалка, кликер, викторина. Бесплатно, прямо в браузере."><meta name="theme-color" content="#0B0A0E">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23B3141F'/%3E%3Ctext x='32' y='44' font-size='30' font-family='Arial' font-weight='700' text-anchor='middle' fill='%23F6DE8D'%3EИИ%3C/text%3E%3C/svg%3E">
 <style>*{box-sizing:border-box}html,body{margin:0}[hidden]{display:none!important}</style></head><body>
-<script id="engine-src">/* Движок «Мастерской ИИгр»: запускает игру по настройкам. Всё рисуется на холсте, текст игрока никогда не вставляется как HTML. */
+<script>/* Вход авторов «ИИгр»: Telegram-бот, почта или телефон — без паролей. Ключ входа хранится только в этом браузере и действует 30 дней. */
+window.IIGRY_ACC=(function(){
+  const API="https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av",K="iigry-sess";
+  const tok=()=>{try{return localStorage.getItem(K)||""}catch(_){return ""}};
+  const set=t=>{try{t?localStorage.setItem(K,t):localStorage.removeItem(K)}catch(_){}};
+  const post=async(a,body)=>{const r=await fetch(API+"?a="+a,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body||{})});let j={};try{j=await r.json()}catch(_){}return{r,j}};
+  async function call(op,x){const t=tok();if(!t)return{need:"login"};
+    try{const{r,j}=await post("u",Object.assign({op,token:t},x||{}));if(r.status===401){set("");return{need:"login"}}return r.ok?j:{error:j.error||"Ошибка сервера"}}catch(_){return{error:"Нет связи с сервером — попробуйте ещё раз"}}}
+  // Запрос с проверкой «не робот» (нужна для писем и кодов)
+  async function human(a,body){let pass=window.IIGRY_PASS?await IIGRY_PASS.need():"";let x=await post(a,Object.assign({pass},body));
+    if(x.r.status===401&&window.IIGRY_PASS){IIGRY_PASS.clear&&IIGRY_PASS.clear();pass=await IIGRY_PASS.need();x=await post(a,Object.assign({pass},body))}return x}
+  const mk=(t,x,c)=>{const e=document.createElement(t);if(x!=null)e.textContent=x;if(c)e.className=c;return e};
+  const lab=(t,i)=>{const l=mk("label",null,"f");l.style.cssText="display:grid;gap:4px;font-weight:600;font-size:.92rem";l.append(t,i);return l};
+  const inp=(ph,type,max)=>{const i=mk("input");i.placeholder=ph;i.type=type||"text";i.maxLength=max||100;return i};
+  // Telegram: кнопка ведёт в бота, бот спрашивает «Это вы?», сайт сам замечает подтверждение
+  function tgFlow(getSes,done,text){const box=mk("div");box.style.cssText="display:grid;gap:8px";
+    const p=mk("p",text);p.style.margin="0";
+    const a=mk("a","Открыть Telegram-бот","btn");a.target="_blank";a.rel="noopener";a.style.justifySelf="start";
+    const st=mk("p","Готовим ссылку…","muted");st.setAttribute("aria-live","polite");st.style.margin="0";box.append(p,a,st);
+    let ses=null,timer=null,t0=0;
+    async function fresh(){clearInterval(timer);timer=null;a.removeAttribute("href");
+      try{const j=await getSes();if(!/^https:\/\/t\.me\/iigry_bot\?start=in_[0-9a-f]{24}$/.test(j.link||""))throw new Error(j.error||"Нет связи с сервером.");
+        ses=j;a.href=j.link;st.textContent="Нажмите кнопку — откроется Telegram. Ссылка действует 10 минут."}
+      catch(e){st.textContent=(e.message||"Нет связи с сервером.")+" Обновите страницу через минуту."}}
+    async function check(){if(!ses)return;if(Date.now()-t0>10*60e3){fresh();return}
+      try{const{j}=await post("ucheck",{code:ses.code,poll:ses.poll});
+        if(j.st==="ok"&&/^[A-Za-z0-9_-]{43}$/.test(j.token||"")){clearInterval(timer);timer=null;set(j.token);st.textContent="✅ Готово!";done&&done()}
+        else if(j.st==="no"){st.textContent="Отменено в боте. Можно попробовать снова.";fresh()}
+        else if(j.st==="gone"){st.textContent="Ссылка устарела — сделали новую.";fresh()}}catch(_){}}
+    a.onclick=e=>{if(!ses){e.preventDefault();return}st.textContent="Ждём подтверждения: нажмите в боте «Да, это я»…";t0=Date.now();if(!timer)timer=setInterval(check,2500)};
+    document.addEventListener("visibilitychange",()=>{if(timer&&!document.hidden)check()});
+    fresh();return box}
+  // Почта или телефон: сначала код, потом вход
+  function codeFlow(kind,done){const box=mk("div");box.style.cssText="display:grid;gap:8px";
+    const em=kind==="e",i=em?inp("you@mail.ru","email",254):inp("+7 900 123-45-67","tel",20);i.autocomplete=em?"email":"tel";
+    const b=mk("button",em?"Прислать код на почту":"Прислать код","btn");b.type="button";b.style.justifySelf="start";
+    const c=inp("6 цифр","text",6);c.inputMode="numeric";c.autocomplete="one-time-code";const cl=lab("Код из "+(em?"письма":"Telegram-бота"),c);cl.hidden=true;
+    const go=mk("button","Войти","btn gold");go.type="button";go.hidden=true;go.style.justifySelf="start";
+    const st=mk("p",em?"Если аккаунта ещё нет — он создастся сам.":"Код придёт в Telegram-бот. Номер привязывается в кабинете.","muted");st.style.margin="0";st.setAttribute("aria-live","polite");
+    box.append(lab(em?"Почта":"Номер телефона",i),b,cl,go,st);
+    b.onclick=async()=>{b.disabled=true;st.textContent="Отправляем…";
+      try{const{r,j}=await human(em?"elogin":"plogin",em?{email:i.value}:{phone:i.value});
+        if(!r.ok)throw new Error(j.error||"Не получилось");st.textContent=j.note||"Код отправлен на почту. Проверьте и «Спам».";cl.hidden=false;go.hidden=false;c.focus()}
+      catch(e){st.textContent=e.message||"Нет связи с сервером"}setTimeout(()=>{b.disabled=false},em?60000:20000)};
+    go.onclick=async()=>{go.disabled=true;try{const{j}=await post(em?"echeck":"pcheck",em?{email:i.value,code:c.value.trim()}:{phone:i.value,code:c.value.trim()});
+        if(j.st==="ok"&&/^[A-Za-z0-9_-]{43}$/.test(j.token||"")){set(j.token);st.textContent="✅ Готово!";done&&done()}else st.textContent=j.error||"Не получилось"}catch(_){st.textContent="Нет связи с сервером"}go.disabled=false};
+    c.onkeydown=e=>{if(e.key==="Enter")go.click()};return box}
+  function login(done){const box=mk("div",null,"acc-login");box.style.cssText="display:grid;gap:10px";
+    const tabs=mk("div");tabs.setAttribute("role","tablist");tabs.style.cssText="display:flex;gap:6px;flex-wrap:wrap";const pane=mk("div");
+    const T=[["Telegram",()=>tgFlow(async()=>(await post("ulogin",{})).j,done,"Без пароля: бот @iigry_bot спросит «Это вы?», вы нажмёте «Да» — и сайт сам вас впустит.")],["Почта",()=>codeFlow("e",done)],["Телефон",()=>codeFlow("p",done)]];
+    const show=n=>{[...tabs.children].forEach((x,k)=>{x.setAttribute("aria-selected",k===n);x.className="btn"+(k===n?"":" ghost")});pane.innerHTML="";pane.append(T[n][1]())};
+    T.forEach((t,n)=>{const b=mk("button",t[0]);b.type="button";b.setAttribute("role","tab");b.onclick=()=>show(n);tabs.append(b)});
+    box.append(tabs,pane);show(0);return box}
+  const linkTg=done=>tgFlow(()=>call("linktg"),done,"Бот спросит «Это вы?» — нажмите «Да», и Telegram привяжется к этому аккаунту.");
+  return{tok,call,login,linkTg,human,out:async()=>{await call("out");set("")},drop:()=>set("")}})();
+</script><script id="engine-src">/* Движок «Мастерской ИИгр»: запускает игру по настройкам. Всё рисуется на холсте, текст игрока никогда не вставляется как HTML. */
 window.IIGRY_ENGINE=(function(){
 const T={
  catch:{n:"Ловилка",e:"🧺",d:"Ловите хорошее, уворачивайтесь от плохого. Управление — мышью, пальцем или стрелками."},
@@ -140,6 +195,7 @@ input[type=color]{height:42px;padding:3px}input[type=range]{accent-color:#E7BD52
 <h1>Мастерская <b>игр</b></h1>
 <p class="lead">Соберите свою игру без программирования: выберите шаблон, поменяйте героя, предметы, цвета и правила — игра рядом обновляется сразу. Всё сохраняется в этом браузере. Готовую игру можно отправить ссылкой, скачать файлом или опубликовать в каталоге.</p>
 <div class="row"><label class="f" style="flex:1;min-width:200px">Мои игры<select id="mine"></select></label><button class="btn ghost sm" id="newG" type="button">＋ Новая игра</button><button class="btn ghost sm" id="delG" type="button">Удалить</button></div>
+<p class="muted" id="cloud" aria-live="polite"></p>
 <div class="lay"><section class="step" id="ed"></section>
 <aside class="pv"><div id="game"></div><div class="row"><button class="btn ghost sm" id="re" type="button">▶ Перезапустить</button><button class="btn ghost sm" id="share" type="button">🔗 Ссылка</button><button class="btn ghost sm" id="dl" type="button">⬇ Скачать</button></div>
 <button class="btn" id="pub" type="button">🚀 Опубликовать в каталоге</button><p class="muted" id="msg" aria-live="polite">Подсказка: нажмите на игру, чтобы управлять с клавиатуры.</p></aside></div>
@@ -154,14 +210,27 @@ const dec=s=>{s=s.replace(/-/g,"+").replace(/_/g,"/");const b=atob(s),u=new Uint
 const newId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 function addGame(cfg){const id=newId();ST.games[id]={cfg:E.clean(cfg),ts:Date.now()};ST.cur=id;save();return id}
 {const m=/^#g=([\w-]{10,20000})$/.exec(location.hash);if(m){try{const c=dec(m[1]);c.title=String(c.title||"Игра").slice(0,30)+" (моя версия)";addGame(c);history.replaceState(null,"",location.pathname);setTimeout(()=>msg("Открыли копию игры — меняйте как хотите!"),50)}catch(_){}}}
-if(!ST.games[ST.cur]){const ids=Object.keys(ST.games);ST.cur=ids[0]||addGame(E.preset("catch"))}
+if(!ST.games[ST.cur]){const ids=Object.keys(ST.games);ST.cur=ids[0]||addGame(E.preset("catch"));if(!ids.length){ST.games[ST.cur].auto=1;save()}}
 let C=ST.games[ST.cur].cfg,G=null,tm=0;
 function play(){if(G)G.stop();G=E.run(C,$("game"))}
-function changed(redraw){C=E.clean(C);ST.games[ST.cur]={cfg:C,ts:Date.now()};save();clearTimeout(tm);tm=setTimeout(()=>{play();fillMine()},350);if(redraw)form()}
+// Облако: если вы вошли в аккаунт, игры сохраняются на сервер и открываются на любом устройстве
+const A=window.IIGRY_ACC;let cloud=false,ctm=0;ST.del=ST.del||[];
+function cmsg(t,login){const c=$("cloud");c.textContent=t;if(login){const a=el("a"," Войти →");a.href="kabinet.html";c.append(a)}}
+async function push(id){if(!cloud||!ST.games[id])return;const g=ST.games[id],r=await A.call("gsave",{gid:id,cfg:g.cfg,ts:g.ts});if(r.need){cloud=false;cmsg("Вход истёк — игры сохраняются только в этом браузере.",1)}else if(r.error)cmsg("⚠️ "+r.error);else cmsg("☁ Сохранено в аккаунте — игры доступны на любом устройстве")}
+async function sync(){if(!A||!A.tok()){cmsg("💾 Игры хранятся только в этом браузере. Войдите, чтобы они сохранялись в аккаунт и открывались на другом компьютере.",1);return}
+  cmsg("☁ Загружаем игры из аккаунта…");const j=await A.call("games");if(j.need){cmsg("💾 Игры хранятся только в этом браузере.",1);return}if(j.error){cmsg("⚠️ "+j.error+" Игры пока только в этом браузере.");return}
+  cloud=true;const rem={};(j.games||[]).forEach(g=>{rem[g.id]=g;if(ST.del.includes(g.id))return;const l=ST.games[g.id];if(!l||l.ts<g.ts)ST.games[g.id]={cfg:E.clean(g.cfg),ts:g.ts}});
+  for(const id of ST.del)await A.call("gdel",{gid:id});ST.del=[];
+  // стартовая игра, которую не трогали, не нужна, если в аккаунте уже есть игры
+  const rs=Object.values(rem).sort((a,b)=>b.ts-a.ts);for(const [id,l] of Object.entries(ST.games))if(l.auto&&rs.length){delete ST.games[id];if(ST.cur===id)ST.cur=rs[0].id}
+  for(const [id,l] of Object.entries(ST.games))if(!l.auto&&(!rem[id]||rem[id].ts<l.ts))await A.call("gsave",{gid:id,cfg:l.cfg,ts:l.ts});
+  if(!ST.games[ST.cur])ST.cur=Object.keys(ST.games)[0];
+  save();C=ST.games[ST.cur].cfg;fillMine();form();play();cmsg("☁ Игры сохраняются в аккаунт — открывайте их на любом устройстве после входа")}
+function changed(redraw){C=E.clean(C);ST.games[ST.cur]={cfg:C,ts:Date.now()};save();clearTimeout(tm);tm=setTimeout(()=>{play();fillMine()},350);clearTimeout(ctm);const id=ST.cur;ctm=setTimeout(()=>push(id),1500);if(redraw)form()}
 function fillMine(){const s=$("mine");s.innerHTML="";Object.entries(ST.games).sort((a,b)=>b[1].ts-a[1].ts).forEach(([id,g])=>{const o=el("option",g.cfg.hero+" "+g.cfg.title+" · "+E.T[g.cfg.t].n);o.value=id;s.append(o)});s.value=ST.cur}
 $("mine").onchange=e=>{ST.cur=e.target.value;C=ST.games[ST.cur].cfg;save();form();play()};
 $("newG").onclick=()=>{addGame(E.preset("catch"));C=ST.games[ST.cur].cfg;fillMine();form();play();msg("Новая игра создана")};
-$("delG").onclick=()=>{if(!confirm("Удалить игру «"+C.title+"»?"))return;delete ST.games[ST.cur];ST.cur=Object.keys(ST.games)[0]||addGame(E.preset("catch"));C=ST.games[ST.cur].cfg;save();fillMine();form();play()};
+$("delG").onclick=()=>{if(!confirm("Удалить игру «"+C.title+"»?"))return;const gone=ST.cur;delete ST.games[gone];if(cloud)A.call("gdel",{gid:gone});else ST.del.push(gone);ST.cur=Object.keys(ST.games)[0]||addGame(E.preset("catch"));C=ST.games[ST.cur].cfg;save();fillMine();form();play()};
 const lab=(t,c,h)=>{const l=el("label",null,"f");l.append(t,c);if(h)l.append(el("small",h,"muted"));return l};
 function inp(k,max,ph){const i=el("input");i.value=C[k];i.maxLength=max;if(ph)i.placeholder=ph;i.oninput=()=>{C[k]=i.value;changed()};return i}
 function num(k,a,b){const i=el("input");i.type="number";i.min=a;i.max=b;i.value=C[k];i.oninput=()=>{C[k]=i.value;changed()};return i}
@@ -212,7 +281,7 @@ $("pub").onclick=()=>{const gen={catch:"Аркада",dodge:"Аркада",runne
   if(W.ticket||!W.title||confirm("В мастере публикации есть незаконченный черновик «"+W.title+"». Заменить его этой игрой?")){
     try{localStorage.setItem("iigry-pubwiz",JSON.stringify({v:2,i:0,cat:"game",forG:"",par:"",chg:"",title:C.title,genre:gen,desc:"Игра «"+C.title+"», собранная в Мастерской ИИгр по шаблону «"+E.T[C.t].n+"». "+E.T[C.t].d,demo:link(),full:"",price:0,buy:"",open:true,con:"",own:false,pub:false,rules:false,pr:{},ticket:""}))}catch(_){}
     location.href="kak-opublikovat.html"}};
-fillMine();form();play();
+fillMine();form();play();sync();
 </script><script>/* Панель навигации «ИИгр»: назад, главная, игры, мастерская, кабинет; в играх — возврат в меню игры. На телефоне — крупные значки с подписями, как в приложениях */
 (function(){if(document.getElementById("iigry-nav"))return;const P=location.pathname,inG=/\/games\//.test(P),base=inG?"../":"./",here=P.replace(/^.*\//,"")||"index.html";
  const st=document.createElement("style");st.textContent="#iigry-nav{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:8px 12px;box-sizing:border-box;background:rgba(11,10,14,.94);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:1px solid rgba(255,255,255,.1)}#iigry-nav::-webkit-scrollbar{display:none}"+
@@ -227,7 +296,7 @@ fillMine();form();play();
  [["🏠","Главная","Главная",""],["🎮","Игры","Игры","#catalog"],["🛠","Мастерская","Создать","masterskaya.html"],["👤","Кабинет","Кабинет","kabinet.html"]].forEach(([i,l,s,h])=>{const a=document.createElement("a");fill(a,i,l,s);a.href=base+h;if(h&&h===here)a.setAttribute("aria-current","page");n.append(a)});
  document.body.prepend(n);const pad=()=>{document.body.style.paddingTop="";const pt=parseFloat(getComputedStyle(document.body).paddingTop)||0;document.body.style.paddingTop=(pt+n.offsetHeight+6)+"px";document.documentElement.style.scrollPaddingTop=(n.offsetHeight+8)+"px"};pad();addEventListener("resize",pad)})();
 </script><script>/* Счётчик посещений «ИИгр»: случайный номер устройства хранится только в этом браузере; без cookie и слежки на других сайтах. Команда сайта не считается. */
-(function(){try{if(navigator.webdriver||localStorage.getItem("iigry-mod"))return;let d=localStorage.getItem("iigry-did");
+(function(){try{if(navigator.webdriver||localStorage.getItem("iigry-team")||localStorage.getItem("iigry-mod"))return;let d=localStorage.getItem("iigry-did");
  if(!/^[0-9a-f]{32}$/.test(d||"")){const a=new Uint8Array(16);crypto.getRandomValues(a);d=[...a].map(x=>x.toString(16).padStart(2,"0")).join("");localStorage.setItem("iigry-did",d)}
  const go=()=>{if(document.visibilityState!=="visible")return;document.removeEventListener("visibilitychange",go);fetch("https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av?a=hit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({d,p:location.pathname,r:document.referrer}),keepalive:true}).catch(()=>{})};
  setTimeout(()=>{document.visibilityState==="visible"?go():document.addEventListener("visibilitychange",go)},2500)}catch(_){}})();
