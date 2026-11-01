@@ -133,7 +133,7 @@ const clean = (s, n) => String(s == null ? "" : s).replace(/[\u0000-\u0008\u000B
 
 // Ник: команда сайта (вошла в панель модерации) может писать под служебным ником с отметкой «✓ команда»; остальным — понятная ошибка вместо тихой замены
 async function nickFor(b, ip) { const raw = clean(b.n, 30).replace(/^@/, "");
-  if (b.k) { const me = await modAuth(b.k, ip); if (me && !me.blocked) { const base = (raw && !BAD.test(raw) && !LINK.test(raw) ? raw : me.name).replace(/\s*✓.*$/, "").slice(0, 20); return { n: base + " ✓ команда" } } }
+  if (b.k) { const me = await modAuth(b.k, ip); if (me && !me.blocked) { const base = (raw && !BAD.test(raw) && !LINK.test(raw) ? raw : me.name).replace(/\s*✓.*$/, "").slice(0, 20); return { n: base + " ✓ команда", team: me.name } } }
   if (raw && (RESV.test(raw) || BAD.test(raw) || LINK.test(raw))) return { err: "Ник «" + raw + "» нельзя использовать: он похож на ник команды сайта, содержит ссылку или запрещённое слово. Выберите другой." };
   return { n: nickOf(b) } }
 const nickOf = b => { const n = clean(b.n, 30).replace(/^@/, ""); return !n || RESV.test(n) || BAD.test(n) || LINK.test(n) ? "Аноним #" + clean(b.aid, 6).replace(/[^0-9A-Z]/g, "").slice(0, 6) : n };
@@ -366,14 +366,15 @@ async function notifyPrio(kind, p, text, id, cat) {
   try { const perm = KPERM[kind], rows = await q(`SELECT chat, role, cats FROM tg;`);
     await Promise.all(rows.filter(r => ROLES[r.role] && ROLES[r.role].p.includes(perm) && (p === 1 || String(r.cats || "").split(",").includes("imp"))).map(r => tgApi("sendMessage", { chat_id: r.chat, parse_mode: "HTML", disable_web_page_preview: true,
       text: (p === 1 ? "🔴 <b>КРИТИЧНО" : "🟠 <b>ВАЖНО") + " · " + esc(KINDS[kind]) + "</b>\n" + text, reply_markup: { inline_keyboard: [[{ text: "Ответить →", url: LINK_MOD(id) }]] } }))) } catch (e) { console.error("prio", e && e.message) } }
-async function notify(cat, text, id) {
-  if (!TG) return; try { const rows = await q(`SELECT chat, role, cats FROM tg;`);
-    await Promise.all(rows.filter(r => String(r.cats || "").split(",").includes(cat) && (CAT_ROLES[cat] || []).includes(r.role))
+// except — имя члена команды, которому не присылаем его собственные действия
+async function notify(cat, text, id, except) {
+  if (!TG) return; try { const rows = await q(`SELECT chat, role, cats, name FROM tg;`);
+    await Promise.all(rows.filter(r => String(r.cats || "").split(",").includes(cat) && (CAT_ROLES[cat] || []).includes(r.role) && !(except && r.name === except))
       .map(r => tgApi("sendMessage", Object.assign({ chat_id: r.chat, text: CATS[cat].split(" ")[0] + " " + text, parse_mode: "HTML", disable_web_page_preview: true },
         id ? { reply_markup: { inline_keyboard: [[{ text: "Открыть и ответить →", url: LINK_MOD(id) }]] } } : {})))) } catch (e) { console.error("notify", e && e.message) } }
 function catsKb(role, cats) { const on = String(cats || "").split(",");
   return { inline_keyboard: Object.keys(CATS).filter(c => CAT_ROLES[c].includes(role)).map(c => [{ text: (on.includes(c) ? "✅ " : "⬜️ ") + CATS[c].replace(/^\S+ /, ""), callback_data: "t:" + c }]) } }
-const mlog = (who, act, what) => notify(/^бан/.test(act) ? "ban" : "mod", "<b>" + esc(who) + "</b>: " + esc(act) + " — " + esc(String(what).slice(0, 200))).then(() => q(`DECLARE $ts AS Uint64; DECLARE $id AS Utf8; DECLARE $w AS Utf8; DECLARE $a AS Utf8; DECLARE $x AS Utf8; UPSERT INTO modlog (ts, id, who, act, what) VALUES ($ts, $id, $w, $a, $x);`,
+const mlog = (who, act, what) => notify(/^бан/.test(act) ? "ban" : "mod", "<b>" + esc(who) + "</b>: " + esc(act) + " — " + esc(String(what).slice(0, 200)), null, String(who).replace(/\s*\([^()]*\)$/, "")).then(() => q(`DECLARE $ts AS Uint64; DECLARE $id AS Utf8; DECLARE $w AS Utf8; DECLARE $a AS Utf8; DECLARE $x AS Utf8; UPSERT INTO modlog (ts, id, who, act, what) VALUES ($ts, $id, $w, $a, $x);`,
   { $ts: TypedValues.uint64(Date.now()), $id: TypedValues.utf8(crypto.randomBytes(4).toString("hex")), $w: TypedValues.utf8(who), $a: TypedValues.utf8(act), $x: TypedValues.utf8(String(what).slice(0, 300)) }));
 async function traffic(days) { const out = []; for (let i = days - 1; i >= 0; i--) { const day = new Date(Date.now() + 3 * 3600e3 - i * 864e5).toISOString().slice(0, 10);
     const r = await q(`DECLARE $d AS Utf8; SELECT COUNT(*) AS u, SUM(views) AS v, SUM(isnew) AS n FROM hits WHERE day=$d;`, { $d: TypedValues.utf8(day) });
@@ -658,12 +659,12 @@ exports.handler = async (event, ctx) => {
       UPSERT INTO rl (ip, ts, cnt) VALUES ($ip, $ts, $c);`,
       { $r: TypedValues.utf8(room), $ts: TypedValues.uint64(now), $id: TypedValues.utf8(id), $n: TypedValues.utf8(n), $t: TypedValues.utf8(t), $ip: TypedValues.utf8(ip), $c: TypedValues.uint64(cnt + 1) });
     const RN = { live: "Живой чат", "talk-site": "Обсуждения: сайт", "talk-industry": "Обсуждения: индустрия", "talk-wishes": "Обсуждения: пожелания" };
-    if (room !== "test" && CALL.test(t)) { const pr = prioOf("call", t); const cid = "c~" + room + "~" + now + "~" + id;
+    if (room !== "test" && !nk.team && CALL.test(t)) { const pr = prioOf("call", t); const cid = "c~" + room + "~" + now + "~" + id;
       await q(`DECLARE $id AS Utf8; DECLARE $k AS Utf8; DECLARE $s AS Utf8; DECLARE $t AS Utf8; DECLARE $st AS Utf8; DECLARE $e AS Utf8; DECLARE $ts AS Uint64;
         UPSERT INTO inbox (id, kind, subj, text, contact, st, who, note, ts) VALUES ($id, $k, $s, $t, $e, $st, $e, $e, $ts);`,
         { $id: TypedValues.utf8(cid), $k: TypedValues.utf8("call"), $s: TypedValues.utf8(n + " в «" + RN[room] + "»"), $t: TypedValues.utf8(t), $st: TypedValues.utf8("new"), $e: TypedValues.utf8(""), $ts: TypedValues.uint64(now) });
       await notifyPrio("call", pr, "<b>" + esc(n) + "</b> в «" + RN[room] + "»: " + esc(t.slice(0, 300)), cid, "chat") }
-    if (room !== "test") await notify("chat", "<b>" + esc(n) + "</b> в «" + ({ live: "Живой чат", "talk-site": "Обсуждения: сайт", "talk-industry": "Обсуждения: индустрия", "talk-wishes": "Обсуждения: пожелания" })[room] + "»: " + esc(t.slice(0, 300)));
+    if (room !== "test") await notify("chat", "<b>" + esc(n) + "</b> в «" + ({ live: "Живой чат", "talk-site": "Обсуждения: сайт", "talk-industry": "Обсуждения: индустрия", "talk-wishes": "Обсуждения: пожелания" })[room] + "»: " + esc(t.slice(0, 300)), null, nk.team);
     return reply(200, { ok: true, item: { ts: now, id, n, t } }, origin);
   }
   if (a === "top" && method === "GET") {
