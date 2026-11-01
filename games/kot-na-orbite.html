@@ -10,7 +10,7 @@
 :root{--bg:#07060C;--panel:#14121B;--fg:#F4F4F6;--muted:#B9B6C2;--red:#E8333F;--gold:#E7BD52;--line:rgba(255,255,255,.12);color-scheme:dark;
   --f-d:"Rubik","Golos Text",system-ui,sans-serif;--f-b:"Golos Text",system-ui,sans-serif}
 *{box-sizing:border-box}
-html,body{height:100%}
+html,body{min-height:100%}html{background:#0B0A0E}body{background-repeat:no-repeat!important;background-color:var(--bg,#0B0A0E)}
 body{margin:0;background:radial-gradient(60vmax 60vmax at 20% 0%,rgba(179,20,31,.22),transparent 60%),var(--bg);color:var(--fg);font-family:var(--f-b);display:grid;place-items:center;padding:16px max(16px,env(safe-area-inset-right,0px)) 16px max(16px,env(safe-area-inset-left,0px))}
 .game{width:min(680px,100%);display:grid;gap:12px}.game>.credit{order:6}.game>.lb{order:4}
 h1{font:800 clamp(1.4rem,5vw,2rem)/1.1 var(--f-d);margin:0}
