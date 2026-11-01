@@ -113,7 +113,13 @@ async function show(){const b=$("box");
   const pv=el("div");const rp=()=>{pv.innerHTML="";pv.append(preview(nick.value.trim()||u.nick,P))};
   if(j.team){const t=el("div",null,"proj");t.style.borderColor="#E7BD52";t.append(el("h3",(j.team.role==="admin"?"👑 Вы — админ сайта":"🛡 Вы в команде сайта: "+j.team.title)));
     t.append(el("p",j.team.role==="admin"?"Вам доступно всё: заявки, жалобы, модерация чата и рейтингов, команда, статистика и выгрузки. Панель открывается без ключа, пока вы вошли в аккаунт.":"Панель модерации открывается без кода, пока вы вошли в этот аккаунт.","muted"));
-    const r=el("div",null,"row"),a=el("a",j.team.role==="admin"?"Открыть панель админа →":"Открыть панель модерации →","btn gold");a.href="mod.html";r.append(a);t.append(r);b.append(t)}
+    const r=el("div",null,"row"),a=el("a",j.team.role==="admin"?"Открыть панель админа →":"Открыть панель модерации →","btn gold");a.href="mod.html";r.append(a);t.append(r);
+    if(j.team.role==="admin"){const S="https://dsaskarov.github.io/",L=[["Игры сайта",[["Лови баги","games/lovi-bagi.html"],["Звёздный почтальон","games/pochtalyon.html"],["Быстрее нейросети","games/bystree.html"],["Кот на орбите","games/kot-na-orbite.html"],["Ферма слов","games/ferma-slov.html"],["Оригами","games/origami.html"],["Меню (пример приложения)","games/menu.html"]]],
+      ["Страницы сайта",[["Главная",""],["Каталог","#catalog"],["Мастерская игр","masterskaya.html"],["Публикация проекта","kak-opublikovat.html"],["Личный кабинет","kabinet.html"],["Панель админа","mod.html"],["Ответы на обращения","otvet.html"],["Профиль автора","avtor.html#"+encodeURIComponent(u.nick)]]]];
+      const det=el("details"),sm=el("summary","🔗 Адреса игр и страниц сайта");sm.style.cssText="cursor:pointer;font-weight:700;padding:6px 0";det.append(sm);t.append(det);
+      L.forEach(([h,items])=>{det.append(el("p",h,"sub"));items.forEach(([n,path])=>{const u2=S+path,row=el("div",null,"wayrow"),a2=el("a",n);a2.href=u2;a2.target="_blank";a2.rel="noopener";const sp=el("span");sp.style.cssText="display:grid;min-width:0;flex:1 1 180px";const sm2=el("small",u2.replace("https://",""),"muted");sm2.style.overflowWrap="anywhere";sp.append(a2,sm2);
+        const cp=el("button","Копировать","btn ghost sm");cp.type="button";cp.onclick=async()=>{try{await navigator.clipboard.writeText(u2);cp.textContent="✓ Скопировано"}catch(_){prompt("Скопируйте адрес:",u2)}setTimeout(()=>cp.textContent="Копировать",1500)};cp.style.flex="none";row.append(sp,cp);det.append(row)})})}
+    b.append(t)}
   b.append(el("h2","Профиль"),pv);
   // ник
   const nick=inp(u.named?u.nick:"",30,"Ваш ник, например PixelFox"),sv=el("button","Сохранить ник","btn gold sm");sv.type="button";const nm=el("p","","muted");nick.oninput=rp;
@@ -166,7 +172,7 @@ async function show(){const b=$("box");
       d.forEach(x=>{const i=el("i");i.style.height=Math.round(x.u/mx*100)+"%";i.title=x.day.split("-").reverse().slice(0,2).join(".")+": "+x.u+" игроков, "+x.v+" запусков";sp.append(i)});
       c.append(n,sp,el("p","Игроки — разные устройства за день, запуски — все открытия. Команда сайта не считается.","muted"))}
     else c.append(el("p","Статистика начнёт копиться, когда проект появится в каталоге.","muted"));
-    if(!/^g:/.test(p.id)){const a=el("a","Статус и ответы →");a.href="otvet.html#"+p.id;c.append(a)}
+    if(!/^g:/.test(p.id)){const a=el("a","Статус и ответы →");a.href="otvet.html#"+p.id;c.append(a)}else{const a=el("a","Открыть игру →");a.href="games/"+p.id.slice(2)+".html";a.target="_blank";a.rel="noopener";c.append(a)}
     b.append(c)});
   const r2=el("div",null,"row"),np=el("a","Опубликовать новый проект","btn");np.href="kak-opublikovat.html";
   const out=mb("Выйти",async()=>{await A.out();show()});

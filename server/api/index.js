@@ -446,7 +446,7 @@ async function myProjects(uid, site) {
   for (const o of own.sort((a, b) => num(b.ts) - num(a.ts)).slice(0, 50)) {
     const i = (await q(`DECLARE $id AS Utf8; SELECT st FROM inbox WHERE id=$id;`, { $id: u8(o.id) }))[0], c = (await q(`DECLARE $id AS Utf8; SELECT verdict FROM checks WHERE id=$id;`, { $id: u8(o.id) }))[0];
     res.push({ id: o.id, title: String(o.title || "").replace(/^Новый проект: /, ""), pid: o.pid || "", st: i ? QST[i.st] || i.st : "", check: c ? c.verdict : "", ts: num(o.ts), stat: o.pid ? await pstat(o.pid, 14) : null }) }
-  if (site) for (const g of ["lovi-bagi", "pochtalyon", "bystree", "kot-na-orbite", "ferma-slov", "origami", "menu"]) res.push({ id: "g:" + g, title: "Игра сайта: " + g, pid: "g:" + g, st: "опубликовано", check: "ok", stat: await pstat("g:" + g, 14) });
+  if (site) for (const g of ["lovi-bagi", "pochtalyon", "bystree", "kot-na-orbite", "ferma-slov", "origami", "menu"]) res.push({ id: "g:" + g, title: "Игра сайта: " + ({ "lovi-bagi": "Лови баги", pochtalyon: "Звёздный почтальон", bystree: "Быстрее нейросети", "kot-na-orbite": "Кот на орбите", "ferma-slov": "Ферма слов", origami: "Оригами", menu: "Меню" }[g] || g), pid: "g:" + g, st: "опубликовано", check: "ok", stat: await pstat("g:" + g, 14) });
   return res }
 // Команда по аккаунту сайта: привязка кодом в панели модерации или автоматически — по Telegram, подключённому к боту команды
 async function teamOfUser(u) { if (!u) return null;
