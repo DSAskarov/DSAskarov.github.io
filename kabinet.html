@@ -75,8 +75,12 @@ h1{font:900 clamp(1.5rem,6vw,2.2rem)/1.1 Rubik,sans-serif;margin:6px 0 0}h1 b{co
 @keyframes kspin{to{transform:rotate(360deg)}}@keyframes kshim{from{background-position:200% 0}to{background-position:-200% 0}}@keyframes kfade{50%{opacity:.5}}
 @media (prefers-reduced-motion:reduce){.kspin,.sk,.kmsg{animation:none}}
 label.f{display:grid;gap:4px;font-weight:600;font-size:.92rem}
-.ktabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 0 14px;padding-bottom:2px}.ktabs::-webkit-scrollbar{display:none}.ktab{flex:none;min-height:42px;padding:0 14px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:#16141B;color:#F4F4F6;font:600 14px/1 inherit;cursor:pointer}.ktab[aria-selected=true]{border-color:#E7BD52;color:#E7BD52;background:rgba(231,189,82,.1)}
-.psave{position:sticky;bottom:12px;z-index:5;box-shadow:0 8px 24px rgba(0,0,0,.45);margin-top:10px}
+.ktabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 0 14px;padding-bottom:2px}.ktabs::-webkit-scrollbar{display:none}.ktab{flex:none;min-height:42px;padding:0 14px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:#16141B;color:#F4F4F6;font:600 14px/1 'Golos Text',system-ui,sans-serif;cursor:pointer}.ktab[aria-selected=true]{border-color:#E7BD52;color:#E7BD52;background:rgba(231,189,82,.1)}
+.psave{margin-top:6px;min-height:48px;justify-self:start;padding:0 22px}
+.kpane{display:grid;gap:14px;align-content:start}.kpane>h2{margin:0}.kpane label.f{gap:6px}.kpane .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.nickrow{display:flex;gap:8px;align-items:end;flex-wrap:wrap}.nickrow label{flex:1 1 220px}.nickrow .btn,.nickrow button{min-height:44px;padding:0 16px}
+.kpane .btn,.kpane button.btn{min-height:42px;display:inline-flex;align-items:center;justify-content:center}
+@media(max-width:600px){.psave{justify-self:stretch;width:100%}.nickrow button{width:100%}.kpane .row>.btn{flex:1 1 auto}}
 details.more{border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:0 14px;margin:6px 0}details.more[open]{padding-bottom:12px}details.more>summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:700;list-style:none}details.more>summary::before{content:"▸";margin-right:8px;transition:transform .2s}details.more[open]>summary::before{transform:rotate(90deg)}details.more>summary::-webkit-details-marker{display:none}
 input,select,textarea{background:#0F0E13;color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:10px;font:400 1rem "Golos Text";width:100%}
 textarea{min-height:90px;resize:vertical}
@@ -139,7 +143,7 @@ async function show(){const b=$("box");
   // ник
   const nick=inp(u.named?u.nick:"",30,"Ваш ник, например PixelFox"),sv=el("button","Сохранить ник","btn gold sm");sv.type="button";const nm=el("p","","muted");nick.oninput=rp;
   sv.onclick=async()=>{sv.disabled=true;const r=await A.call("nick",{nick:nick.value});sv.disabled=false;if(r.nick)show();else nm.textContent=r.error||"Не получилось"};
-  const nr=el("div",null,"row");nr.append(sv);b.append(lab(u.named?"Ник на сайте":"Выберите постоянный ник — без него публиковать нельзя",nick),nr,nm);
+  const nr=el("div",null,"nickrow");nr.append(lab(u.named?"Ник на сайте":"Выберите постоянный ник — без него публиковать нельзя",nick),sv);b.append(nr,nm);
   if(u.named){const o=el("a","Мой открытый профиль →");o.href="avtor.html#"+encodeURIComponent(u.nick);b.append(o)}
   // аватар и фон
   const pa=el("div",null,"pick");AV.forEach(x=>{const k=el("button",x);k.type="button";k.setAttribute("aria-label","Аватар "+x);k.setAttribute("aria-pressed",P.av===x);k.onclick=()=>{P.av=x;[...pa.children].forEach(y=>y.setAttribute("aria-pressed",y===k));rp()};pa.append(k)});
@@ -264,7 +268,7 @@ show();
   async function sync(){if(!did)return;const add=Math.min(pend,50),r=react;pend-=add;react=-1;
    try{const x=await (await fetch(API.replace("a=status","a=mg"),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({d:did,add,r,n:nick})})).json();
     if(x.total!=null){tot.textContent="⭐ Вместе: "+x.total.toLocaleString("ru-RU");on.textContent="👥 Сейчас здесь: "+x.online;feed.textContent=(x.feed||[]).slice(-4).map(z=>z.n+" "+z.e).join("  ·  ")||"Отправьте привет другим посетителям 👇"}}catch(_){pend+=add}}
-  const b=E("button","Закрыть и подождать","border:0;border-radius:10px;padding:10px 16px;font:700 1rem inherit;background:linear-gradient(135deg,#FF4A55,#A3101C);color:#fff;cursor:pointer;justify-self:center");b.type="button";
+  const b=E("button","Закрыть и подождать","border:0;border-radius:10px;padding:10px 16px;font:700 1rem 'Golos Text',system-ui,sans-serif;background:linear-gradient(135deg,#FF4A55,#A3101C);color:#fff;cursor:pointer;justify-self:center");b.type="button";
   b.onclick=()=>{alive=false;clearInterval(t);d.remove();shown=null;bar()};c.append(h,p,w,st,f,feed,rx,b);d.append(c);document.body.append(d);shown=d;spawn();sync();const t=setInterval(()=>{if(document.body.contains(d))sync();else clearInterval(t)},3000)}
  function bar(){if(document.getElementById("iigry-maint-bar"))return;const s=document.createElement("div");s.id="iigry-maint-bar";s.textContent="🛠 Идут технические работы — возможны недолгие сбои";s.style.cssText="position:fixed;left:0;right:0;bottom:0;z-index:2147482999;background:#E7BD52;color:#1A1306;font:700 .9rem Golos Text,system-ui,sans-serif;text-align:center;padding:6px";document.body.append(s)}
  async function check(){try{const j=await (await fetch(API,{cache:"no-store"})).json();

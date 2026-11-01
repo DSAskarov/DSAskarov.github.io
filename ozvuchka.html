@@ -9,15 +9,15 @@ body{margin:0;background:var(--bg);color:var(--fg);font-family:"Golos Text",syst
 .oz{max-width:860px;margin:0 auto;padding:16px;display:grid;gap:14px}
 .oz h1{margin:0;font:800 clamp(1.5rem,4vw,2.2rem) Rubik,system-ui,sans-serif}.oz h1 b{color:var(--gold)}
 .mu{color:var(--mu);margin:0;font-size:.95rem}
-.tabs{display:flex;gap:8px;flex-wrap:wrap}.tb{min-height:44px;padding:0 16px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--fg);font:700 15px/1 inherit;cursor:pointer}
+.tabs{display:flex;gap:8px;flex-wrap:wrap}.tb{min-height:44px;padding:0 16px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--fg);font:700 15px/1 'Golos Text',system-ui,sans-serif;cursor:pointer}
 .tb[aria-selected=true]{border-color:var(--gold);color:var(--gold);background:rgba(231,189,82,.1)}
 .pane{display:grid;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px}.pane[hidden]{display:none}
-textarea{width:100%;box-sizing:border-box;min-height:180px;border-radius:12px;border:1px solid var(--line);background:#0F0E13;color:var(--fg);font:16px/1.5 inherit;padding:12px;resize:vertical}
-.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-label.f{display:grid;gap:4px;font-size:.9rem;color:var(--mu);min-width:150px;flex:1}
-select,input[type=range]{min-height:42px;border-radius:12px;border:1px solid var(--line);background:#0F0E13;color:var(--fg);font:16px inherit;padding:0 10px}
-input[type=range]{padding:0;accent-color:#E7BD52}
-.b{min-height:46px;padding:0 18px;border-radius:12px;border:1px solid var(--line);background:#1E1B25;color:var(--fg);font:700 15px/1 inherit;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+textarea{width:100%;box-sizing:border-box;min-height:180px;border-radius:12px;border:1px solid var(--line);background:#0F0E13;color:var(--fg);font:16px/1.5 'Golos Text',system-ui,sans-serif;padding:12px;resize:vertical}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:end}
+label.f{display:grid;grid-template-rows:auto auto;gap:6px;font-size:.9rem;color:var(--mu);min-width:170px;flex:1;align-content:end}label.f b{color:var(--fg)}
+select,input[type=range]{min-height:42px;border-radius:12px;border:1px solid var(--line);background:#0F0E13;color:var(--fg);font:16px 'Golos Text',system-ui,sans-serif;padding:0 10px}
+input[type=range]{padding:0;accent-color:#E7BD52;height:42px;border:0;background:transparent;width:100%}select{width:100%}
+.b{min-height:46px;padding:0 18px;border-radius:12px;border:1px solid var(--line);background:#1E1B25;color:var(--fg);font:700 15px/1 'Golos Text',system-ui,sans-serif;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
 .b.gold{background:linear-gradient(135deg,#F2C45A,#C98E2B);color:#1A1306;border:0}.b:disabled{opacity:.45;cursor:default}
 .mic{width:96px;height:96px;border-radius:50%;font-size:40px;justify-content:center;padding:0}
 .mic.rec{background:#E8333F;border-color:#E8333F;animation:pulse 1.2s ease-in-out infinite}
@@ -34,9 +34,9 @@ input[type=range]{padding:0;accent-color:#E7BD52}
   <section class="pane" id="p1" role="tabpanel" aria-labelledby="t1">
     <textarea id="txt" maxlength="20000" placeholder="Вставьте или напишите текст, который нужно озвучить…" aria-label="Текст для озвучки"></textarea>
     <div class="row">
-      <label class="f">Голос<select id="voice"></select></label>
-      <label class="f">Скорость: <span id="rv">1.0</span><input type="range" id="rate" min="0.5" max="2" step="0.1" value="1"></label>
-      <label class="f">Высота: <span id="pv">1.0</span><input type="range" id="pitch" min="0.5" max="2" step="0.1" value="1"></label>
+      <label class="f"><span>Голос</span><select id="voice"></select></label>
+      <label class="f"><span>Скорость: <b id="rv">1.0</b></span><input type="range" id="rate" min="0.5" max="2" step="0.1" value="1"></label>
+      <label class="f"><span>Высота: <b id="pv">1.0</b></span><input type="range" id="pitch" min="0.5" max="2" step="0.1" value="1"></label>
     </div>
     <div class="prog" aria-hidden="true"><i id="bar"></i></div>
     <div class="row"><button class="b gold" id="play" type="button">▶ Озвучить</button><button class="b" id="pause" type="button" disabled>⏸ Пауза</button><button class="b" id="stop" type="button" disabled>⏹ Стоп</button></div>
@@ -47,7 +47,7 @@ input[type=range]{padding:0;accent-color:#E7BD52}
   <section class="pane" id="p2" role="tabpanel" aria-labelledby="t2" hidden>
     <p class="warn" id="noRec" hidden>Ваш браузер не умеет распознавать речь. Откройте страницу в Chrome, Яндекс Браузере или Edge — на компьютере или Android.</p>
     <div class="row" style="justify-content:center;gap:18px"><button class="b mic" id="mic" type="button" aria-label="Начать запись">🎙</button>
-      <label class="f" style="max-width:240px">Язык речи<select id="lang"><option value="ru-RU">Русский</option><option value="en-US">English</option><option value="uk-UA">Українська</option><option value="be-BY">Беларуская</option><option value="kk-KZ">Қазақша</option><option value="de-DE">Deutsch</option><option value="fr-FR">Français</option><option value="es-ES">Español</option><option value="it-IT">Italiano</option><option value="tr-TR">Türkçe</option><option value="zh-CN">中文</option></select></label></div>
+      <label class="f" style="max-width:240px"><span>Язык речи</span><select id="lang"><option value="ru-RU">Русский</option><option value="en-US">English</option><option value="uk-UA">Українська</option><option value="be-BY">Беларуская</option><option value="kk-KZ">Қазақша</option><option value="de-DE">Deutsch</option><option value="fr-FR">Français</option><option value="es-ES">Español</option><option value="it-IT">Italiano</option><option value="tr-TR">Türkçe</option><option value="zh-CN">中文</option></select></label></div>
     <p class="st" id="s2" aria-live="polite">Нажмите на микрофон и говорите. Знаки препинания можно говорить словами: «точка», «запятая», «новая строка».</p>
     <p class="interim" id="interim" aria-live="polite"></p>
     <textarea id="out" placeholder="Здесь появится расшифровка — её можно править вручную" aria-label="Расшифровка"></textarea>
@@ -134,7 +134,7 @@ input[type=range]{padding:0;accent-color:#E7BD52}
   async function sync(){if(!did)return;const add=Math.min(pend,50),r=react;pend-=add;react=-1;
    try{const x=await (await fetch(API.replace("a=status","a=mg"),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({d:did,add,r,n:nick})})).json();
     if(x.total!=null){tot.textContent="⭐ Вместе: "+x.total.toLocaleString("ru-RU");on.textContent="👥 Сейчас здесь: "+x.online;feed.textContent=(x.feed||[]).slice(-4).map(z=>z.n+" "+z.e).join("  ·  ")||"Отправьте привет другим посетителям 👇"}}catch(_){pend+=add}}
-  const b=E("button","Закрыть и подождать","border:0;border-radius:10px;padding:10px 16px;font:700 1rem inherit;background:linear-gradient(135deg,#FF4A55,#A3101C);color:#fff;cursor:pointer;justify-self:center");b.type="button";
+  const b=E("button","Закрыть и подождать","border:0;border-radius:10px;padding:10px 16px;font:700 1rem 'Golos Text',system-ui,sans-serif;background:linear-gradient(135deg,#FF4A55,#A3101C);color:#fff;cursor:pointer;justify-self:center");b.type="button";
   b.onclick=()=>{alive=false;clearInterval(t);d.remove();shown=null;bar()};c.append(h,p,w,st,f,feed,rx,b);d.append(c);document.body.append(d);shown=d;spawn();sync();const t=setInterval(()=>{if(document.body.contains(d))sync();else clearInterval(t)},3000)}
  function bar(){if(document.getElementById("iigry-maint-bar"))return;const s=document.createElement("div");s.id="iigry-maint-bar";s.textContent="🛠 Идут технические работы — возможны недолгие сбои";s.style.cssText="position:fixed;left:0;right:0;bottom:0;z-index:2147482999;background:#E7BD52;color:#1A1306;font:700 .9rem Golos Text,system-ui,sans-serif;text-align:center;padding:6px";document.body.append(s)}
  async function check(){try{const j=await (await fetch(API,{cache:"no-store"})).json();
