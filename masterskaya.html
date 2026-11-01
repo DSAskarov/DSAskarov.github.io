@@ -193,6 +193,7 @@ input[type=color]{height:42px;padding:3px}input[type=range]{accent-color:#E7BD52
 .sub{font:800 1rem Rubik,sans-serif;margin:4px 0 0}.btn.sm{padding:7px 11px;font-size:.85rem}#game{background:#000;border-radius:16px}</style>
 <main>
 <h1>Мастерская <b>игр</b></h1>
+<p style="margin:6px 0 0"><a href="konstruktor.html" style="color:#E7BD52;font-weight:700">🧱 Новое: конструктор уровней — рисуйте свой платформер и сразу играйте →</a></p>
 <p class="lead">Соберите свою игру без программирования: выберите шаблон, поменяйте героя, предметы, цвета и правила — игра рядом обновляется сразу. Всё сохраняется в этом браузере. Готовую игру можно отправить ссылкой, скачать файлом или опубликовать в каталоге.</p>
 <div class="row"><label class="f" style="flex:1;min-width:200px">Мои игры<select id="mine"></select></label><button class="btn ghost sm" id="newG" type="button">＋ Новая игра</button><button class="btn ghost sm" id="delG" type="button">Удалить</button></div>
 <p class="muted" id="cloud" aria-live="polite"></p>
@@ -219,7 +220,7 @@ function cmsg(t,login){const c=$("cloud");c.textContent=t;if(login){const a=el("
 async function push(id){if(!cloud||!ST.games[id])return;const g=ST.games[id],r=await A.call("gsave",{gid:id,cfg:g.cfg,ts:g.ts});if(r.need){cloud=false;cmsg("Вход истёк — игры сохраняются только в этом браузере.",1)}else if(r.error)cmsg("⚠️ "+r.error);else cmsg("☁ Сохранено в аккаунте — игры доступны на любом устройстве")}
 async function sync(){if(!A||!A.tok()){cmsg("💾 Игры хранятся только в этом браузере. Войдите, чтобы они сохранялись в аккаунт и открывались на другом компьютере.",1);return}
   cmsg("☁ Загружаем игры из аккаунта…");const j=await A.call("games");if(j.need){cmsg("💾 Игры хранятся только в этом браузере.",1);return}if(j.error){cmsg("⚠️ "+j.error+" Игры пока только в этом браузере.");return}
-  cloud=true;const rem={};(j.games||[]).forEach(g=>{rem[g.id]=g;if(ST.del.includes(g.id))return;const l=ST.games[g.id];if(!l||l.ts<g.ts)ST.games[g.id]={cfg:E.clean(g.cfg),ts:g.ts}});
+  cloud=true;const rem={};(j.games||[]).filter(g=>!(g.cfg&&g.cfg.kind==="level")).forEach(g=>{rem[g.id]=g;if(ST.del.includes(g.id))return;const l=ST.games[g.id];if(!l||l.ts<g.ts)ST.games[g.id]={cfg:E.clean(g.cfg),ts:g.ts}});
   for(const id of ST.del)await A.call("gdel",{gid:id});ST.del=[];
   // стартовая игра, которую не трогали, не нужна, если в аккаунте уже есть игры
   const rs=Object.values(rem).sort((a,b)=>b.ts-a.ts);for(const [id,l] of Object.entries(ST.games))if(l.auto&&rs.length){delete ST.games[id];if(ST.cur===id)ST.cur=rs[0].id}
