@@ -1,7 +1,7 @@
 {
  "name": "ИИгры онлайн",
  "short_name": "ИИгры",
- "description": "Игры и приложения, сделанные с нейросетями: играйте, создавайте, публикуйте.",
+ "description": "Браузерные игры и приложения, сделанные с нейросетями: симулятор инспектора ДПС, Пульсар, стратегии и головоломки. Без рекламы, играйте бесплатно.",
  "start_url": "/?app=1",
  "scope": "/",
  "display": "standalone",
@@ -12,8 +12,32 @@
  "id": "/?app=1",
  "icons": [
   {
+   "src": "/icon-96.png",
+   "sizes": "96x96",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "/icon-144.png",
+   "sizes": "144x144",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
    "src": "/icon-192.png",
    "sizes": "192x192",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "/icon-256.png",
+   "sizes": "256x256",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "/icon-384.png",
+   "sizes": "384x384",
    "type": "image/png",
    "purpose": "any"
   },
@@ -24,7 +48,7 @@
    "purpose": "any"
   },
   {
-   "src": "/icon-512.png",
+   "src": "/icon-maskable-512.png",
    "sizes": "512x512",
    "type": "image/png",
    "purpose": "maskable"
@@ -32,20 +56,100 @@
  ],
  "shortcuts": [
   {
-   "name": "Пульсар",
-   "url": "/games/pulsar.html"
+   "name": "Жезл",
+   "short_name": "Жезл",
+   "description": "Симулятор инспектора ДПС",
+   "url": "/games/zhezl.html",
+   "icons": [
+    {
+     "src": "/og/zhezl.png",
+     "sizes": "512x512",
+     "type": "image/png"
+    }
+   ]
   },
   {
-   "name": "Жезл",
-   "url": "/games/zhezl.html"
+   "name": "Пульсар",
+   "short_name": "Пульсар",
+   "description": "Игра на реакцию под техно",
+   "url": "/games/pulsar.html",
+   "icons": [
+    {
+     "src": "/og/pulsar.png",
+     "sizes": "512x512",
+     "type": "image/png"
+    }
+   ]
   },
   {
    "name": "Жизнь с нуля",
-   "url": "/games/s-nulya.html"
+   "short_name": "Жизнь с нуля",
+   "description": "Симулятор выживания в городе",
+   "url": "/games/s-nulya.html",
+   "icons": [
+    {
+     "src": "/og/s-nulya.png",
+     "sizes": "512x512",
+     "type": "image/png"
+    }
+   ]
   }
  ],
  "categories": [
   "games",
   "entertainment"
+ ],
+ "dir": "ltr",
+ "display_override": [
+  "standalone",
+  "minimal-ui"
+ ],
+ "prefer_related_applications": false,
+ "launch_handler": {
+  "client_mode": [
+   "navigate-existing",
+   "auto"
+  ]
+ },
+ "handle_links": "preferred",
+ "edge_side_panel": {
+  "preferred_width": 420
+ },
+ "screenshots": [
+  {
+   "src": "/shot-wide-1.png",
+   "sizes": "1280x720",
+   "type": "image/png",
+   "form_factor": "wide",
+   "label": "Каталог игр «ИИгры онлайн»"
+  },
+  {
+   "src": "/shot-wide-2.png",
+   "sizes": "1280x720",
+   "type": "image/png",
+   "form_factor": "wide",
+   "label": "Жезл — симулятор инспектора ДПС"
+  },
+  {
+   "src": "/shot-narrow-1.png",
+   "sizes": "1082x1922",
+   "type": "image/png",
+   "form_factor": "narrow",
+   "label": "Главная на телефоне"
+  },
+  {
+   "src": "/shot-narrow-2.png",
+   "sizes": "1082x1922",
+   "type": "image/png",
+   "form_factor": "narrow",
+   "label": "Жезл на телефоне"
+  },
+  {
+   "src": "/shot-narrow-3.png",
+   "sizes": "1082x1922",
+   "type": "image/png",
+   "form_factor": "narrow",
+   "label": "Пульсар на телефоне"
+  }
  ]
 }
