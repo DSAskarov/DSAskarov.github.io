@@ -42,7 +42,7 @@ android {{
   namespace '{pkg}'
   compileSdk 34
   defaultConfig {{ applicationId '{pkg}'; minSdk 24; targetSdk 34; versionCode {build}; versionName '1.{build}' }}
-  buildTypes {{ debug {{ minifyEnabled false }} }}
+  buildTypes {{ debug {{ minifyEnabled false }}; release {{ minifyEnabled false }} }}
 }}
 """)
     open(os.path.join(a, "app/src/main/AndroidManifest.xml"), "w").write(f"""<?xml version="1.0" encoding="utf-8"?>
