@@ -285,7 +285,9 @@ renderLv();draw();if(shE){ED=shE;$("menu").hidden=true;$("editor").hidden=false;
  const SKIP="SCRIPT,STYLE,NOSCRIPT,TEXTAREA,CODE,PRE,KBD,SVG,CANVAS,OPTION".split(",");
  const ATTR=["placeholder","title","aria-label","alt"];
  const nodes=new Map(),queue=new Set(),done=new WeakMap();let busy=false,tm=0;
- function want(t){const[k,n]=tpl(t.trim());if(!CY.test(k)){if(n.some(x=>/^[A-Z]/.test(x))){mem[k]=k;return{k,n}}return null}return{k,n}}
+ // ручные переводы коротких пунктов меню, где машинный перевод ошибается без контекста
+ const OV={en:{"Магазин нового времени · без рекламы":"A new-era store · no ads","Добро":"Charity","Связь":"Contact","Кабинет":"Account","Войти":"Sign in","Регистрация":"Sign up","Авторам":"For authors","Доработать":"Remix","Доработки":"Remixes","Простая":"Lite","Финансы":"Finance","Редактор":"Editor","Обсуждения":"Discussions","Главная":"Home","Игрокам":"Players","Доработчикам":"Remixers","Жезл: смена инспектора":"Zhezl: Traffic Cop Shift"}};
+ function want(t){const tt=t.trim(),ov=OV[lang]&&OV[lang][tt];if(ov){const k="="+tt;mem[k]=ov;return{k,n:[]}}const[k,n]=tpl(tt);if(!CY.test(k)){if(n.some(x=>/^[A-Z]/.test(x))){mem[k]=k;return{k,n}}return null}return{k,n}}
  // «ИИ» выделено отдельным тегом внутри слова («ИИгры», «ПрИИложения») — склеиваем слово, чтобы переводчик видел его целиком
  function glue(root){root.querySelectorAll&&root.querySelectorAll("i.ii").forEach(i=>{const a=i.previousSibling,b=i.nextSibling,at=a&&a.nodeType===3,bt=b&&b.nodeType===3;if(!(bt&&/^[а-яё]/.test(b.nodeValue))&&!(at&&/[а-яё]$/i.test(a.nodeValue)))return;
    const txt=(at?a.nodeValue:"")+i.textContent+(bt?b.nodeValue:"");if(at){a.nodeValue=txt;if(bt)b.remove()}else if(bt)b.nodeValue=txt;i.remove()})}
