@@ -116,9 +116,9 @@ $("mk").onclick=async()=>{const t=$("txt").value.trim();if(!t){$("ns").textConte
   if(t.length>5000){$("ns").textContent="За раз — до 5000 знаков. Разбейте текст на части.";return}
   const b=$("mk");b.disabled=true;$("dl").hidden=true;$("au").hidden=true;$("nbar").style.width="0";
   try{if(!tts){$("ns").textContent="Загружаем нейросеть…";tts=await import("https://cdn.jsdelivr.net/npm/@mintplex-labs/piper-tts-web@1.0.4/dist/piper-tts-web.js")}
-    const v=$("nv").value,P=parts(t),out=[];
+    const v=$("nv").value,P=parts(t),out=[];if(tts.TtsSession&&tts.TtsSession._instance&&tts.TtsSession._instance.__v!==v){tts.TtsSession._instance=null}
     for(let i=0;i<P.length;i++){$("ns").textContent=P.length>1?"Озвучиваем: часть "+(i+1)+" из "+P.length+"…":"Озвучиваем…";
-      out.push(await tts.predict({text:P[i],voiceId:v},p=>{if(p&&p.total){$("ns").textContent="Скачиваем голос (один раз): "+Math.round(p.loaded/p.total*100)+"%";$("nbar").style.width=Math.round(p.loaded/p.total*100)+"%"}}));
+      const ss=new tts.TtsSession({voiceId:v,progress:p=>{if(p&&p.total){$("ns").textContent="Скачиваем голос (один раз): "+Math.round(p.loaded/p.total*100)+"%";$("nbar").style.width=Math.round(p.loaded/p.total*100)+"%"}}});ss.__v=v;out.push(await ss.predict(P[i]));if(false)out.push(await tts.predict({text:P[i],voiceId:v},p=>{if(p&&p.total){$("ns").textContent="Скачиваем голос (один раз): "+Math.round(p.loaded/p.total*100)+"%";$("nbar").style.width=Math.round(p.loaded/p.total*100)+"%"}}));
       $("nbar").style.width=Math.round((i+1)/P.length*100)+"%"}
     const wav=await wavJoin(out);if(url)URL.revokeObjectURL(url);url=URL.createObjectURL(wav);$("au").src=url;$("au").hidden=false;$("dl").href=url;$("dl").download=(t.slice(0,30).replace(/[^\wа-яё ]+/gi,"").trim().replace(/\s+/g,"-")||"ozvuchka")+".wav";$("dl").hidden=false;
     $("ns").textContent="✅ Готово: "+(wav.size/1048576).toFixed(1)+" МБ. Послушайте и скачайте.";$("au").play().catch(()=>{})}
