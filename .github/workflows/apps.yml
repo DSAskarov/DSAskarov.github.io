@@ -26,7 +26,9 @@ jobs:
         working-directory: build/${{ matrix.slug }}/android
       - run: mkdir -p out && cp build/${{ matrix.slug }}/android/app/build/outputs/apk/debug/app-debug.apk out/${{ matrix.slug }}.apk
       - uses: actions/upload-artifact@v4
-        with: { name: apk-${{ matrix.slug }}, path: out/*.apk }
+        with:
+          name: apk-${{ matrix.slug }}
+          path: out/*.apk
   windows:
     runs-on: windows-latest
     strategy:
@@ -45,7 +47,9 @@ jobs:
       - run: mkdir out; copy build\${{ matrix.slug }}\electron\dist\${{ matrix.slug }}-setup.exe out\
         shell: cmd
       - uses: actions/upload-artifact@v4
-        with: { name: win-${{ matrix.slug }}, path: out/*.exe }
+        with:
+          name: win-${{ matrix.slug }}
+          path: out/*.exe
   release:
     needs: [android, windows]
     if: always() && (needs.android.result == 'success' || needs.windows.result == 'success')
