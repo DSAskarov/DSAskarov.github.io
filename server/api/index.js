@@ -27,6 +27,7 @@ const GAMES = {
 };
 const RESV = /команд|✓|dsaskarov|адм[иi]н|admin|модер|moder|иигр|iigr|поддержк|support|claude|anthropic|официал|official/i;
 
+const FOLDER_ID = "b1g52stf4nhegsql0vgk", TR_DAY_CAP = 600000, TR_LANGS = ["en", "uk", "be", "kk", "uz", "hy", "az", "ka", "de", "fr", "es", "it", "pt", "pl", "tr", "zh", "ja", "ko", "hi"];
 let driver = null, token = "", salt = "", ready = null;
 const auth = { getAuthMetadata: async () => new TokenAuthService(token).getAuthMetadata() };
 
@@ -115,6 +116,7 @@ async function db(ctx) {
         await T("mgames", [["uid", Types.UTF8], ["gid", Types.UTF8], ["j", Types.UTF8], ["ts", Types.UINT64]], ["uid", "gid"]);
         await T("pv", [["pid", Types.UTF8], ["day", Types.UTF8], ["dev", Types.UTF8], ["v", Types.UINT64]], ["pid", "day", "dev"]);
         await T("rate", [["pid", Types.UTF8], ["k", Types.UTF8], ["s", Types.UINT32], ["ts", Types.UINT64]], ["pid", "k"]);
+        await T("trc", [["k", Types.UTF8], ["v", Types.UTF8], ["ts", Types.UINT64]], ["k"]);
         await T("mgon", [["d", Types.UTF8], ["ts", Types.UINT64]], ["d"]);
         await T("purch", [["uid", Types.UTF8], ["id", Types.UTF8], ["prod", Types.UTF8], ["ts", Types.UINT64]], ["uid", "id"]);
         await T("dlscan", [["h", Types.UTF8], ["url", Types.UTF8], ["st", Types.UTF8], ["why", Types.UTF8], ["au", Types.UTF8], ["pid", Types.UTF8], ["ts", Types.UINT64]], ["h"]);
@@ -956,6 +958,30 @@ exports.handler = async (event, ctx) => {
     const k = crypto.createHash("sha256").update(salt + "|rate|" + raw).digest("hex").slice(0, 32);
     await q(`DECLARE $p AS Utf8; DECLARE $k AS Utf8; DECLARE $s AS Uint32; DECLARE $t AS Uint64; UPSERT INTO rate (pid, k, s, ts) VALUES ($p, $k, $s, $t);`, { $p: u8(pid), $k: u8(k), $s: TypedValues.uint32(sc), $t: u64(now) });
     gstatCache = null; return reply(200, { ok: true }, origin) }
+  // Перевод сайта: Яндекс Переводчик + общий кэш в базе (каждую фразу переводим один раз для всех)
+  if (a === "tr" && method === "POST") { const b = parse(event) || {}, lang = String(b.lang || "");
+    if (!TR_LANGS.includes(lang)) return reply(400, { error: "Язык не поддерживается" }, origin);
+    const texts = (Array.isArray(b.texts) ? b.texts : []).slice(0, 120).map(x => String(x == null ? "" : x).slice(0, 600));
+    if (!texts.length) return reply(200, { t: [] }, origin);
+    const keys = texts.map(t => crypto.createHash("sha1").update(lang + "|" + t).digest("hex")), out = new Array(texts.length).fill(null), map = {};
+    for (const r of await q(`DECLARE $ks AS List<Utf8>; SELECT k, v FROM trc WHERE k IN $ks;`, { $ks: TypedValues.list(Types.UTF8, [...new Set(keys)]) })) map[r.k] = r.v;
+    const miss = []; keys.forEach((k, i) => { if (map[k] != null) out[i] = map[k]; else if (!miss.some(j => keys[j] === k)) miss.push(i) });
+    if (miss.length) {
+      const day = new Date().toISOString().slice(0, 10); let used = { d: day, n: 0 }; try { const u = JSON.parse(await cfgGet("tr_day") || "null"); if (u && u.d === day) used = u } catch (_) {}
+      const chars = miss.reduce((s, i) => s + texts[i].length, 0);
+      if (used.n + chars > TR_DAY_CAP) return reply(200, { t: out, limit: true }, origin);
+      const newK = [], newV = [];
+      for (let i0 = 0; i0 < miss.length;) { let n = 0, part = []; while (i0 < miss.length && part.length < 100 && n + texts[miss[i0]].length <= 9000) { part.push(miss[i0]); n += texts[miss[i0]].length; i0++ }
+        if (!part.length) { part.push(miss[i0]); i0++ }
+        try { const r = await fetch("https://translate.api.cloud.yandex.net/translate/v2/translate", { method: "POST", headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" }, signal: AbortSignal.timeout(8000),
+            body: JSON.stringify({ folderId: FOLDER_ID, sourceLanguageCode: "ru", targetLanguageCode: lang, format: "PLAIN_TEXT", texts: part.map(i => texts[i]) }) });
+          const j = await r.json(); if (!r.ok || !Array.isArray(j.translations)) { console.error("tr", r.status, JSON.stringify(j).slice(0, 200)); return reply(200, { t: out, err: r.status }, origin) }
+          j.translations.forEach((x, n2) => { const i = part[n2], v = String(x.text || "").slice(0, 2000); keys.forEach((k, ii) => { if (k === keys[i]) out[ii] = v }); newK.push(keys[i]); newV.push(v) });
+        } catch (e) { console.error("tr", e && e.message); return reply(200, { t: out, err: 1 }, origin) } }
+      if (newK.length) await q(`DECLARE $ks AS List<Utf8>; DECLARE $vs AS List<Utf8>; DECLARE $ts AS Uint64; UPSERT INTO trc SELECT p.0 AS k, p.1 AS v, $ts AS ts FROM AS_TABLE(ListMap(ListZip($ks, $vs), ($p) -> (AsStruct($p AS p)))) ;`.replace("SELECT p.0 AS k, p.1 AS v, $ts AS ts FROM AS_TABLE(ListMap(ListZip($ks, $vs), ($p) -> (AsStruct($p AS p))))", "SELECT k, v, $ts AS ts FROM AS_TABLE(ListMap(ListZip($ks, $vs), ($p) -> (AsStruct($p.0 AS k, $p.1 AS v))))"), { $ks: TypedValues.list(Types.UTF8, newK), $vs: TypedValues.list(Types.UTF8, newV), $ts: u64(Date.now()) }).catch(e => console.error("trc", e && e.message));
+      used.n += chars; await cfgSet("tr_day", JSON.stringify(used)).catch(() => {});
+    }
+    return reply(200, { t: out }, origin) }
   if (a === "gstats") { if (gstatCache && gstatCache.t > Date.now()) return reply(200, gstatCache.v, origin);
     const out = {}, o = id => out[id] || (out[id] = { r: 0, n: 0, v7: 0, v: 0 }), d7 = dayNow(6);
     for (const x of await q(`SELECT pid, SUM(s) AS t, COUNT(*) AS n FROM rate GROUP BY pid;`)) { const g = o(x.pid); g.n = num(x.n); g.r = g.n ? Math.round(num(x.t) / g.n * 10) / 10 : 0 }

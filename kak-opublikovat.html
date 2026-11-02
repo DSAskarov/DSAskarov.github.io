@@ -262,4 +262,56 @@ loadMe().catch(()=>{}).finally(draw);
   b.innerHTML='<span>📲 ИИгры как приложение</span><button type="button" style="border:0;border-radius:999px;background:#E7BD52;color:#1A1306;font:700 13px inherit;padding:8px 12px;cursor:pointer">Установить</button><button type="button" aria-label="Скрыть" style="border:0;background:transparent;color:#B9B6C2;font-size:16px;cursor:pointer;padding:4px 8px">✕</button>';
   b.children[1].onclick=async()=>{b.remove();e.prompt();try{await e.userChoice}catch(_){}};b.children[2].onclick=()=>{b.remove();try{localStorage.setItem("iigry-pwa-no","1")}catch(_){}};document.body.append(b)})})();
 </script>
-</body></html>
+<script>/* Перевод ИИгр на другие языки: Яндекс Переводчик через наш сервер, общий кэш для всех и локальный кэш в браузере.
+   Переводятся тексты страницы, подсказки и кнопки; числа сохраняются как есть. Ники и код не переводятся (translate="no"). */
+(function(){if(window.__iigryI18n)return;window.__iigryI18n=1;
+ const API="https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av?a=tr",LS="iigry-lang",CY=/[А-Яа-яЁё]/;
+ const LANGS=[["ru","Русский"],["en","English"],["uk","Українська"],["be","Беларуская"],["kk","Қазақша"],["uz","Oʻzbekcha"],["hy","Հայերեն"],["az","Azərbaycanca"],["ka","ქართული"],["de","Deutsch"],["fr","Français"],["es","Español"],["it","Italiano"],["pt","Português"],["pl","Polski"],["tr","Türkçe"],["zh","中文"],["ja","日本語"],["ko","한국어"],["hi","हिन्दी"]];
+ const G=k=>{try{return localStorage.getItem(k)}catch(_){return null}},S=(k,v)=>{try{localStorage.setItem(k,v)}catch(_){}};
+ let lang=G(LS)||"ru";if(!LANGS.some(l=>l[0]===lang))lang="ru";
+ const D=document;
+ // ---- переключатель языка
+ const st=D.createElement("style");st.textContent=`#iigry-lang{position:fixed;left:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:1200;font:600 13px "Golos Text",system-ui,sans-serif}
+#iigry-lang>button{min-height:38px;padding:0 12px;border-radius:999px;border:1px solid rgba(255,255,255,.18);background:rgba(18,16,24,.88);color:#F4F4F6;cursor:pointer;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);box-shadow:0 6px 20px rgba(0,0,0,.35)}
+#iigry-lang ul{position:absolute;left:0;bottom:46px;margin:0;padding:6px;list-style:none;max-height:min(60vh,420px);overflow:auto;background:#17151D;border:1px solid rgba(255,255,255,.14);border-radius:14px;min-width:180px;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+#iigry-lang li button{width:100%;text-align:left;min-height:36px;padding:0 12px;border:0;border-radius:10px;background:none;color:#F4F4F6;font:inherit;cursor:pointer}#iigry-lang li button:hover,#iigry-lang li button[aria-current=true]{background:rgba(231,189,82,.16);color:#FFE6A8}
+#iigry-lang .tip{position:absolute;left:0;bottom:46px;width:240px;padding:10px 12px;border-radius:14px;background:#17151D;border:1px solid rgba(231,189,82,.5);color:#F4F4F6;box-shadow:0 12px 40px rgba(0,0,0,.5)}#iigry-lang .tip button{margin:8px 8px 0 0;min-height:32px;padding:0 12px;border-radius:999px;border:1px solid rgba(255,255,255,.18);background:#221F2A;color:#fff;font:inherit;cursor:pointer}#iigry-lang .tip button.y{background:#E7BD52;color:#1A1306;border:0}
+:fullscreen #iigry-lang,html.iigry-noui #iigry-lang{display:none}`;D.head.append(st);
+ function ui(){const w=D.createElement("div");w.id="iigry-lang";w.setAttribute("translate","no");const b=D.createElement("button");b.type="button";b.setAttribute("aria-label","Язык / Language");b.textContent="🌐 "+lang.toUpperCase();w.append(b);
+  b.onclick=()=>{const o=w.querySelector("ul");if(o){o.remove();return}const ul=D.createElement("ul");LANGS.forEach(([c,n])=>{const li=D.createElement("li"),x=D.createElement("button");x.type="button";x.textContent=n;if(c===lang)x.setAttribute("aria-current","true");x.onclick=()=>{S(LS,c);location.reload()};li.append(x);ul.append(li)});w.append(ul)};
+  D.addEventListener("click",e=>{if(!w.contains(e.target)){const o=w.querySelector("ul");if(o)o.remove()}});D.body.append(w);
+  // браузер не на русском — один раз предложим перевод
+  const nav=(navigator.language||"ru").slice(0,2).toLowerCase();
+  if(lang==="ru"&&!G(LS)&&nav!=="ru"&&!G("iigry-lang-asked")){const tl=LANGS.some(l=>l[0]===nav)?nav:"en",name=(LANGS.find(l=>l[0]===tl)||[0,"English"])[1];
+   const t=D.createElement("div");t.className="tip";t.innerHTML=`<div>${tl==="en"?"Translate the site into English?":"Перевести сайт: "+name+"?"}</div>`;const y=D.createElement("button"),n=D.createElement("button");y.className="y";y.textContent=tl==="en"?"Yes":"Да";n.textContent=tl==="en"?"No, thanks":"Нет";
+   y.onclick=()=>{S("iigry-lang-asked","1");S(LS,tl);location.reload()};n.onclick=()=>{S("iigry-lang-asked","1");t.remove()};t.append(y,n);w.append(t)}}
+ if(D.body)ui();else D.addEventListener("DOMContentLoaded",ui);
+ if(lang==="ru")return;
+ D.documentElement.lang=lang;
+ // ---- перевод
+ const CK="iigry-tr-"+lang;let mem={};try{mem=JSON.parse(G(CK)||"{}")||{}}catch(_){mem={}}
+ let saveT=0;const persist=()=>{clearTimeout(saveT);saveT=setTimeout(()=>{const k=Object.keys(mem);if(k.length>4000)k.slice(0,k.length-4000).forEach(x=>delete mem[x]);S(CK,JSON.stringify(mem))},800)};
+ // числа заменяем метками, чтобы «Рекорд: 12» и «Рекорд: 13» переводились один раз
+ const tpl=s=>{const n=[];const t=s.replace(/\d+(?:[.,:]\d+)*/g,m=>{n.push(m);return"{"+(n.length-1)+"}"});return[t,n]};
+ const fill=(t,n)=>{let ok=true;const r=t.replace(/\{(\d+)\}/g,(m,i)=>{if(n[+i]==null){ok=false;return m}return n[+i]});return ok&&!/\{\d+\}/.test(r)?r:null};
+ const SKIP="SCRIPT,STYLE,NOSCRIPT,TEXTAREA,CODE,PRE,KBD,SVG,CANVAS,OPTION".split(",");
+ const ATTR=["placeholder","title","aria-label","alt"];
+ const nodes=new Map(),queue=new Set(),done=new WeakMap();let busy=false,tm=0;
+ function want(t){const[k,n]=tpl(t.trim());if(!CY.test(k))return null;return{k,n}}
+ function scan(root){if(!root)return;const w=D.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:n=>{const p=n.parentElement;if(!p||SKIP.includes(p.tagName)||p.closest('[translate="no"],.notranslate,#iigry-lang'))return 2;return CY.test(n.nodeValue)?1:2}});
+  let n;while((n=w.nextNode())){if(done.get(n)===n.nodeValue)continue;const x=want(n.nodeValue);if(!x)continue;nodes.set(n,x);if(mem[x.k]==null)queue.add(x.k)}
+  const els=root.querySelectorAll?root.querySelectorAll(ATTR.map(a=>"["+a+"]").join(",")+',input[type=button],input[type=submit]'):[];
+  els.forEach(el=>{if(el.closest('[translate="no"],#iigry-lang'))return;[...ATTR,"value"].forEach(a=>{if(a==="value"&&!(el.tagName==="INPUT"&&/^(button|submit)$/.test(el.type)))return;const v=el.getAttribute(a);if(!v||!CY.test(v))return;const key=el.__trA||(el.__trA={});if(key[a]===v)return;const x=want(v);if(!x)return;nodes.set({el,a},x);if(mem[x.k]==null)queue.add(x.k)})});
+  apply();pump()}
+ function apply(){for(const[n,x]of nodes){const tr=mem[x.k];if(tr==null)continue;const r=fill(tr,x.n);nodes.delete(n);if(r==null)continue;
+   if(n.nodeType===3){const v=n.nodeValue,lead=v.match(/^\s*/)[0],trail=v.match(/\s*$/)[0],nv=lead+r+trail;if(n.nodeValue!==nv)n.nodeValue=nv;done.set(n,nv)}
+   else{n.el.setAttribute(n.a,r);n.el.__trA[n.a]=r}}}
+ async function pump(){if(busy||!queue.size)return;busy=true;try{while(queue.size){const part=[];let len=0;for(const k of queue){if(part.length>=100||len+k.length>8000)break;part.push(k);len+=k.length}part.forEach(k=>queue.delete(k));
+    const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({lang,texts:part})}),j=await r.json().catch(()=>({}));
+    (j.t||[]).forEach((v,i)=>{if(v!=null)mem[part[i]]=v});persist();apply();if(j.err||j.limit)break}}catch(_){}busy=false}
+ const mo=new MutationObserver(ms=>{for(const m of ms){if(m.type==="characterData"){const n=m.target;if(done.get(n)===n.nodeValue)continue}}clearTimeout(tm);tm=setTimeout(()=>scan(D.body),120)});
+ function start(){D.title&&CY.test(D.title)&&(async()=>{const x=want(D.title);if(!x)return;if(mem[x.k]==null){queue.add(x.k);await pump()}const r=mem[x.k]!=null&&fill(mem[x.k],x.n);if(r)D.title=r})();
+  scan(D.body);mo.observe(D.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:ATTR})}
+ if(D.body)start();else D.addEventListener("DOMContentLoaded",start);
+})();
+</script></body></html>
