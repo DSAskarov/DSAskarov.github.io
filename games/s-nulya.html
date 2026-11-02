@@ -1,0 +1,242 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; font-src https://fonts.gstatic.com; img-src 'self' data: https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; connect-src https://functions.yandexcloud.net https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; frame-src https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; object-src 'none'; base-uri 'none'; form-action 'none'"><meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="description" content="Игра площадки «ИИгры онлайн»"><meta property="og:title" content="Жизнь с нуля — ИИгры онлайн — ИИгры онлайн"><meta property="og:description" content="Игра площадки «ИИгры онлайн»"><meta name="theme-color" content="#0B0A0E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23B3141F'/%3E%3Ctext x='32' y='44' font-size='30' font-family='Arial' font-weight='700' text-anchor='middle' fill='%23F6DE8D'%3EИИ%3C/text%3E%3C/svg%3E">
+<style>*{box-sizing:border-box}html,body{margin:0}[hidden]{display:none!important}</style></head><body>
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Жизнь с нуля — ИИгры онлайн</title>
+<style>
+:root{--bg:#0D0C11;--card:#17151D;--line:rgba(255,255,255,.1);--fg:#F4F4F6;--mu:#B9B6C2;--gold:#E7BD52;--red:#E8333F;--grn:#4ADE95;--f-b:"Golos Text",system-ui,sans-serif;--f-d:"Rubik",system-ui,sans-serif}
+html,body{min-height:100%}html{background:#0D0C11}body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-b);padding:12px}
+.w{max-width:760px;margin:0 auto;display:grid;gap:12px}
+h1{margin:0;font:900 clamp(1.5rem,5vw,2.2rem) var(--f-d)}h1 b{color:var(--gold)}
+.mu{color:var(--mu);margin:0;font-size:.93rem}
+.top{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px}
+.ava{font-size:54px;width:72px;height:72px;display:grid;place-items:center;background:#0F0E13;border-radius:50%}
+.rank{font:800 1.1rem var(--f-d)}.money{font:800 1.4rem var(--f-d);color:var(--gold)}
+.bars{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.bar{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 10px;display:grid;gap:6px;font-size:.88rem}
+.bar i{display:block;height:8px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden}.bar i b{display:block;height:100%;transition:width .3s}
+.tabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}
+.tab{flex:none;min-height:42px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--fg);font:700 14px var(--f-b);cursor:pointer}.tab[aria-selected=true]{border-color:var(--gold);color:var(--gold)}
+.acts{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
+.act{display:grid;gap:4px;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;color:var(--fg);cursor:pointer;font:inherit;min-height:84px}
+.act:hover:not(:disabled){border-color:var(--gold)}.act:disabled{opacity:.42;cursor:default}.act b{font-size:1rem}.act small{color:var(--mu);font-size:.8rem}.act .fx{font-size:.78rem;color:#C9C6D2}
+.log{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 12px;max-height:180px;overflow:auto;font-size:.9rem;display:grid;gap:4px}
+.log p{margin:0}.log .g{color:var(--grn)}.log .r{color:#FF8A8F}.log .y{color:var(--gold)}
+.modal{position:fixed;inset:0;background:rgba(5,4,9,.75);display:grid;place-items:center;padding:16px;z-index:50}.modal[hidden]{display:none}
+.modal .c{max-width:420px;background:var(--card);border:1px solid var(--gold);border-radius:16px;padding:18px;display:grid;gap:10px;text-align:center}
+.btn{min-height:46px;padding:0 16px;border-radius:12px;border:1px solid var(--line);background:#221F2A;color:#fff;font:700 15px var(--f-b);cursor:pointer}.btn.go{background:linear-gradient(135deg,#F2C45A,#C98E2B);color:#1A1306;border:0}
+.goal{background:rgba(231,189,82,.08);border:1px solid rgba(231,189,82,.35);border-radius:12px;padding:8px 12px;font-size:.9rem}
+.row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+</style></head><body>
+<div class="w">
+  <h1>Жизнь <b>с нуля</b></h1>
+  <p class="mu">Вы проснулись на лавке в парке: ни денег, ни документов, ни планов. Соберите жизнь заново — от бутылок до собственного дела.</p>
+  <div class="top"><div class="ava" id="ava">🧔</div><div><div class="rank" id="rank"></div><div class="money" id="money"></div><div class="mu" id="day"></div></div></div>
+  <div class="bars" id="bars"></div>
+  <div class="goal" id="goal"></div>
+  <div class="tabs" role="tablist" id="tabs"></div>
+  <div class="acts" id="acts"></div>
+  <div class="log" id="log" aria-live="polite"></div>
+  <div class="row"><button class="btn" id="restart" type="button">↻ Начать заново</button></div>
+</div>
+<div class="modal" id="modal" hidden><div class="c"><b id="mT" style="font:800 1.3rem Rubik,system-ui,sans-serif"></b><p class="mu" id="mP"></p><div class="row" id="mB"></div></div></div>
+<script>
+(function(){
+const $=id=>document.getElementById(id),R=n=>Math.floor(Math.random()*n),chance=p=>Math.random()<p,clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const RANKS=[["🧔","Бездомный",0],["🧥","Обитатель ночлежки",1],["👷","Работяга",2],["🏠","Съёмщик комнаты",3],["👔","Офисный работник",4],["🏢","Владелец квартиры",5],["💼","Предприниматель",6]];
+const KEY="iigry-snulya";let S;
+function fresh(){return{day:1,hour:8,money:0,hp:70,food:50,mood:50,clean:30,rank:0,items:{},rep:0,job:null,home:null,biz:0,dead:false,won:false,log:[],best:0}}
+function load(){try{const s=JSON.parse(localStorage.getItem(KEY)||"null");if(s&&s.day)return s}catch(_){}return fresh()}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(_){}}
+const has=k=>!!S.items[k];
+function say(t,c){S.log.unshift([t,c||""]);S.log=S.log.slice(0,40)}
+// время идёт: каждое действие тратит часы, ночь — сон
+function pass(h){for(let i=0;i<h;i++){S.hour++;S.food-=has("room")||S.home?2.2:2.8;S.clean-=1;if(S.hour>=24){S.hour=0;newDay()}}
+  if(S.food<=0){S.hp+=S.food*.8;S.food=0}if(S.clean<=0)S.clean=0;if(S.clean<15)S.mood-=1;if(S.hp<30)S.mood-=1}
+function newDay(){S.day++;if(S.home==="room")S.money-=150,say("🏠 Аренда комнаты: −150 ₽","r");if(S.home==="flat"){}
+  if(S.biz)S.money+=S.biz,say("💼 Доход дела: +"+S.biz+" ₽","g");
+  if(S.money<0&&S.home==="room"){S.home=null;S.items.room=false;S.money=0;say("😿 Не хватило на аренду — снова на улице.","r")}
+  if(!S.home&&S.day%3===0&&chance(.3)){S.hp-=8;say("🌧 Ночь выдалась холодной: −8 здоровья.","r")}}
+// действия: [вкладка, ключ, название, описание, часы, условие, эффект]
+const A=[
+ ["work","bottles","Собирать бутылки","Пакет тары в пункт приёма",3,()=>true,()=>{const m=(has("cart")?90:40)+R(30);S.money+=m;S.food-=4;S.clean-=3;say("♻️ Сдали тару: +"+m+" ₽","g")}],
+ ["work","beg","Просить у метро","Как повезёт — и как одеты",2,()=>!S.job,()=>{const m=R(has("guitar")?160:70)+(S.clean>50?20:0);S.money+=m;S.mood-=m<20?6:1;say(m?"🥺 Прохожие подали "+m+" ₽":"🥺 Сегодня никто не подал…",m?"g":"r");if(chance(.08)){S.money=Math.max(0,S.money-60);say("👮 Попросили «пройти» — штраф 60 ₽","r")}}],
+ ["work","guitarplay","Играть на гитаре","Нужна гитара. Поднимает настроение",3,()=>has("guitar"),()=>{const m=60+R(180);S.money+=m;S.mood+=10;say("🎸 Отыграли сет: +"+m+" ₽","g")}],
+ ["work","loader","Подработка грузчиком","Нужно здоровье от 40",5,()=>S.hp>=40,()=>{const m=450+R(150);S.money+=m;S.hp-=10;S.food-=10;S.clean-=10;say("📦 Разгрузили фуру: +"+m+" ₽","g")}],
+ ["work","courier","Курьер на смену","Нужны телефон и чистая одежда",6,()=>has("phone")&&has("clothes")&&S.clean>=30,()=>{const m=1100+R(400);S.money+=m;S.hp-=6;S.food-=10;say("🛵 Смена курьером: +"+m+" ₽","g");S.rep+=1}],
+ ["work","office","Рабочий день в офисе","Нужны документы, костюм и телефон",8,()=>S.job==="office",()=>{const m=2600+R(400);S.money+=m;S.mood-=4;S.food-=8;say("💻 Зарплата за день: +"+m+" ₽","g");S.rep+=2}],
+ ["work","getjob","Устроиться в офис","Документы + костюм + репутация 15",2,()=>S.job!=="office"&&has("docs")&&has("suit")&&S.rep>=15,()=>{S.job="office";say("🎉 Вас взяли в офис! Теперь доступны рабочие дни.","y")}],
+ ["food","trash","Порыться в мусорке","Бесплатно, но рискованно",1,()=>true,()=>{S.food+=18;S.clean-=6;if(chance(.25)){S.hp-=12;say("🤢 Что-то было несвежим: −12 здоровья","r")}else say("🍞 Нашли полбатона: +сытость","g")}],
+ ["food","shawarma","Шаурма","120 ₽",1,()=>S.money>=120,()=>{S.money-=120;S.food+=40;S.mood+=4;say("🌯 Шаурма: +сытость")}],
+ ["food","canteen","Обед в столовой","250 ₽ — сытно и полезно",1,()=>S.money>=250,()=>{S.money-=250;S.food+=60;S.hp+=6;say("🍲 Обед в столовой: +сытость, +здоровье")}],
+ ["food","free","Бесплатная еда у фонда","Раз в день, нужно постоять в очереди",3,()=>S.freeDay!==S.day,()=>{S.freeDay=S.day;S.food+=45;S.mood+=3;say("🥣 Волонтёры накормили. Спасибо им!","g")}],
+ ["life","sleepbench","Спать на лавке","Бесплатно, холодно",8,()=>!S.home,()=>{S.hp+=chance(.3)?-6:6;S.mood-=4;say("🌙 Ночь на лавке.")}],
+ ["life","shelter","Ночлежка","200 ₽ — тепло и душ",8,()=>S.money>=200&&!S.home,()=>{S.money-=200;S.hp+=15;S.clean=Math.max(S.clean,70);S.mood+=5;if(S.rank<1)S.rank=1;say("🛏 Ночь в ночлежке: тепло и душ","g")}],
+ ["life","sleephome","Спать дома","Своя кровать",8,()=>!!S.home,()=>{S.hp+=22;S.mood+=8;S.clean=Math.max(S.clean,90);say("😴 Выспались дома","g")}],
+ ["life","bath","Помыться в бане","300 ₽",2,()=>S.money>=300,()=>{S.money-=300;S.clean=100;S.mood+=8;say("🧼 Баня: чистота 100%","g")}],
+ ["life","doctor","Сходить к врачу","500 ₽, +30 здоровья",2,()=>S.money>=500,()=>{S.money-=500;S.hp+=30;say("🩺 Врач подлечил: +30 здоровья","g")}],
+ ["life","park","Погулять по парку","Бесплатно, +настроение",2,()=>true,()=>{S.mood+=10;if(chance(.12)){const m=200+R(800);S.money+=m;say("👛 Нашли кошелёк с "+m+" ₽! (А документы отнесли в полицию.)","y");S.rep+=1}else say("🌳 Погуляли — стало легче")}],
+ ["shop","cart","Тележка","300 ₽ — бутылок в два раза больше",0,()=>!has("cart")&&S.money>=300,()=>{S.money-=300;S.items.cart=1;say("🛒 Купили тележку","y")}],
+ ["shop","guitar","Б/у гитара","900 ₽ — играть на улице",0,()=>!has("guitar")&&S.money>=900,()=>{S.money-=900;S.items.guitar=1;say("🎸 Купили гитару","y")}],
+ ["shop","clothes","Чистая одежда","1 500 ₽ — для работы",0,()=>!has("clothes")&&S.money>=1500,()=>{S.money-=1500;S.items.clothes=1;S.clean=Math.max(S.clean,60);say("👕 Купили нормальную одежду","y")}],
+ ["shop","phone","Простой телефон","2 500 ₽ — для подработок",0,()=>!has("phone")&&S.money>=2500,()=>{S.money-=2500;S.items.phone=1;say("📱 Купили телефон","y")}],
+ ["shop","docs","Восстановить документы","4 000 ₽ и полдня",5,()=>!has("docs")&&S.money>=4000,()=>{S.money-=4000;S.items.docs=1;if(S.rank<2)S.rank=2;say("🪪 Документы восстановлены! Вы — Работяга.","y")}],
+ ["shop","suit","Костюм","8 000 ₽ — для офиса",0,()=>!has("suit")&&S.money>=8000,()=>{S.money-=8000;S.items.suit=1;say("👔 Купили костюм","y")}],
+ ["shop","room","Снять комнату","5 000 ₽ залог, потом 150 ₽ в день",1,()=>!S.home&&has("docs")&&S.money>=5000,()=>{S.money-=5000;S.home="room";S.items.room=1;if(S.rank<3)S.rank=3;say("🏠 Сняли комнату! Теперь есть дом.","y")}],
+ ["shop","flat","Купить квартиру","300 000 ₽ — своё жильё навсегда",2,()=>S.home!=="flat"&&S.money>=300000,()=>{S.money-=300000;S.home="flat";if(S.rank<5)S.rank=5;if(S.biz)S.rank=6;say("🔑 Своя квартира! Аренда больше не нужна.","y")}],
+ ["shop","biz","Открыть кофейню","150 000 ₽ — доход каждый день",3,()=>S.job==="office"&&S.money>=150000,()=>{S.money-=150000;S.biz+=3500;say("☕ Открыли кофейню: +3 500 ₽ в день","y");if(S.home==="flat"){S.rank=6}}]
+];
+const TABS=[["work","💰 Заработок"],["food","🍽 Еда"],["life","❤️ Жизнь"],["shop","🛍 Покупки"]];let tab="work";
+// случайные события
+const EV=[
+ [()=>chance(.05),"🐕 Бездомный пёс увязался за вами. Взять его к себе?",[["Взять",()=>{S.items.dog=1;S.mood+=15;say("🐕 Теперь у вас есть друг!","y")}],["Пройти мимо",()=>{}]]],
+ [()=>chance(.04)&&S.money>300,"🎰 Мутный тип предлагает «удвоить» деньги в напёрстки.",[["Сыграть (300 ₽)",()=>{S.money-=300;say("🎲 Конечно, проиграли. Напёрстки не обыграть.","r")}],["Отказаться",()=>{S.mood+=2;say("👍 Правильно — это лохотрон.","g")}]]],
+ [()=>chance(.04),"🧓 Пожилая женщина просит помочь донести сумки.",[["Помочь",()=>{S.rep+=3;S.mood+=6;const m=R(2)?100:0;S.money+=m;pass(1);say("😊 Помогли"+(m?" — и она дала 100 ₽ на чай":"")+". Репутация растёт.","g")}],["Отказаться",()=>{S.mood-=3}]]],
+ [()=>chance(.03)&&S.hp<50,"🤒 Вас знобит. Похоже, простуда.",[["Отлежаться",()=>{pass(6);S.hp+=5}],["Терпеть",()=>{S.hp-=10}]]],
+ [()=>chance(.03)&&S.rank>=2,"📢 Знакомый зовёт в бригаду на выходные: 3 000 ₽ за два дня.",[["Согласиться",()=>{pass(16);S.money+=3000;S.hp-=15;say("🔨 Отработали выходные: +3 000 ₽","g")}],["Не сейчас",()=>{}]]]
+];
+function modal(t,p,btns){$("mT").textContent=t;$("mP").textContent=p;const b=$("mB");b.innerHTML="";btns.forEach(([n,f],i)=>{const x=document.createElement("button");x.className="btn"+(i?"":" go");x.textContent=n;x.onclick=()=>{$("modal").hidden=true;f&&f();check();render()};b.append(x)});$("modal").hidden=false;b.firstChild&&b.firstChild.focus()}
+function check(){S.hp=clamp(S.hp,-50,100);S.food=clamp(S.food,0,100);S.mood=clamp(S.mood,0,100);S.clean=clamp(S.clean,0,100);S.money=Math.round(S.money);
+  const worth=S.money+(S.home==="flat"?300000:0)+S.biz*30;if(worth>S.best)S.best=worth;
+  if(S.mood<=0&&!S.dead){S.mood=20;S.hp-=15;say("😞 Совсем опустились руки… −15 здоровья. Погуляйте и поешьте.","r")}
+  if(S.hp<=0&&!S.dead){S.dead=true;save();submit(false);modal("Здоровье закончилось","Прожито дней: "+S.day+". Лучший капитал: "+fmt(S.best)+" ₽. Попробуйте ещё раз — теперь вы знаете, с чего начать.",[["Начать заново",()=>{S=fresh();say("☀️ Новое утро, новый шанс.","y")}]]);return}
+  if(S.rank===6&&!S.won){S.won=true;save();submit(true);modal("Вы — предприниматель! 🎉","От лавки в парке до своей квартиры и кофейни за "+S.day+" дн. Капитал: "+fmt(S.best)+" ₽.",[["Играть дальше",()=>{}],["Начать заново",()=>{S=fresh()}]])}}
+function submit(full){if(window.IIGRY_SCORE&&S.best>0)window.IIGRY_SCORE(Math.round(S.best/100),full?{full:true}:undefined)}
+const fmt=n=>Math.round(n).toLocaleString("ru-RU");
+function render(){const r=RANKS[S.rank];$("ava").textContent=r[0];$("rank").textContent=r[1]+(S.items.dog?" 🐕":"");$("money").textContent=fmt(S.money)+" ₽";
+  $("day").textContent="День "+S.day+", "+String(S.hour).padStart(2,"0")+":00 · "+(S.home==="flat"?"своя квартира":S.home==="room"?"съёмная комната":"без жилья")+(S.job?" · работа в офисе":"");
+  const B=[["❤️ Здоровье",S.hp,"#4ADE95"],["🍞 Сытость",S.food,"#E7BD52"],["🙂 Настроение",S.mood,"#7AB8FF"],["🧼 Чистота",S.clean,"#B79CFF"]];
+  $("bars").innerHTML=B.map(([n,v,c])=>`<div class="bar"><span>${n}: <b>${Math.max(0,Math.round(v))}</b></span><i><b style="width:${clamp(v,0,100)}%;background:${v<25?"#E8333F":c}"></b></i></div>`).join("");
+  const next=["Накопите 200 ₽ и переночуйте в ночлежке","Восстановите документы (4 000 ₽)","Снимите комнату (5 000 ₽ залога)","Купите костюм и устройтесь в офис (репутация 15)","Накопите на квартиру (300 000 ₽)","Откройте кофейню (150 000 ₽)","Цель достигнута — живите в своё удовольствие!"][Math.min(6,S.rank===4?4:S.rank===3&&S.job==="office"?4:S.rank)];
+  $("goal").textContent="🎯 Цель: "+next+" · репутация: "+S.rep;
+  $("tabs").innerHTML=TABS.map(([k,n])=>`<button class="tab" role="tab" data-t="${k}" aria-selected="${k===tab}">${n}</button>`).join("");
+  $("acts").innerHTML="";A.filter(a=>a[0]===tab).forEach(a=>{const ok=!S.dead&&a[5]();if(a[0]==="shop"&&!ok&&(S.items[a[1]]||(a[1]==="room"&&S.home)||(a[1]==="flat"&&S.home==="flat")))return;
+    const b=document.createElement("button");b.className="act";b.type="button";b.disabled=!ok;b.innerHTML=`<b></b><small></small><span class="fx"></span>`;b.querySelector("b").textContent=a[2];b.querySelector("small").textContent=a[3];b.querySelector(".fx").textContent=a[4]?"⏱ "+a[4]+" ч":"мгновенно";
+    b.onclick=()=>{a[6]();pass(a[4]);check();if(!S.dead){for(const e of EV)if(e[0]()){modal("Случай",e[1],e[2]);break}}save();render()};$("acts").append(b)});
+  $("log").innerHTML=S.log.map(([t,c])=>`<p class="${c}">${t.replace(/</g,"&lt;")}</p>`).join("")||'<p class="mu">Начните с бутылок или бесплатной еды у фонда.</p>'}
+$("tabs").onclick=e=>{const b=e.target.closest("[data-t]");if(b){tab=b.dataset.t;render()}};
+$("restart").onclick=()=>modal("Начать заново?","Прогресс этой жизни будет потерян.",[["Да, заново",()=>{S=fresh();save()}],["Отмена",()=>{}]]);
+window.IIGRY_TO_MENU=()=>{scrollTo({top:0,behavior:"smooth"})};
+S=load();if(!S.log.length)say("☀️ Вы проснулись на лавке. Холодно, но жить можно.","y");render();
+})();
+</script>
+</body></html>
+<script>/* Панель навигации «ИИгр»: назад, главная, игры, мастерская, кабинет; в играх — возврат в меню игры. На телефоне — крупные значки с подписями, как в приложениях */
+(function(){if(document.getElementById("iigry-nav"))return;const P=location.pathname,inG=/\/games\//.test(P),base=inG?"../":"./",here=P.replace(/^.*\//,"")||"index.html";
+ const st=document.createElement("style");st.textContent="#iigry-nav{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:8px 12px;box-sizing:border-box;background:rgba(11,10,14,.94);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:1px solid rgba(255,255,255,.1)}#iigry-nav::-webkit-scrollbar{display:none}"+
+  "#iigry-nav a,#iigry-nav button{flex:none;display:inline-flex;align-items:center;gap:5px;border:1px solid rgba(255,255,255,.14);background:#16141B;color:#F4F4F6;border-radius:999px;padding:0 14px;min-height:38px;font:600 13px/1.2 'Golos Text',system-ui,sans-serif;text-decoration:none;cursor:pointer;white-space:nowrap;-webkit-tap-highlight-color:transparent}"+
+  "#iigry-nav a[aria-current=page]{border-color:#E7BD52;color:#E7BD52}#iigry-nav .gm{border-color:rgba(231,189,82,.6)}#iigry-nav a:focus-visible,#iigry-nav button:focus-visible{outline:2px solid #E7BD52;outline-offset:2px}#iigry-nav .s{display:none}"+
+  "@media(max-width:600px){#iigry-nav{gap:2px;padding:4px 4px;justify-content:space-between}#iigry-nav a,#iigry-nav button{flex:1 1 0;min-width:0;flex-direction:column;justify-content:center;gap:2px;border:0;background:transparent;border-radius:12px;padding:4px 2px;min-height:50px;font-size:10.5px;color:#C9C6D2}"+
+  "#iigry-nav .i{font-size:20px;line-height:1}#iigry-nav .l{display:none}#iigry-nav .s{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis}#iigry-nav a[aria-current=page]{background:rgba(231,189,82,.14)}#iigry-nav .gm{background:rgba(231,189,82,.1);color:#E7BD52}#iigry-nav a:active,#iigry-nav button:active{background:rgba(255,255,255,.08)}}";
+ document.head.append(st);const n=document.createElement("nav");n.id="iigry-nav";n.setAttribute("aria-label","Навигация по сайту");
+ const fill=(el,i,l,s)=>{const a=document.createElement("span"),b=document.createElement("span"),c=document.createElement("span");a.className="i";a.textContent=i;a.setAttribute("aria-hidden","true");b.className="l";b.textContent=l;c.className="s";c.textContent=s;c.setAttribute("aria-hidden","true");el.append(a,b,c);el.setAttribute("aria-label",l)};
+ const b=document.createElement("button");b.type="button";fill(b,"←","Назад","Назад");b.onclick=()=>{if(document.referrer.indexOf(location.origin)===0&&history.length>1)history.back();else location.href=base};n.append(b);
+ if(inG||/igra\.html$/.test(P)){const m=document.createElement("button");m.type="button";m.className="gm";fill(m,"↩","В меню игры","В меню");m.title="Вернуться в начальное меню игры";m.onclick=()=>{if(window.IIGRY_TO_MENU)window.IIGRY_TO_MENU();else location.reload()};n.append(m)}
+ [["🏠","Главная","Главная",""],["🎮","Игры","Игры","#catalog"],["🛠","Мастерская","Создать","masterskaya.html"],["👤","Кабинет","Кабинет","kabinet.html"]].forEach(([i,l,s,h])=>{const a=document.createElement("a");fill(a,i,l,s);a.href=base+h;if(h&&h===here)a.setAttribute("aria-current","page");n.append(a)});
+ document.body.prepend(n);const pad=()=>{document.body.style.paddingTop="";const pt=parseFloat(getComputedStyle(document.body).paddingTop)||0;document.body.style.paddingTop=(pt+n.offsetHeight+6)+"px";document.documentElement.style.scrollPaddingTop=(n.offsetHeight+8)+"px"};pad();addEventListener("resize",pad)})();
+</script><script>/* Счётчик посещений «ИИгр»: случайный номер устройства хранится только в этом браузере; без cookie и слежки на других сайтах. Команда сайта не считается. */
+(function(){try{if(navigator.webdriver||localStorage.getItem("iigry-team")||localStorage.getItem("iigry-mod"))return;let d=localStorage.getItem("iigry-did");
+ if(!/^[0-9a-f]{32}$/.test(d||"")){const a=new Uint8Array(16);crypto.getRandomValues(a);d=[...a].map(x=>x.toString(16).padStart(2,"0")).join("");localStorage.setItem("iigry-did",d)}
+ const go=()=>{if(document.visibilityState!=="visible")return;document.removeEventListener("visibilitychange",go);fetch("https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av?a=hit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({d,p:location.pathname,r:document.referrer}),keepalive:true}).catch(()=>{})};
+ setTimeout(()=>{document.visibilityState==="visible"?go():document.addEventListener("visibilitychange",go)},2500)}catch(_){}})();
+/* Технические работы: пока сайт обновляется, показываем понятное предупреждение и сами обновляем страницу, когда всё готово */
+(function(){const API="https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av?a=status";let shown=null,was=false;
+ function show(j){if(shown)return;const d=document.createElement("div");d.setAttribute("role","alertdialog");d.setAttribute("aria-live","assertive");d.setAttribute("aria-label","Технические работы");
+  d.style.cssText="position:fixed;inset:0;z-index:2147483000;background:rgba(11,10,14,.92);display:grid;place-items:center;padding:12px;font-family:Golos Text,system-ui,sans-serif;overflow:auto";
+  const c=document.createElement("div");c.style.cssText="width:min(460px,100%);background:#16141B;border:1px solid #E7BD52;border-radius:16px;padding:18px;color:#F4F4F6;text-align:center;display:grid;gap:10px;box-sizing:border-box";
+  const E=(t,x,css)=>{const e=document.createElement(t);if(x!=null)e.textContent=x;if(css)e.style.cssText=css;return e};
+  const left=Math.max(1,Math.round((j.until-Date.now())/60000));
+  const h=E("b","🛠 Идут технические работы","font:800 1.25rem Rubik,system-ui,sans-serif;color:#E7BD52");
+  const p=E("p",(j.text||"Сайт обновляется — добавляем новое.")+" Обычно это пара минут (не дольше "+left+" мин). Страница обновится сама.","margin:0");
+  const w=E("p","⚠️ Пока идут работы, то, что вы вводите на сайте (тексты, профиль, результаты), может не сохраниться. Лучше подождите — а пока сыграйте с другими посетителями:","margin:0;font-size:.9rem;color:#FFD98A");
+  // мини-игра «Звездопад»: все, кто сейчас на сайте, ловят звёзды в общую копилку
+  const st=E("div",null,"display:flex;justify-content:space-between;gap:8px;font-size:.9rem;flex-wrap:wrap");const tot=E("span","⭐ Вместе: …"),me=E("span","Вы: 0"),on=E("span","👥 …");st.append(tot,me,on);
+  const f=E("div",null,"position:relative;height:190px;border-radius:12px;overflow:hidden;background:radial-gradient(1px 1px at 20% 30%,#fff,transparent),radial-gradient(1px 1px at 70% 60%,#fff,transparent),radial-gradient(1.5px 1.5px at 40% 80%,#fff,transparent),linear-gradient(160deg,#1B1546,#3B2A7A);touch-action:manipulation;user-select:none");
+  const feed=E("div",null,"min-height:22px;font-size:.88rem;color:#C9C6D2");const rx=E("div",null,"display:flex;gap:6px;justify-content:center;flex-wrap:wrap");
+  const R=["👋","😂","🔥","❤️","🚀","⭐"];let mine=0,pend=0,react=-1,alive=true;
+  const did=(()=>{let v="";try{v=localStorage.getItem("iigry-did")||""}catch(_){}if(!/^[0-9a-f]{32}$/.test(v)){const a=new Uint8Array(16);crypto.getRandomValues(a);v=[...a].map(x=>x.toString(16).padStart(2,"0")).join("")}return v})(),nick=(()=>{try{return (localStorage.getItem("iigry-nick")||"").slice(0,20)}catch(_){return ""}})()||"Гость";
+  R.forEach((e,i)=>{const b=E("button",e,"border:1px solid rgba(255,255,255,.15);background:#0F0E13;border-radius:10px;min-width:44px;min-height:40px;font-size:20px;cursor:pointer");b.type="button";b.setAttribute("aria-label","Отправить "+e);b.onclick=()=>{react=i;sync()};rx.append(b)});
+  function spawn(){if(!alive)return;const s=E("button",Math.random()<.15?"🌟":"⭐","position:absolute;border:0;background:transparent;cursor:pointer;font-size:30px;padding:6px;transition:transform .2s,opacity .2s;left:"+(5+Math.random()*80)+"%;top:-40px");s.type="button";s.setAttribute("aria-label","Поймать звезду");
+   const big=s.textContent==="🌟",dur=2600+Math.random()*1800;f.append(s);s.animate([{top:"-40px"},{top:"200px"}],{duration:dur,easing:"linear"}).onfinish=()=>s.remove();
+   s.onpointerdown=e=>{e.preventDefault();const v=big?5:1;mine+=v;pend+=v;me.textContent="Вы: "+mine;s.style.transform="scale(1.8)";s.style.opacity="0";s.onpointerdown=null;setTimeout(()=>s.remove(),200)};setTimeout(spawn,500+Math.random()*500)}
+  async function sync(){if(!did)return;const add=Math.min(pend,50),r=react;pend-=add;react=-1;
+   try{const x=await (await fetch(API.replace("a=status","a=mg"),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({d:did,add,r,n:nick})})).json();
+    if(x.total!=null){tot.textContent="⭐ Вместе: "+x.total.toLocaleString("ru-RU");on.textContent="👥 Сейчас здесь: "+x.online;feed.textContent=(x.feed||[]).slice(-4).map(z=>z.n+" "+z.e).join("  ·  ")||"Отправьте привет другим посетителям 👇"}}catch(_){pend+=add}}
+  const b=E("button","Закрыть и подождать","border:0;border-radius:10px;padding:10px 16px;font:700 1rem 'Golos Text',system-ui,sans-serif;background:linear-gradient(135deg,#FF4A55,#A3101C);color:#fff;cursor:pointer;justify-self:center");b.type="button";
+  b.onclick=()=>{alive=false;clearInterval(t);d.remove();shown=null;bar()};c.append(h,p,w,st,f,feed,rx,b);d.append(c);document.body.append(d);shown=d;spawn();sync();const t=setInterval(()=>{if(document.body.contains(d))sync();else clearInterval(t)},3000)}
+ function bar(){if(document.getElementById("iigry-maint-bar"))return;const s=document.createElement("div");s.id="iigry-maint-bar";s.textContent="🛠 Идут технические работы — возможны недолгие сбои";s.style.cssText="position:fixed;left:0;right:0;bottom:0;z-index:2147482999;background:#E7BD52;color:#1A1306;font:700 .9rem Golos Text,system-ui,sans-serif;text-align:center;padding:6px";document.body.append(s)}
+ async function check(){try{const j=await (await fetch(API,{cache:"no-store"})).json();
+   if(j.maint){was=true;if(!document.getElementById("iigry-maint-bar"))show(j)}else if(was){location.reload()}}catch(_){} }
+ check();setInterval(check,20000)})();
+/* Ник аккаунта — один на чат и таблицы лидеров: подтягиваем его после входа, чтобы не сбивался */
+(function(){try{const t=localStorage.getItem("iigry-sess");if(!/^[A-Za-z0-9_-]{43}$/.test(t||""))return;const last=+localStorage.getItem("iigry-nick-ts")||0;if(Date.now()-last<36e5&&localStorage.getItem("iigry-nick"))return;
+ fetch("https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av?a=u",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({op:"whoami",token:t})}).then(r=>r.ok?r.json():null).then(j=>{if(j&&j.named&&j.nick){localStorage.setItem("iigry-nick",j.nick);localStorage.setItem("iigry-nick-ts",String(Date.now()))}}).catch(()=>{})}catch(_){}})();
+</script><script>/* Проверка «не робот» Yandex SmartCaptcha: один раз на 12 часов для всего сайта и игр */
+(function(){
+  const API="https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av",PK="iigry-pass";
+  const get=()=>{try{const o=JSON.parse(localStorage.getItem(PK)||"null");return o&&o.exp>Date.now()+60e3?o.v:""}catch(_){return ""}};
+  let cfgP=null,scriptP=null,busy=null;
+  const cfg=()=>cfgP||(cfgP=fetch(API+"?a=cfg",{cache:"no-store"}).then(r=>r.json()).catch(()=>({captcha:""})));
+  const load=()=>scriptP||(scriptP=new Promise((ok,no)=>{const s=document.createElement("script");s.src="https://smartcaptcha.cloud.yandex.ru/captcha.js?render=onload&onload=__iigryCap";
+    window.__iigryCap=ok;s.onerror=()=>{scriptP=null;no(new Error("Проверка не загрузилась. Проверьте интернет."))};document.head.appendChild(s)}));
+  function overlay(){const d=document.createElement("div");d.setAttribute("role","dialog");d.setAttribute("aria-modal","true");d.setAttribute("aria-label","Проверка, что вы не робот");
+    d.style.cssText="position:fixed;inset:0;z-index:999990;display:grid;place-items:center;background:rgba(10,9,14,.72);padding:16px";
+    d.innerHTML='<div style="background:#16141B;color:#F4F4F6;border:1px solid rgba(231,189,82,.4);border-radius:16px;padding:18px;width:min(360px,100%);display:grid;gap:12px;font:500 15px/1.4 system-ui,sans-serif"><b style="font-size:17px">Проверим, что вы не робот</b><div id="iigryCapBox" style="min-height:100px"></div><button type="button" style="justify-self:end;background:transparent;color:#B9B6C2;border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:7px 12px;cursor:pointer">Отмена</button></div>';
+    document.body.appendChild(d);return d}
+  async function need(){const p=get();if(p)return p;if(busy)return busy;
+    busy=(async()=>{const c=await cfg();if(!c.captcha)return "";await load();const d=overlay();
+      try{return await new Promise((ok,no)=>{d.querySelector("button").onclick=()=>no(new Error("Проверка отменена."));
+        window.smartCaptcha.render(d.querySelector("#iigryCapBox"),{sitekey:c.captcha,hl:"ru",callback:async token=>{
+          try{const r=await fetch(API+"?a=pass",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({token})}),j=await r.json();
+            if(!r.ok||!j.pass)throw new Error(j.error||"Проверка не пройдена.");try{localStorage.setItem(PK,JSON.stringify({v:j.pass,exp:j.exp}))}catch(_){}ok(j.pass)}catch(e){no(e)}}})})}
+      finally{d.remove()}})().finally(()=>{busy=null});return busy}
+  window.IIGRY_PASS={get,need,clear:()=>{try{localStorage.removeItem(PK)}catch(_){}}};
+})();
+</script><script data-game="life" data-asc="0" data-unit="очко|очка|очков">/* Таблица лидеров ИИгр: общий ник для всех игр и чата, результаты — на сервере в Yandex Cloud */
+(function(){
+  const me=document.currentScript,G=me.dataset.game,ASC=me.dataset.asc==="1",UNIT=me.dataset.unit||"",
+    API="https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av",K="iigry-nick",t0=Date.now();
+  // Единица с правильным падежом: «1 рыба, 3 рыбы, 5 рыб»
+  const U=v=>{const f=UNIT.split("|"),n=Math.abs(v)%100,d=n%10;return v+" "+(f.length<3?UNIT:n>10&&n<20?f[2]:d===1?f[0]:d>=2&&d<=4?f[1]:f[2])};
+  const S=(v,n)=>String(v==null?"":v).slice(0,n);
+  const getNick=()=>{try{return S(localStorage.getItem(K),30)}catch(_){return ""}},setNick=v=>{try{localStorage.setItem(K,v)}catch(_){}};
+  let aid="";try{aid=localStorage.getItem("aid")||""}catch(_){}
+  const css=document.createElement("style");css.textContent=`.lb{width:min(560px,100%);margin-top:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:14px 16px;display:grid;gap:10px;font-family:inherit;color:inherit}
+.lb h2{margin:0;font:800 1.05rem/1.2 Rubik,"Golos Text",system-ui,sans-serif}.lb ol{margin:0;padding-left:1.6em;display:grid;gap:4px}
+.lb li{font-variant-numeric:tabular-nums}.lb li b{float:right;color:#E7BD52}.lb li.me{color:#E7BD52}.lb .mu{opacity:.7;font-size:.9rem;margin:0}
+.lb .lbSave{justify-self:start}.lb form{display:flex;gap:8px;flex-wrap:wrap}.lb input{flex:1 1 160px;min-width:0;padding:9px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.2);background:rgba(0,0,0,.25);color:inherit;font:inherit}
+.lb button{min-height:42px;padding:9px 14px;border-radius:10px;border:0;background:#E7BD52;color:#1A1306;font-weight:800;cursor:pointer}.lb button:focus-visible,.lb input:focus-visible{outline:2px solid #E7BD52;outline-offset:2px}`;
+  document.head.appendChild(css);
+  const box=document.createElement("section");box.className="lb";box.setAttribute("aria-live","polite");
+  box.innerHTML='<h2>Таблица лидеров</h2><ol></ol><p class="mu" id="lbMsg"></p><button type="button" class="lbSave" hidden>Записать мой результат</button><form hidden><input maxlength="30" placeholder="Ваш ник" autocomplete="nickname" aria-label="Ваш ник"><button type="submit">В таблицу</button></form><p class="mu">Ник запоминается для всех игр и чата ИИгр.</p>';
+  (document.querySelector(".game")||document.body).appendChild(box);
+  const ol=box.querySelector("ol"),msg=box.querySelector("#lbMsg"),form=box.querySelector("form"),inp=form.querySelector("input");
+  let pending=null,items=[],fullMsg="";const save=box.querySelector(".lbSave");
+  // Попадает ли результат в топ-5 (для «меньше — лучше» сравнение наоборот)
+  const top5=v=>{const a=items.slice(0,5);return a.length<5||(ASC?v<(+a[4].v||0):v>(+a[4].v||0))};
+  const say=t=>{msg.textContent=t};
+  async function top(){try{const r=await fetch(API+"?a=top&game="+G,{cache:"no-store"}),j=await r.json();ol.textContent="";
+      items=Array.isArray(j.items)?j.items.slice(0,10):[];const nick=getNick().toLowerCase();
+      if(!items.length){const li=document.createElement("li");li.className="mu";li.textContent="Пока пусто. Станьте первым!";ol.appendChild(li);return}
+      items.forEach(x=>{const li=document.createElement("li");li.textContent=S(x.n,30);const b=document.createElement("b");b.textContent=U(Math.round(+x.v||0));li.appendChild(b);if(S(x.n,30).toLowerCase()===nick)li.className="me";ol.appendChild(li)})}
+    catch(_){ol.textContent="";say("Таблица временно недоступна.")}}
+  async function send(v,n,again){say("Отправляем результат…");
+    try{const P=window.IIGRY_PASS,r=await fetch(API+"?a=score",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({game:G,v,n,aid,ms:Date.now()-t0,pass:P?P.get():""})}),j=await r.json();
+      if(r.status===401&&j.need==="captcha"&&P&&!again){P.clear();await P.need();return send(v,n,true)}
+      if(!r.ok)throw new Error(j.error||"Не удалось сохранить");
+      say(fullMsg+(j.improved?"Новый личный рекорд: "+U(j.best)+"!":"Ваш рекорд — "+U(j.best)+". Этот результат не лучше, но вы близко."));fullMsg="";form.hidden=true;save.hidden=true;top()}
+    catch(e){say(S(e.message,200))}}
+  const ask=(v,t)=>{pending=v;say(t+" Впишите ник, чтобы попасть в таблицу.");form.hidden=false;save.hidden=true;try{inp.focus({preventScroll:true})}catch(_){}};
+  // После игры: прошли игру целиком или попали в топ-5 — записываем сами; иначе — кнопка «Записать мой результат»
+  window.IIGRY_SCORE=(v,o)=>{v=Math.round(+v||0);if(!v)return;const n=getNick(),full=!!(o&&o.full),best=top5(v);
+    if(full||best){fullMsg=full?"Игра пройдена — результат записан. ":"Вы в топ-5! ";if(n)send(v,n);else ask(v,(full?"Игра пройдена! ":"Вы в топ-5! ")+"Результат: "+U(v)+".");return}
+    pending=v;form.hidden=true;save.hidden=false;say("Ваш результат: "+U(v)+". В топ-5 пока не вошёл, но его можно записать в таблицу кнопкой ниже.")};
+  save.onclick=()=>{const n=getNick();if(!pending)return;if(n){const v=pending;pending=null;send(v,n)}else ask(pending,"Результат: "+U(pending)+".")};
+  form.addEventListener("submit",e=>{e.preventDefault();const n=S(inp.value,30).trim().replace(/^@/,"");if(!n){say("Впишите ник.");return}setNick(n);if(pending){send(pending,n);pending=null}});
+  top();setInterval(()=>{if(!document.hidden)top()},30000);
+})();
+</script>
+</body></html>

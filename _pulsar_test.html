@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Пульсар — ИИгры онлайн</title>
+<style>
+:root{--bg:#07060B;--fg:#F4F4F6;--mu:#B9B6C2;--gold:#E7BD52;--f-b:"Golos Text",system-ui,sans-serif;--f-d:"Rubik",system-ui,sans-serif}
+html,body{min-height:100%}html{background:#07060B}body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-b);display:grid;place-items:center;padding:12px}
+.wrap{width:min(720px,100%);display:grid;gap:10px}
+h1{margin:0;font:900 clamp(1.6rem,5vw,2.4rem) var(--f-d);letter-spacing:.04em}h1 b{color:var(--gold)}
+.mu{color:var(--mu);margin:0;font-size:.95rem}
+.stage{position:relative;aspect-ratio:1/1;width:100%;border-radius:16px;overflow:hidden;background:#000;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+canvas{display:block;width:100%;height:100%}
+.ov{position:absolute;inset:0;display:grid;place-items:center;text-align:center;background:rgba(5,4,9,.62);padding:16px}.ov[hidden]{display:none}
+.ov .in{display:grid;gap:10px;justify-items:center}.ov b.t{font:900 clamp(1.6rem,6vw,2.6rem) var(--f-d);letter-spacing:.06em}
+.modes{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}.modes button,.btn{min-height:46px;padding:0 16px;border-radius:12px;border:1px solid rgba(255,255,255,.2);background:#15131c;color:#fff;font:700 15px var(--f-b);cursor:pointer}
+.modes button[aria-pressed=true]{border-color:var(--gold);color:var(--gold);background:rgba(231,189,82,.12)}
+.btn.go{background:linear-gradient(135deg,#F2C45A,#C98E2B);color:#1A1306;border:0;min-width:180px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.small{font-size:.85rem;color:var(--mu)}
+kbd{border:1px solid rgba(255,255,255,.25);border-radius:6px;padding:0 6px;font:600 .85em var(--f-b)}
+</style></head><body>
+<div class="wrap">
+  <div class="row"><h1>ПУЛЬ<b>САР</b></h1><button class="btn" id="snd" type="button" aria-pressed="true">🔊 Звук</button></div>
+  <p class="mu">Звезда сжимает стены. Вы — искра на её орбите: проскальзывайте в просветы и держитесь как можно дольше.</p>
+  <div class="stage" id="stage"><canvas id="cv" aria-label="Игровое поле Пульсара"></canvas>
+    <div class="ov" id="ov"><div class="in">
+      <b class="t" id="ovT">ПУЛЬСАР</b><p class="mu" id="ovP">Выберите орбиту</p>
+      <div class="modes" id="modes"><button type="button" data-m="0" aria-pressed="true">Орбита</button><button type="button" data-m="1" aria-pressed="false">Сверхорбита</button><button type="button" data-m="2" aria-pressed="false">Пульсар</button></div>
+      <p class="small" id="best"></p>
+      <button class="btn go" id="go" type="button">▶ Старт</button>
+      <p class="small">Управление: <kbd>←</kbd> <kbd>→</kbd> или <kbd>A</kbd> <kbd>D</kbd> · на телефоне — держите палец слева или справа · <kbd>Пробел</kbd> — заново</p>
+    </div></div>
+  </div>
+  <p class="small">Очки в таблице лидеров = время × сложность орбиты (×1, ×1,5, ×2). Каждые несколько секунд — новая фаза: быстрее, хитрее, с разворотами.</p>
+</div>
+<script>
+(function(){
+const cv=document.getElementById("cv"),ctx=cv.getContext("2d"),stage=document.getElementById("stage"),ov=document.getElementById("ov");
+const N=6,SEG=Math.PI*2/N,TAU=Math.PI*2;
+const MODES=[{name:"Орбита",sp:1.0,rot:1.0,mul:1},{name:"Сверхорбита",sp:1.3,rot:1.35,mul:1.5},{name:"Пульсар",sp:1.6,rot:1.7,mul:2}];
+const PHASES=[[0,"ИСКРА"],[10,"ЛИНИЯ"],[20,"ТРЕУГОЛЬНИК"],[30,"КВАДРАТ"],[45,"ПЕНТАГОН"],[60,"ГЕКСАГОН"],[90,"ПУЛЬСАР"],[120,"СВЕРХНОВАЯ"]];
+let mode=0,W=0,H=0,DPR=1,S=1;
+const bestK=m=>"iigry-pulsar-best-"+m,getBest=m=>{try{return +localStorage.getItem(bestK(m))||0}catch(_){return 0}},setBest=(m,v)=>{try{localStorage.setItem(bestK(m),String(v))}catch(_){}};
+function resize(){const r=stage.getBoundingClientRect();DPR=Math.min(2,window.devicePixelRatio||1);W=Math.round(r.width*DPR);H=Math.round(r.height*DPR);cv.width=W;cv.height=H;S=Math.min(W,H)/720}
+addEventListener("resize",resize);resize();
+// ---- звук: простой синтезатор (бочка + арпеджио)
+let AC=null,soundOn=true,master=null;
+try{soundOn=localStorage.getItem("iigry-pulsar-snd")!=="0"}catch(_){}
+const sndBtn=document.getElementById("snd");const sndUI=()=>{sndBtn.textContent=soundOn?"🔊 Звук":"🔇 Без звука";sndBtn.setAttribute("aria-pressed",soundOn)};sndUI();
+sndBtn.onclick=()=>{soundOn=!soundOn;try{localStorage.setItem("iigry-pulsar-snd",soundOn?"1":"0")}catch(_){}if(master)master.gain.value=soundOn?.5:0;sndUI()};
+function audio(){if(AC)return;try{AC=new (window.AudioContext||window.webkitAudioContext)();master=AC.createGain();master.gain.value=soundOn?.5:0;master.connect(AC.destination)}catch(_){AC=null}}
+function tone(f,t,d,type,vol){if(!AC)return;const o=AC.createOscillator(),g=AC.createGain();o.type=type||"square";o.frequency.setValueAtTime(f,t);g.gain.setValueAtTime(vol||.08,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(master);o.start(t);o.stop(t+d+.02)}
+function kick(t){if(!AC)return;const o=AC.createOscillator(),g=AC.createGain();o.frequency.setValueAtTime(150,t);o.frequency.exponentialRampToValueAtTime(40,t+.12);g.gain.setValueAtTime(.5,t);g.gain.exponentialRampToValueAtTime(.001,t+.18);o.connect(g);g.connect(master);o.start(t);o.stop(t+.2)}
+const ARP=[0,7,12,15,12,7,3,10];let nextBeat=0,beatN=0,bpm=128;
+function music(){if(!AC||!G.run)return;const spb=60/bpm/2;while(nextBeat<AC.currentTime+.15){if(beatN%2===0){kick(nextBeat);G.pulse=1}const root=[220,196,174.6,196][Math.floor(beatN/16)%4];tone(root*Math.pow(2,ARP[beatN%8]/12),nextBeat,spb*.9,"square",.035);beatN++;nextBeat+=spb}}
+function sfxDie(){if(!AC)return;const t=AC.currentTime;tone(220,t,.25,"sawtooth",.15);tone(110,t+.05,.5,"sawtooth",.12)}
+function sfxPhase(){if(!AC)return;const t=AC.currentTime;[523,659,784].forEach((f,i)=>tone(f,t+i*.06,.18,"triangle",.09))}
+// ---- состояние
+const G={run:false,dead:false,t:0,a:0,rot:0,rotSp:1,rotDir:1,walls:[],spawnD:0,pulse:0,shake:0,phase:0,flash:0,hue:200,lastRow:null,deadAt:0,zoom:1,flipT:0,speedK:1};
+const K={l:false,r:false};
+const R_HEX=()=>68*S,R_PL=()=>(68+16)*S,R_SPAWN=()=>Math.hypot(W,H)*0.75;
+function wrap(a){a%=TAU;return a<0?a+TAU:a}
+const sideOf=a=>Math.floor(wrap(a)/SEG)%N;
+// ---- узоры стен: список рядов, в каждом — набор закрытых сторон
+const rnd=n=>Math.floor(Math.random()*n);
+function rowsFor(level){const o=rnd(N),mir=Math.random()<.5?1:-1,sd=k=>((o+mir*k)%N+N)%N,R=[];
+  const C=gap=>{const s=[];for(let i=0;i<N;i++)if(i!==gap)s.push(i);return s},alt=p=>[0,2,4].map(i=>(i+p)%N);
+  const pick=rnd(level<1?3:level<3?6:8);
+  switch(pick){
+    case 0:R.push(C(sd(0)));break;                                    // одиночная «С»
+    case 1:R.push(alt(sd(0)));R.push(alt(sd(1)));break;               // чередование
+    case 2:R.push(C(sd(0)));R.push(C(sd(3)));break;                   // «С» и разворот
+    case 3:for(let k=0;k<4;k++)R.push([sd(k),sd(k+3)]);break;         // спираль-пропеллер
+    case 4:for(let k=0;k<3;k++)R.push(alt(sd(k%2)));break;            // тройное чередование
+    case 5:R.push(C(sd(0)));R.push(C(sd(1)));R.push(C(sd(2)));break;  // лестница
+    case 6:for(let k=0;k<6;k++)R.push([sd(k)]);break;                 // спираль из одиночных
+    default:R.push([sd(0),sd(1),sd(2),sd(3)]);R.push([sd(2),sd(3),sd(4),sd(5)]);R.push([sd(4),sd(5),sd(0),sd(1)]);  // «ворота»
+  }return R}
+// сколько сторон минимум нужно проехать от любого просвета ряда A до любого просвета ряда B
+function travel(A,B){if(!A)return 0;const oa=[],ob=[];for(let i=0;i<N;i++){if(!A.includes(i))oa.push(i);if(!B.includes(i))ob.push(i)}
+  if(!ob.length)return 3;let worst=0;for(const a of oa){let best=9;for(const b of ob){const d=Math.min((a-b+N)%N,(b-a+N)%N);if(d<best)best=d}if(best>worst)worst=best}return worst}
+function wallSpeed(){return 410*S*MODES[mode].sp*G.speedK}
+function angSpeed(){return TAU*1.62*Math.min(1.25,.95+G.t/240)*(mode===2?1.12:1)}
+function spawn(){const lvl=Math.min(4,Math.floor(G.t/15)),rows=rowsFor(lvl),sp=wallSpeed(),th=Math.max(22*S,sp*.075);let d=Math.max(G.spawnD,R_SPAWN());
+  for(const row of rows){const need=travel(G.lastRow,row),time=.2+need*SEG/angSpeed()+.1;d+= (G.lastRow?Math.max(th+sp*time,th+70*S):0);
+    for(const s of row)G.walls.push({s,d,th});G.lastRow=row}
+  G.spawnD=d+th+sp*.32}
+// ---- игровой цикл
+function start(){audio();if(AC&&AC.state==="suspended")AC.resume();Object.assign(G,{run:true,dead:false,t:0,a:-Math.PI/2+SEG/2,rot:0,rotSp:1,rotDir:Math.random()<.5?1:-1,walls:[],spawnD:0,pulse:0,shake:0,phase:0,flash:0,lastRow:null,zoom:1,flipT:4+Math.random()*3,speedK:1});
+  ov.hidden=true;if(AC){nextBeat=AC.currentTime+.05;beatN=0}last=0;cancelAnimationFrame(raf);raf=requestAnimationFrame(loop)}
+function die(){G.dead=true;G.run=false;G.deadAt=performance.now();G.shake=1;G.flash=1;sfxDie();if(navigator.vibrate)try{navigator.vibrate(120)}catch(_){}
+  const ms=Math.round(G.t*1000),b=getBest(mode),nb=ms>b;if(nb)setBest(mode,ms);
+  document.getElementById("ovT").textContent=nb?"НОВЫЙ РЕКОРД!":"СТОЛКНОВЕНИЕ";
+  document.getElementById("ovP").textContent="Время: "+(ms/1000).toFixed(2)+" с · фаза «"+PHASES[G.phase][1]+"»";showBest();
+  const score=Math.round(ms*MODES[mode].mul/100);if(score>0&&window.IIGRY_SCORE)window.IIGRY_SCORE(score,{full:G.t>=120});
+  setTimeout(()=>{if(!G.run){ov.hidden=false;document.getElementById("go").textContent="↻ Ещё раз"}},450)}
+function step(dt){G.t+=dt;
+  // фазы
+  let ph=0;for(let i=0;i<PHASES.length;i++)if(G.t>=PHASES[i][0])ph=i;if(ph!==G.phase){G.phase=ph;G.flash=.6;G.speedK=1+ph*.07;sfxPhase();bpm=128+ph*6}
+  // вращение мира и развороты
+  G.flipT-=dt;if(G.flipT<=0){G.rotDir*=-1;G.flipT=3+Math.random()*(6-Math.min(3,G.phase*.5));if(G.phase>=3&&Math.random()<.35)G.rotSp=1.8}G.rotSp+=(1-G.rotSp)*Math.min(1,dt*.8);
+  G.rot+=G.rotDir*G.rotSp*(.9+G.phase*.18)*MODES[mode].rot*dt;
+  // движение игрока с блокировкой сбоку
+  const dir=(K.r?1:0)-(K.l?1:0);if(dir){const na=wrap(G.a+dir*angSpeed()*dt),ns=sideOf(na),os=sideOf(G.a);
+    if(ns===os||!blocked(ns))G.a=na;else{const edge=dir>0?(os+1)*SEG-1e-4:os*SEG+1e-4;G.a=wrap(edge)}}
+  // стены
+  const sp=wallSpeed()*dt;for(const w of G.walls)w.d-=sp;G.spawnD-=sp;
+  G.walls=G.walls.filter(w=>w.d+w.th>R_HEX()-2);if(G.spawnD<R_SPAWN()+40*S)spawn();
+  // столкновение «в лоб»
+  const ps=sideOf(G.a),rp=R_PL();for(const w of G.walls)if(w.s===ps&&w.d<=rp+6*S&&w.d+w.th>=rp-6*S){die();return}
+  G.pulse=Math.max(0,G.pulse-dt*4);G.zoom=1+G.pulse*.04}
+function blocked(side){const rp=R_PL();return G.walls.some(w=>w.s===side&&w.d<=rp+6*S&&w.d+w.th>=rp-6*S)}
+// ---- рисование
+function col(h,s,l,a){return "hsla("+h+","+s+"%,"+l+"%,"+(a==null?1:a)+")"}
+function draw(){const hue=(G.t*14+200+G.phase*40)%360,cx=W/2,cy=H/2;ctx.setTransform(1,0,0,1,0,0);
+  ctx.fillStyle=col(hue,40,6);ctx.fillRect(0,0,W,H);
+  let sx=0,sy=0;if(G.shake>0){sx=(Math.random()-.5)*24*S*G.shake;sy=(Math.random()-.5)*24*S*G.shake}
+  ctx.translate(cx+sx,cy+sy);ctx.rotate(G.rot);const z=G.zoom;ctx.scale(z,z);const far=Math.hypot(W,H);
+  for(let i=0;i<N;i++){ctx.fillStyle=i%2?col(hue,45,10):col(hue,45,14);ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(Math.cos(i*SEG)*far,Math.sin(i*SEG)*far);ctx.lineTo(Math.cos((i+1)*SEG)*far,Math.sin((i+1)*SEG)*far);ctx.closePath();ctx.fill()}
+  ctx.fillStyle=col(hue,85,62);for(const w of G.walls){const a0=w.s*SEG,a1=a0+SEG,r0=Math.max(w.d,R_HEX()),r1=w.d+w.th;if(r1<=r0)continue;ctx.beginPath();ctx.moveTo(Math.cos(a0)*r0,Math.sin(a0)*r0);ctx.lineTo(Math.cos(a1)*r0,Math.sin(a1)*r0);ctx.lineTo(Math.cos(a1)*r1,Math.sin(a1)*r1);ctx.lineTo(Math.cos(a0)*r1,Math.sin(a0)*r1);ctx.closePath();ctx.fill()}
+  const rh=R_HEX()*(1+G.pulse*.12);ctx.fillStyle=col(hue,40,8);ctx.strokeStyle=col(hue,85,62);ctx.lineWidth=6*S;ctx.beginPath();for(let i=0;i<=N;i++){const a=i*SEG;i?ctx.lineTo(Math.cos(a)*rh,Math.sin(a)*rh):ctx.moveTo(Math.cos(a)*rh,Math.sin(a)*rh)}ctx.closePath();ctx.fill();ctx.stroke();
+  if(!G.dead||Math.floor(performance.now()/90)%2){const rp=R_PL(),a=G.a;ctx.save();ctx.rotate(a);ctx.fillStyle=col(hue,90,75);ctx.beginPath();ctx.moveTo(rp+10*S,0);ctx.lineTo(rp-5*S,-7*S);ctx.lineTo(rp-5*S,7*S);ctx.closePath();ctx.fill();ctx.restore()}
+  ctx.setTransform(1,0,0,1,0,0);
+  if(G.flash>0){ctx.fillStyle="rgba(255,255,255,"+(G.flash*.35)+")";ctx.fillRect(0,0,W,H)}
+  // интерфейс
+  const fs=Math.round(22*S*DPR/DPR*1.0);ctx.font="800 "+Math.max(14,Math.round(30*S))+"px Rubik,system-ui,sans-serif";ctx.textBaseline="top";
+  ctx.fillStyle="rgba(0,0,0,.45)";ctx.fillRect(W-210*S,0,210*S,52*S);ctx.fillRect(0,0,260*S,52*S);
+  ctx.fillStyle="#fff";ctx.textAlign="right";ctx.fillText(G.t.toFixed(2),W-14*S,10*S);ctx.textAlign="left";ctx.font="700 "+Math.max(11,Math.round(20*S))+"px Rubik,system-ui,sans-serif";ctx.fillText(PHASES[G.phase][1],14*S,16*S)}
+let raf=0,last=0;
+function loop(ts){const dt=last?Math.min(.034,(ts-last)/1000):0;last=ts;if(G.run&&!paused){step(dt);music()}G.shake=Math.max(0,G.shake-dt*2.5);G.flash=Math.max(0,G.flash-dt*2.2);draw();if(G.run||G.shake>0||G.flash>0)raf=requestAnimationFrame(loop)}
+// ---- управление
+const KEYL=["ArrowLeft","KeyA"],KEYR=["ArrowRight","KeyD"];
+addEventListener("keydown",e=>{if(KEYL.includes(e.code)){K.l=true;e.preventDefault()}else if(KEYR.includes(e.code)){K.r=true;e.preventDefault()}
+  else if(e.code==="Space"||e.code==="Enter"){e.preventDefault();if(!G.run&&performance.now()-G.deadAt>400)start()}else if(e.code==="Escape"&&G.run)togglePause()});
+addEventListener("keyup",e=>{if(KEYL.includes(e.code))K.l=false;else if(KEYR.includes(e.code))K.r=false});
+const touches=new Map();function tUpd(){K.l=K.r=false;for(const x of touches.values()){if(x<.5)K.l=true;else K.r=true}}
+stage.addEventListener("pointerdown",e=>{if(ov&&!ov.hidden&&e.target.closest("button"))return;if(!G.run){if(performance.now()-G.deadAt>400&&ov.hidden===false&&!e.target.closest(".in"))start();return}
+  const r=stage.getBoundingClientRect();touches.set(e.pointerId,(e.clientX-r.left)/r.width);tUpd();stage.setPointerCapture(e.pointerId);e.preventDefault()});
+stage.addEventListener("pointermove",e=>{if(!touches.has(e.pointerId))return;const r=stage.getBoundingClientRect();touches.set(e.pointerId,(e.clientX-r.left)/r.width);tUpd()});
+["pointerup","pointercancel","lostpointercapture"].forEach(v=>stage.addEventListener(v,e=>{touches.delete(e.pointerId);tUpd()}));
+stage.addEventListener("contextmenu",e=>e.preventDefault());
+let paused=false;function togglePause(){paused=!paused;if(paused){if(AC)AC.suspend();document.getElementById("ovT").textContent="ПАУЗА";document.getElementById("ovP").textContent="Нажмите «Продолжить»";document.getElementById("go").textContent="▶ Продолжить";ov.hidden=false}else{if(AC){AC.resume();nextBeat=AC.currentTime+.05}ov.hidden=true;last=0}}
+document.addEventListener("visibilitychange",()=>{if(document.hidden&&G.run&&!paused)togglePause()});addEventListener("blur",()=>{K.l=K.r=false;touches.clear()});
+document.getElementById("go").onclick=()=>{if(G.run&&paused){togglePause();return}start()};
+document.getElementById("modes").onclick=e=>{const b=e.target.closest("button");if(!b)return;mode=+b.dataset.m;[...e.currentTarget.children].forEach(x=>x.setAttribute("aria-pressed",x===b));showBest()};
+function showBest(){const b=getBest(mode);document.getElementById("best").textContent=b?"Рекорд на «"+MODES[mode].name+"»: "+(b/1000).toFixed(2)+" с":"Рекорда на этой орбите пока нет"}
+window.IIGRY_TO_MENU=()=>{G.run=false;paused=false;if(AC)AC.suspend();document.getElementById("ovT").textContent="ПУЛЬСАР";document.getElementById("ovP").textContent="Выберите орбиту";document.getElementById("go").textContent="▶ Старт";ov.hidden=false;draw()};
+showBest();draw();window.__pulsar={G,sideOf,R_PL,SEG,N,angSpeed};
+})();
+</script>
+</body></html>

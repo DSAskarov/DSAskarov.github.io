@@ -16,7 +16,11 @@ const GAMES = {
   post:  { min: 1,  max: 1000, asc: false, minMs: v => v * 600 },        // «Звёздный почтальон»: доставлено писем
   react: { min: 90, max: 3000, asc: true,  minMs: v => 5 * (v + 1000) }, // «Быстрее нейросети»: среднее время реакции, мс
   cat:   { min: 1,  max: 400,  asc: false, minMs: v => Math.min(110000, v * 350) }, // «Кот на орбите»: рыба за 3 орбиты
-  words: { min: 1,  max: 3000, asc: false, minMs: v => Math.min(900000, v * 100) }  // «Ферма слов»: очки за сезон
+  words: { min: 1,  max: 3000, asc: false, minMs: v => Math.min(900000, v * 100) },  // «Ферма слов»: очки за сезон
+  hex:   { min: 1,  max: 200000, asc: false, minMs: v => Math.min(1800000, v * 45) },  // «Пульсар»: десятые секунды × сложность
+  life:  { min: 1,  max: 100000, asc: false, minMs: v => Math.min(1200000, v * 20) },  // «Жизнь с нуля»: капитал / 100
+  gai:   { min: 1,  max: 400,    asc: false, minMs: v => 60000 },                       // «Жезл»: очки за смену
+  conq:  { min: 3,  max: 500,    asc: true,  minMs: v => v * 2500 }                     // «Континенты»: ходов до победы
 };
 const RESV = /команд|✓|dsaskarov|адм[иi]н|admin|модер|moder|иигр|iigr|поддержк|support|claude|anthropic|официал|official/i;
 

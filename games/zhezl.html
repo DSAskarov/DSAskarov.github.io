@@ -1,0 +1,238 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; font-src https://fonts.gstatic.com; img-src 'self' data: https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; connect-src https://functions.yandexcloud.net https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; frame-src https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; object-src 'none'; base-uri 'none'; form-action 'none'"><meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="description" content="Игра площадки «ИИгры онлайн»"><meta property="og:title" content="Жезл: смена инспектора — ИИгры онлайн — ИИгры онлайн"><meta property="og:description" content="Игра площадки «ИИгры онлайн»"><meta name="theme-color" content="#0B0A0E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23B3141F'/%3E%3Ctext x='32' y='44' font-size='30' font-family='Arial' font-weight='700' text-anchor='middle' fill='%23F6DE8D'%3EИИ%3C/text%3E%3C/svg%3E">
+<style>*{box-sizing:border-box}html,body{margin:0}[hidden]{display:none!important}</style></head><body>
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Жезл: смена инспектора — ИИгры онлайн</title>
+<style>
+:root{--bg:#0D0C11;--card:#17151D;--line:rgba(255,255,255,.1);--fg:#F4F4F6;--mu:#B9B6C2;--gold:#E7BD52;--red:#E8333F;--grn:#4ADE95;--f-b:"Golos Text",system-ui,sans-serif;--f-d:"Rubik",system-ui,sans-serif}
+html,body{min-height:100%}html{background:#0D0C11}body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-b);padding:12px}
+.w{max-width:900px;margin:0 auto;display:grid;gap:10px}
+h1{margin:0;font:900 clamp(1.5rem,5vw,2.2rem) var(--f-d)}h1 b{color:var(--gold)}
+.mu{color:var(--mu);margin:0;font-size:.93rem}
+.hud{display:flex;gap:8px;flex-wrap:wrap}.hud span{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-weight:700;font-size:.92rem}
+.main{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,320px);gap:10px}
+@media(max-width:760px){.main{grid-template-columns:minmax(0,1fr)}}
+.stage{position:relative;border-radius:16px;overflow:hidden;background:#3a3f45;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+canvas{display:block;width:100%;height:auto;cursor:pointer}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px;display:grid;gap:8px;align-content:start}
+.panel h2{margin:0;font:800 1.1rem var(--f-d)}
+.doc{display:flex;justify-content:space-between;gap:8px;border-bottom:1px dashed var(--line);padding:5px 0;font-size:.92rem}.doc b.bad{color:#FF8A8F}.doc b.ok{color:var(--grn)}
+.vio{display:grid;gap:6px}.vio label{display:flex;gap:8px;align-items:center;font-size:.92rem;min-height:32px;cursor:pointer}
+.btn{min-height:44px;padding:0 14px;border-radius:12px;border:1px solid var(--line);background:#221F2A;color:#fff;font:700 14px var(--f-b);cursor:pointer}.btn.go{background:linear-gradient(135deg,#F2C45A,#C98E2B);color:#1A1306;border:0}.btn.red{background:#3a171b;border-color:#E8333F}
+.btn:disabled{opacity:.45;cursor:default}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.ov{position:absolute;inset:0;display:grid;place-items:center;background:rgba(5,4,9,.7);text-align:center;padding:16px}.ov[hidden]{display:none}.ov .in{display:grid;gap:10px;justify-items:center;max-width:420px}
+.ov b.t{font:900 1.6rem var(--f-d);color:var(--gold)}
+.say{min-height:2.6em;font-size:.92rem;background:#0F0E13;border-radius:10px;padding:8px 10px}
+.task{background:rgba(231,189,82,.08);border:1px solid rgba(231,189,82,.35);border-radius:12px;padding:8px 12px;font-size:.9rem}
+</style></head><body>
+<div class="w">
+  <h1>Жезл: <b>смена инспектора</b></h1>
+  <p class="mu">Вы — инспектор на посту. Ограничение — 60 км/ч. Останавливайте нарушителей нажатием на машину, проверяйте документы и выписывайте штрафы по делу. Честных водителей не мучайте, взяток не берите.</p>
+  <div class="hud"><span id="hT">⏱ 3:00</span><span id="hS">⭐ 0</span><span id="hB">💰 0 ₽ в бюджет</span><span id="hC">😠 жалоб: 0</span><span id="hM">🚗 упущено: 0</span><span id="hL">Смена 1</span></div>
+  <div class="task" id="task"></div>
+  <div class="main">
+    <div class="stage" id="stage"><canvas id="cv" width="560" height="640" aria-label="Дорога с машинами — нажмите на машину, чтобы остановить"></canvas>
+      <div class="ov" id="ov"><div class="in"><b class="t" id="oT">Заступить на смену</b><p class="mu" id="oP">Машины едут снизу вверх. Над каждой — скорость с радара и значки: 🔦 без фар, 📱 с телефоном, 🧷 без ремня, 🕶 тонировка. Нажмите на машину — она остановится у поста.</p><button class="btn go" id="go" type="button">🚓 Начать смену</button></div></div>
+    </div>
+    <div class="panel" id="panel">
+      <h2>Проверка документов</h2>
+      <div id="insp"><p class="mu">Остановите машину, чтобы проверить водителя.</p></div>
+    </div>
+  </div>
+  <p class="mu" style="font-size:.85rem">Очки: +3 за верный штраф, +1 за честное «Счастливого пути», +5 за отказ от взятки. −4 за штраф без нарушения (жалоба), −2 за каждого упущенного лихача. Взятка — конец смены.</p>
+</div>
+<script>
+(function(){
+const $=id=>document.getElementById(id),cv=$("cv"),ctx=cv.getContext("2d"),W=cv.width,H=cv.height,R=n=>Math.floor(Math.random()*n),ch=p=>Math.random()<p;
+const LANES=[190,290,390],POST_Y=150,COLORS=["#E8333F","#4A8CF0","#F2C45A","#4ADE95","#E6E6EA","#2B2B33","#B79CFF","#FF8A3D"],NAMES=["Иван","Ольга","Пётр","Анна","Сергей","Марина","Тимур","Алёна","Виктор","Дарья"];
+const TASKS=[["belt","Сегодня рейд «Ремень»: поймайте 3 водителей без ремня",3],["speed","План по скорости: оштрафуйте 4 лихачей",4],["docs","Проверка документов: найдите 2 просроченных ОСАГО",2],["phone","Рейд «Не отвлекайся»: 3 водителя с телефоном",3]];
+let G=null,raf=0,last=0;
+function newCar(){const lane=R(3),bad=ch(.45+G.level*.04),c={lane,x:LANES[lane],y:H+60,col:COLORS[R(COLORS.length)],v:0,state:"drive",name:NAMES[R(NAMES.length)]};
+  c.speed=bad&&ch(.55)?65+R(45):35+R(25);c.belt=!(bad&&ch(.35));c.phone=bad&&ch(.25);c.lights=!(bad&&ch(.25));c.tint=bad&&ch(.2);
+  c.osago=!(bad&&ch(.25));c.licence=!(bad&&ch(.12));c.drunk=bad&&ch(.1);c.bribe=ch(.18+G.level*.03);c.vy=-(1.2+c.speed/40)*(60);return c}
+function viol(c){const v=[];if(c.speed>80)v.push("speed");if(!c.belt)v.push("belt");if(c.phone)v.push("phone");if(!c.lights)v.push("lights");if(c.tint)v.push("tint");if(!c.osago)v.push("osago");if(!c.licence)v.push("licence");if(c.drunk)v.push("drunk");return v}
+const VN={speed:"Превышение скорости (больше 80 км/ч)",belt:"Не пристёгнут ремнём",phone:"Телефон за рулём",lights:"Без ближнего света",tint:"Тонировка передних стёкол",osago:"Нет действующего ОСАГО",licence:"Просроченные права",drunk:"Алкоголь"};
+const FINE={speed:1500,belt:1000,phone:1500,lights:500,tint:500,osago:800,licence:5000,drunk:30000};
+function start(){const t=TASKS[R(TASKS.length)];G={t:180,score:0,budget:0,compl:0,miss:0,level:(G?G.level:1),cars:[],spawn:0,sel:null,task:t,taskN:0,over:false};$("ov").hidden=true;$("task").textContent="📋 "+t[1]+" (бонус +10)";insp();last=0;cancelAnimationFrame(raf);raf=requestAnimationFrame(loop)}
+function hud(){$("hT").textContent="⏱ "+Math.floor(G.t/60)+":"+String(Math.floor(G.t%60)).padStart(2,"0");$("hS").textContent="⭐ "+G.score;$("hB").textContent="💰 "+G.budget.toLocaleString("ru-RU")+" ₽ в бюджет";$("hC").textContent="😠 жалоб: "+G.compl;$("hM").textContent="🚗 упущено: "+G.miss;$("hL").textContent="Смена "+G.level;
+  $("task").textContent="📋 "+G.task[1]+": "+Math.min(G.taskN,G.task[2])+" / "+G.task[2]+(G.taskN>=G.task[2]?" ✅":" (бонус +10)")}
+function step(dt){G.t-=dt;if(G.t<=0){G.t=0;return end("Смена окончена!")}
+  G.spawn-=dt;const busy=G.cars.filter(c=>c.state!=="gone").length;if(G.spawn<=0&&busy<7){G.cars.push(newCar());G.spawn=Math.max(.7,1.9-G.level*.15)+Math.random()*.8}
+  for(const c of G.cars){if(c.state==="drive"){c.y+=c.vy*dt;if(c.y<-80){c.state="gone";if(viol(c).includes("speed")||c.drunk){G.miss++;G.score-=2;flash("Упустили нарушителя: −2","#FF8A8F")}}}
+    else if(c.state==="pull"){const tx=490,ty=POST_Y+40;c.x+=(tx-c.x)*Math.min(1,dt*3);c.y+=(ty-c.y)*Math.min(1,dt*3);if(Math.abs(c.y-ty)<2&&Math.abs(c.x-tx)<2)c.state="stop"}
+    else if(c.state==="leave"){c.x+=(LANES[2]-c.x)*Math.min(1,dt*2);c.y-=180*dt;if(c.y<-80)c.state="gone"}}
+  // машины в одной полосе не проезжают сквозь друг друга
+  for(const a of G.cars)if(a.state==="drive")for(const b of G.cars)if(b!==a&&b.state==="drive"&&b.lane===a.lane&&b.y<a.y&&a.y-b.y<90){a.y=b.y+90}
+  G.cars=G.cars.filter(c=>c.state!=="gone");hud()}
+let fl=null;function flash(t,c){fl={t,c,a:1.6}}
+function drawCar(c){ctx.save();ctx.translate(c.x,c.y);ctx.fillStyle="rgba(0,0,0,.35)";ctx.fillRect(-23,-38,50,80);ctx.fillStyle=c.col;roundRect(-25,-40,50,80,10);ctx.fill();
+  ctx.fillStyle=c.tint?"#111":"#9fd3ff";roundRect(-19,-26,38,18,5);ctx.fill();ctx.fillStyle=c.tint?"#111":"#7fb6e0";roundRect(-19,14,38,14,5);ctx.fill();
+  ctx.fillStyle=c.lights?"#FFF6B0":"#555";ctx.fillRect(-21,-42,10,5);ctx.fillRect(11,-42,10,5);ctx.fillStyle="#C2262E";ctx.fillRect(-21,38,10,4);ctx.fillRect(11,38,10,4);
+  if(G.sel===c){ctx.strokeStyle="#E7BD52";ctx.lineWidth=4;roundRect(-29,-44,58,88,12);ctx.stroke()}ctx.restore();
+  if(c.state==="drive"&&c.y<H-20){ctx.font="700 15px Rubik,system-ui,sans-serif";ctx.textAlign="center";const sp=c.speed;ctx.fillStyle="rgba(0,0,0,.7)";roundRect(c.x-30,c.y-72,60,22,8);ctx.fill();ctx.fillStyle=sp>80?"#FF6B70":sp>60?"#F2C45A":"#C8F7DA";ctx.fillText(sp+" км/ч",c.x,c.y-56);
+    const ic=(c.lights?"":"🔦")+(c.phone?"📱":"")+(c.belt?"":"🧷")+(c.tint?"🕶":"");if(ic){ctx.font="18px system-ui";ctx.fillText(ic,c.x,c.y-80)}}}
+function roundRect(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath()}
+let roadOff=0;function draw(dt){ctx.fillStyle="#5b8f4b";ctx.fillRect(0,0,W,H);ctx.fillStyle="#3b3f46";ctx.fillRect(140,0,300,H);ctx.fillStyle="#4a4f57";ctx.fillRect(440,0,90,H);
+  roadOff=(roadOff+dt*220)%60;ctx.strokeStyle="#EDEDED";ctx.lineWidth=4;ctx.setLineDash([30,30]);ctx.lineDashOffset=-roadOff;[240,340].forEach(x=>{ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()});ctx.setLineDash([]);
+  ctx.fillStyle="#fff";ctx.fillRect(140,0,4,H);ctx.fillRect(436,0,4,H);
+  ctx.fillStyle="rgba(255,255,255,.12)";ctx.fillRect(140,POST_Y+260,300,6);ctx.font="700 13px Golos Text,system-ui";ctx.fillStyle="#fff";ctx.textAlign="left";ctx.fillText("📡 радар",446,POST_Y+272);
+  ctx.font="36px system-ui";ctx.textAlign="center";ctx.fillText("👮",500,POST_Y-30);ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(70,90,30,0,7);ctx.fill();ctx.fillStyle="#E8333F";ctx.lineWidth=6;ctx.strokeStyle="#E8333F";ctx.beginPath();ctx.arc(70,90,30,0,7);ctx.stroke();ctx.fillStyle="#111";ctx.font="800 26px Rubik,system-ui";ctx.fillText("60",70,100);
+  if(G)for(const c of G.cars)drawCar(c);
+  if(fl&&fl.a>0){ctx.globalAlpha=Math.min(1,fl.a);ctx.fillStyle="rgba(0,0,0,.6)";roundRect(W/2-170,H-70,340,40,12);ctx.fill();ctx.fillStyle=fl.c;ctx.font="700 16px Golos Text,system-ui";ctx.fillText(fl.t,W/2,H-44);ctx.globalAlpha=1;fl.a-=dt}}
+function loop(ts){const dt=last?Math.min(.05,(ts-last)/1000):0;last=ts;if(G&&!G.over&&!paused)step(dt);draw(paused?0:dt);if(G&&!G.over)raf=requestAnimationFrame(loop)}
+// выбор машины
+cv.addEventListener("pointerdown",e=>{if(!G||G.over)return;const r=cv.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*W,y=(e.clientY-r.top)/r.height*H;
+  if(G.sel){flash("Сначала закончите проверку текущей машины","#F2C45A");return}
+  const c=G.cars.find(c=>c.state==="drive"&&Math.abs(c.x-x)<40&&Math.abs(c.y-y)<55);if(!c)return;c.state="pull";G.sel=c;insp()});
+function insp(){const box=$("insp"),c=G&&G.sel;if(!c){box.innerHTML='<p class="mu">Нажмите на машину на дороге, чтобы остановить её.</p>';return}
+  const exp=c.licence?"до "+(2027+R(6)):"истекли в "+(2020+R(5)),os=c.osago?"действует":"просрочен";
+  box.innerHTML=`<div class="say" id="say">— Здравствуйте, инспектор. Что-то случилось?</div>
+   <div class="doc"><span>Водитель</span><b>${c.name}</b></div><div class="doc"><span>Скорость по радару</span><b class="${c.speed>80?"bad":"ok"}">${c.speed} км/ч</b></div>
+   <div class="doc"><span>Права</span><b class="${c.licence?"ok":"bad"}">${exp}</b></div><div class="doc"><span>ОСАГО</span><b class="${c.osago?"ok":"bad"}">${os}</b></div>
+   <div class="doc"><span>Ремень / телефон</span><b class="${c.belt&&!c.phone?"ok":"bad"}">${c.belt?"пристёгнут":"не пристёгнут"} · ${c.phone?"говорил по телефону":"без телефона"}</b></div>
+   <div class="doc"><span>Фары / стёкла</span><b class="${c.lights&&!c.tint?"ok":"bad"}">${c.lights?"свет включён":"без света"} · ${c.tint?"тонировка":"стёкла прозрачные"}</b></div>
+   <div class="row"><button class="btn" id="alco" type="button">🌬 Алкотестер</button></div>
+   <p class="mu" style="margin:4px 0 0">Отметьте нарушения:</p><div class="vio">${Object.keys(VN).map(k=>`<label><input type="checkbox" value="${k}"> ${VN[k]}</label>`).join("")}</div>
+   <div class="row"><button class="btn go" id="fine" type="button">📝 Выписать штраф</button><button class="btn" id="free" type="button">👋 Счастливого пути</button></div>`;
+  $("alco").onclick=()=>{$("alco").disabled=true;$("alco").textContent=c.drunk?"🌬 0,62 мг/л — пьян!":"🌬 0,00 мг/л — трезв"};
+  $("fine").onclick=()=>decide(true);$("free").onclick=()=>decide(false);
+  if(c.bribe&&viol(c).length){setTimeout(()=>{if(G.sel!==c)return;$("say").innerHTML="— Командир, может, договоримся? Тут пять тысяч…";const r=document.createElement("div");r.className="row";r.innerHTML='<button class="btn red" id="br1" type="button">💵 Взять</button><button class="btn" id="br2" type="button">🙅 «Я этого не слышал»</button>';$("say").after(r);
+    $("br1").onclick=()=>{G.over=true;end("Служебная проверка","Видеорегистратор всё записал. Смена закончилась досрочно — взятки здесь не работают.",true)};$("br2").onclick=()=>{G.score+=5;r.remove();$("say").textContent="— Понял, понял… Выписывайте.";flash("Отказ от взятки: +5","#4ADE95")}},700)}}
+function decide(fine){const c=G.sel,v=viol(c),marked=[...document.querySelectorAll("#insp .vio input:checked")].map(x=>x.value);
+  if(fine){if(!marked.length){flash("Отметьте, за что штраф","#F2C45A");return}
+    const right=marked.filter(m=>v.includes(m)),wrong=marked.filter(m=>!v.includes(m));
+    if(right.length){G.score+=3*right.length;const sum=right.reduce((a,m)=>a+FINE[m],0);G.budget+=sum;flash("Штраф "+sum.toLocaleString("ru-RU")+" ₽: +"+3*right.length,"#4ADE95");right.forEach(m=>{if(G.task[0]===m||(G.task[0]==="docs"&&m==="osago"))G.taskN++})}
+    if(wrong.length){G.compl+=wrong.length;G.score-=4*wrong.length;flash("Жалоба водителя: −"+4*wrong.length,"#FF8A8F")}
+    const missed=v.filter(m=>!marked.includes(m));if(missed.length&&!wrong.length)flash("Штраф выписан, но вы пропустили: "+missed.map(m=>VN[m].toLowerCase()).join(", "),"#F2C45A")}
+  else{if(!v.length){G.score+=1;flash("Честный водитель: +1","#4ADE95")}else{G.score-=1;flash("Отпустили нарушителя: −1","#FF8A8F")}}
+  if(G.taskN>=G.task[2]&&!G.taskDone){G.taskDone=true;G.score+=10;flash("План выполнен: +10","#E7BD52")}
+  c.state="leave";G.sel=null;insp();hud()}
+function end(t,p,bribe){G.over=true;cancelAnimationFrame(raf);draw(0);const ok=!bribe&&G.score>0;
+  $("oT").textContent=t;$("oP").textContent=p||("Очки: "+G.score+" · в бюджет: "+G.budget.toLocaleString("ru-RU")+" ₽ · жалоб: "+G.compl+" · упущено: "+G.miss+(ok&&G.score>=25?". Отличная работа — следующая смена будет сложнее!":""));
+  if(ok&&G.score>=25)G.level=Math.min(6,G.level+1);$("go").textContent="🚓 Новая смена";$("ov").hidden=false;if(ok&&window.IIGRY_SCORE)window.IIGRY_SCORE(G.score,G.level>=6?{full:true}:undefined)}
+let paused=false;document.addEventListener("visibilitychange",()=>{paused=document.hidden;last=0});
+$("go").onclick=start;window.IIGRY_TO_MENU=()=>{if(G){G.over=true}cancelAnimationFrame(raf);$("oT").textContent="Заступить на смену";$("go").textContent="🚓 Начать смену";$("ov").hidden=false};
+draw(0);
+})();
+</script>
+</body></html>
+<script>/* Панель навигации «ИИгр»: назад, главная, игры, мастерская, кабинет; в играх — возврат в меню игры. На телефоне — крупные значки с подписями, как в приложениях */
+(function(){if(document.getElementById("iigry-nav"))return;const P=location.pathname,inG=/\/games\//.test(P),base=inG?"../":"./",here=P.replace(/^.*\//,"")||"index.html";
+ const st=document.createElement("style");st.textContent="#iigry-nav{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:8px 12px;box-sizing:border-box;background:rgba(11,10,14,.94);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:1px solid rgba(255,255,255,.1)}#iigry-nav::-webkit-scrollbar{display:none}"+
+  "#iigry-nav a,#iigry-nav button{flex:none;display:inline-flex;align-items:center;gap:5px;border:1px solid rgba(255,255,255,.14);background:#16141B;color:#F4F4F6;border-radius:999px;padding:0 14px;min-height:38px;font:600 13px/1.2 'Golos Text',system-ui,sans-serif;text-decoration:none;cursor:pointer;white-space:nowrap;-webkit-tap-highlight-color:transparent}"+
+  "#iigry-nav a[aria-current=page]{border-color:#E7BD52;color:#E7BD52}#iigry-nav .gm{border-color:rgba(231,189,82,.6)}#iigry-nav a:focus-visible,#iigry-nav button:focus-visible{outline:2px solid #E7BD52;outline-offset:2px}#iigry-nav .s{display:none}"+
+  "@media(max-width:600px){#iigry-nav{gap:2px;padding:4px 4px;justify-content:space-between}#iigry-nav a,#iigry-nav button{flex:1 1 0;min-width:0;flex-direction:column;justify-content:center;gap:2px;border:0;background:transparent;border-radius:12px;padding:4px 2px;min-height:50px;font-size:10.5px;color:#C9C6D2}"+
+  "#iigry-nav .i{font-size:20px;line-height:1}#iigry-nav .l{display:none}#iigry-nav .s{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis}#iigry-nav a[aria-current=page]{background:rgba(231,189,82,.14)}#iigry-nav .gm{background:rgba(231,189,82,.1);color:#E7BD52}#iigry-nav a:active,#iigry-nav button:active{background:rgba(255,255,255,.08)}}";
+ document.head.append(st);const n=document.createElement("nav");n.id="iigry-nav";n.setAttribute("aria-label","Навигация по сайту");
+ const fill=(el,i,l,s)=>{const a=document.createElement("span"),b=document.createElement("span"),c=document.createElement("span");a.className="i";a.textContent=i;a.setAttribute("aria-hidden","true");b.className="l";b.textContent=l;c.className="s";c.textContent=s;c.setAttribute("aria-hidden","true");el.append(a,b,c);el.setAttribute("aria-label",l)};
+ const b=document.createElement("button");b.type="button";fill(b,"←","Назад","Назад");b.onclick=()=>{if(document.referrer.indexOf(location.origin)===0&&history.length>1)history.back();else location.href=base};n.append(b);
+ if(inG||/igra\.html$/.test(P)){const m=document.createElement("button");m.type="button";m.className="gm";fill(m,"↩","В меню игры","В меню");m.title="Вернуться в начальное меню игры";m.onclick=()=>{if(window.IIGRY_TO_MENU)window.IIGRY_TO_MENU();else location.reload()};n.append(m)}
+ [["🏠","Главная","Главная",""],["🎮","Игры","Игры","#catalog"],["🛠","Мастерская","Создать","masterskaya.html"],["👤","Кабинет","Кабинет","kabinet.html"]].forEach(([i,l,s,h])=>{const a=document.createElement("a");fill(a,i,l,s);a.href=base+h;if(h&&h===here)a.setAttribute("aria-current","page");n.append(a)});
+ document.body.prepend(n);const pad=()=>{document.body.style.paddingTop="";const pt=parseFloat(getComputedStyle(document.body).paddingTop)||0;document.body.style.paddingTop=(pt+n.offsetHeight+6)+"px";document.documentElement.style.scrollPaddingTop=(n.offsetHeight+8)+"px"};pad();addEventListener("resize",pad)})();
+</script><script>/* Счётчик посещений «ИИгр»: случайный номер устройства хранится только в этом браузере; без cookie и слежки на других сайтах. Команда сайта не считается. */
+(function(){try{if(navigator.webdriver||localStorage.getItem("iigry-team")||localStorage.getItem("iigry-mod"))return;let d=localStorage.getItem("iigry-did");
+ if(!/^[0-9a-f]{32}$/.test(d||"")){const a=new Uint8Array(16);crypto.getRandomValues(a);d=[...a].map(x=>x.toString(16).padStart(2,"0")).join("");localStorage.setItem("iigry-did",d)}
+ const go=()=>{if(document.visibilityState!=="visible")return;document.removeEventListener("visibilitychange",go);fetch("https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av?a=hit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({d,p:location.pathname,r:document.referrer}),keepalive:true}).catch(()=>{})};
+ setTimeout(()=>{document.visibilityState==="visible"?go():document.addEventListener("visibilitychange",go)},2500)}catch(_){}})();
+/* Технические работы: пока сайт обновляется, показываем понятное предупреждение и сами обновляем страницу, когда всё готово */
+(function(){const API="https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av?a=status";let shown=null,was=false;
+ function show(j){if(shown)return;const d=document.createElement("div");d.setAttribute("role","alertdialog");d.setAttribute("aria-live","assertive");d.setAttribute("aria-label","Технические работы");
+  d.style.cssText="position:fixed;inset:0;z-index:2147483000;background:rgba(11,10,14,.92);display:grid;place-items:center;padding:12px;font-family:Golos Text,system-ui,sans-serif;overflow:auto";
+  const c=document.createElement("div");c.style.cssText="width:min(460px,100%);background:#16141B;border:1px solid #E7BD52;border-radius:16px;padding:18px;color:#F4F4F6;text-align:center;display:grid;gap:10px;box-sizing:border-box";
+  const E=(t,x,css)=>{const e=document.createElement(t);if(x!=null)e.textContent=x;if(css)e.style.cssText=css;return e};
+  const left=Math.max(1,Math.round((j.until-Date.now())/60000));
+  const h=E("b","🛠 Идут технические работы","font:800 1.25rem Rubik,system-ui,sans-serif;color:#E7BD52");
+  const p=E("p",(j.text||"Сайт обновляется — добавляем новое.")+" Обычно это пара минут (не дольше "+left+" мин). Страница обновится сама.","margin:0");
+  const w=E("p","⚠️ Пока идут работы, то, что вы вводите на сайте (тексты, профиль, результаты), может не сохраниться. Лучше подождите — а пока сыграйте с другими посетителями:","margin:0;font-size:.9rem;color:#FFD98A");
+  // мини-игра «Звездопад»: все, кто сейчас на сайте, ловят звёзды в общую копилку
+  const st=E("div",null,"display:flex;justify-content:space-between;gap:8px;font-size:.9rem;flex-wrap:wrap");const tot=E("span","⭐ Вместе: …"),me=E("span","Вы: 0"),on=E("span","👥 …");st.append(tot,me,on);
+  const f=E("div",null,"position:relative;height:190px;border-radius:12px;overflow:hidden;background:radial-gradient(1px 1px at 20% 30%,#fff,transparent),radial-gradient(1px 1px at 70% 60%,#fff,transparent),radial-gradient(1.5px 1.5px at 40% 80%,#fff,transparent),linear-gradient(160deg,#1B1546,#3B2A7A);touch-action:manipulation;user-select:none");
+  const feed=E("div",null,"min-height:22px;font-size:.88rem;color:#C9C6D2");const rx=E("div",null,"display:flex;gap:6px;justify-content:center;flex-wrap:wrap");
+  const R=["👋","😂","🔥","❤️","🚀","⭐"];let mine=0,pend=0,react=-1,alive=true;
+  const did=(()=>{let v="";try{v=localStorage.getItem("iigry-did")||""}catch(_){}if(!/^[0-9a-f]{32}$/.test(v)){const a=new Uint8Array(16);crypto.getRandomValues(a);v=[...a].map(x=>x.toString(16).padStart(2,"0")).join("")}return v})(),nick=(()=>{try{return (localStorage.getItem("iigry-nick")||"").slice(0,20)}catch(_){return ""}})()||"Гость";
+  R.forEach((e,i)=>{const b=E("button",e,"border:1px solid rgba(255,255,255,.15);background:#0F0E13;border-radius:10px;min-width:44px;min-height:40px;font-size:20px;cursor:pointer");b.type="button";b.setAttribute("aria-label","Отправить "+e);b.onclick=()=>{react=i;sync()};rx.append(b)});
+  function spawn(){if(!alive)return;const s=E("button",Math.random()<.15?"🌟":"⭐","position:absolute;border:0;background:transparent;cursor:pointer;font-size:30px;padding:6px;transition:transform .2s,opacity .2s;left:"+(5+Math.random()*80)+"%;top:-40px");s.type="button";s.setAttribute("aria-label","Поймать звезду");
+   const big=s.textContent==="🌟",dur=2600+Math.random()*1800;f.append(s);s.animate([{top:"-40px"},{top:"200px"}],{duration:dur,easing:"linear"}).onfinish=()=>s.remove();
+   s.onpointerdown=e=>{e.preventDefault();const v=big?5:1;mine+=v;pend+=v;me.textContent="Вы: "+mine;s.style.transform="scale(1.8)";s.style.opacity="0";s.onpointerdown=null;setTimeout(()=>s.remove(),200)};setTimeout(spawn,500+Math.random()*500)}
+  async function sync(){if(!did)return;const add=Math.min(pend,50),r=react;pend-=add;react=-1;
+   try{const x=await (await fetch(API.replace("a=status","a=mg"),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({d:did,add,r,n:nick})})).json();
+    if(x.total!=null){tot.textContent="⭐ Вместе: "+x.total.toLocaleString("ru-RU");on.textContent="👥 Сейчас здесь: "+x.online;feed.textContent=(x.feed||[]).slice(-4).map(z=>z.n+" "+z.e).join("  ·  ")||"Отправьте привет другим посетителям 👇"}}catch(_){pend+=add}}
+  const b=E("button","Закрыть и подождать","border:0;border-radius:10px;padding:10px 16px;font:700 1rem 'Golos Text',system-ui,sans-serif;background:linear-gradient(135deg,#FF4A55,#A3101C);color:#fff;cursor:pointer;justify-self:center");b.type="button";
+  b.onclick=()=>{alive=false;clearInterval(t);d.remove();shown=null;bar()};c.append(h,p,w,st,f,feed,rx,b);d.append(c);document.body.append(d);shown=d;spawn();sync();const t=setInterval(()=>{if(document.body.contains(d))sync();else clearInterval(t)},3000)}
+ function bar(){if(document.getElementById("iigry-maint-bar"))return;const s=document.createElement("div");s.id="iigry-maint-bar";s.textContent="🛠 Идут технические работы — возможны недолгие сбои";s.style.cssText="position:fixed;left:0;right:0;bottom:0;z-index:2147482999;background:#E7BD52;color:#1A1306;font:700 .9rem Golos Text,system-ui,sans-serif;text-align:center;padding:6px";document.body.append(s)}
+ async function check(){try{const j=await (await fetch(API,{cache:"no-store"})).json();
+   if(j.maint){was=true;if(!document.getElementById("iigry-maint-bar"))show(j)}else if(was){location.reload()}}catch(_){} }
+ check();setInterval(check,20000)})();
+/* Ник аккаунта — один на чат и таблицы лидеров: подтягиваем его после входа, чтобы не сбивался */
+(function(){try{const t=localStorage.getItem("iigry-sess");if(!/^[A-Za-z0-9_-]{43}$/.test(t||""))return;const last=+localStorage.getItem("iigry-nick-ts")||0;if(Date.now()-last<36e5&&localStorage.getItem("iigry-nick"))return;
+ fetch("https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av?a=u",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({op:"whoami",token:t})}).then(r=>r.ok?r.json():null).then(j=>{if(j&&j.named&&j.nick){localStorage.setItem("iigry-nick",j.nick);localStorage.setItem("iigry-nick-ts",String(Date.now()))}}).catch(()=>{})}catch(_){}})();
+</script><script>/* Проверка «не робот» Yandex SmartCaptcha: один раз на 12 часов для всего сайта и игр */
+(function(){
+  const API="https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av",PK="iigry-pass";
+  const get=()=>{try{const o=JSON.parse(localStorage.getItem(PK)||"null");return o&&o.exp>Date.now()+60e3?o.v:""}catch(_){return ""}};
+  let cfgP=null,scriptP=null,busy=null;
+  const cfg=()=>cfgP||(cfgP=fetch(API+"?a=cfg",{cache:"no-store"}).then(r=>r.json()).catch(()=>({captcha:""})));
+  const load=()=>scriptP||(scriptP=new Promise((ok,no)=>{const s=document.createElement("script");s.src="https://smartcaptcha.cloud.yandex.ru/captcha.js?render=onload&onload=__iigryCap";
+    window.__iigryCap=ok;s.onerror=()=>{scriptP=null;no(new Error("Проверка не загрузилась. Проверьте интернет."))};document.head.appendChild(s)}));
+  function overlay(){const d=document.createElement("div");d.setAttribute("role","dialog");d.setAttribute("aria-modal","true");d.setAttribute("aria-label","Проверка, что вы не робот");
+    d.style.cssText="position:fixed;inset:0;z-index:999990;display:grid;place-items:center;background:rgba(10,9,14,.72);padding:16px";
+    d.innerHTML='<div style="background:#16141B;color:#F4F4F6;border:1px solid rgba(231,189,82,.4);border-radius:16px;padding:18px;width:min(360px,100%);display:grid;gap:12px;font:500 15px/1.4 system-ui,sans-serif"><b style="font-size:17px">Проверим, что вы не робот</b><div id="iigryCapBox" style="min-height:100px"></div><button type="button" style="justify-self:end;background:transparent;color:#B9B6C2;border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:7px 12px;cursor:pointer">Отмена</button></div>';
+    document.body.appendChild(d);return d}
+  async function need(){const p=get();if(p)return p;if(busy)return busy;
+    busy=(async()=>{const c=await cfg();if(!c.captcha)return "";await load();const d=overlay();
+      try{return await new Promise((ok,no)=>{d.querySelector("button").onclick=()=>no(new Error("Проверка отменена."));
+        window.smartCaptcha.render(d.querySelector("#iigryCapBox"),{sitekey:c.captcha,hl:"ru",callback:async token=>{
+          try{const r=await fetch(API+"?a=pass",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({token})}),j=await r.json();
+            if(!r.ok||!j.pass)throw new Error(j.error||"Проверка не пройдена.");try{localStorage.setItem(PK,JSON.stringify({v:j.pass,exp:j.exp}))}catch(_){}ok(j.pass)}catch(e){no(e)}}})})}
+      finally{d.remove()}})().finally(()=>{busy=null});return busy}
+  window.IIGRY_PASS={get,need,clear:()=>{try{localStorage.removeItem(PK)}catch(_){}}};
+})();
+</script><script data-game="gai" data-asc="0" data-unit="очко|очка|очков">/* Таблица лидеров ИИгр: общий ник для всех игр и чата, результаты — на сервере в Yandex Cloud */
+(function(){
+  const me=document.currentScript,G=me.dataset.game,ASC=me.dataset.asc==="1",UNIT=me.dataset.unit||"",
+    API="https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av",K="iigry-nick",t0=Date.now();
+  // Единица с правильным падежом: «1 рыба, 3 рыбы, 5 рыб»
+  const U=v=>{const f=UNIT.split("|"),n=Math.abs(v)%100,d=n%10;return v+" "+(f.length<3?UNIT:n>10&&n<20?f[2]:d===1?f[0]:d>=2&&d<=4?f[1]:f[2])};
+  const S=(v,n)=>String(v==null?"":v).slice(0,n);
+  const getNick=()=>{try{return S(localStorage.getItem(K),30)}catch(_){return ""}},setNick=v=>{try{localStorage.setItem(K,v)}catch(_){}};
+  let aid="";try{aid=localStorage.getItem("aid")||""}catch(_){}
+  const css=document.createElement("style");css.textContent=`.lb{width:min(560px,100%);margin-top:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:14px 16px;display:grid;gap:10px;font-family:inherit;color:inherit}
+.lb h2{margin:0;font:800 1.05rem/1.2 Rubik,"Golos Text",system-ui,sans-serif}.lb ol{margin:0;padding-left:1.6em;display:grid;gap:4px}
+.lb li{font-variant-numeric:tabular-nums}.lb li b{float:right;color:#E7BD52}.lb li.me{color:#E7BD52}.lb .mu{opacity:.7;font-size:.9rem;margin:0}
+.lb .lbSave{justify-self:start}.lb form{display:flex;gap:8px;flex-wrap:wrap}.lb input{flex:1 1 160px;min-width:0;padding:9px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.2);background:rgba(0,0,0,.25);color:inherit;font:inherit}
+.lb button{min-height:42px;padding:9px 14px;border-radius:10px;border:0;background:#E7BD52;color:#1A1306;font-weight:800;cursor:pointer}.lb button:focus-visible,.lb input:focus-visible{outline:2px solid #E7BD52;outline-offset:2px}`;
+  document.head.appendChild(css);
+  const box=document.createElement("section");box.className="lb";box.setAttribute("aria-live","polite");
+  box.innerHTML='<h2>Таблица лидеров</h2><ol></ol><p class="mu" id="lbMsg"></p><button type="button" class="lbSave" hidden>Записать мой результат</button><form hidden><input maxlength="30" placeholder="Ваш ник" autocomplete="nickname" aria-label="Ваш ник"><button type="submit">В таблицу</button></form><p class="mu">Ник запоминается для всех игр и чата ИИгр.</p>';
+  (document.querySelector(".game")||document.body).appendChild(box);
+  const ol=box.querySelector("ol"),msg=box.querySelector("#lbMsg"),form=box.querySelector("form"),inp=form.querySelector("input");
+  let pending=null,items=[],fullMsg="";const save=box.querySelector(".lbSave");
+  // Попадает ли результат в топ-5 (для «меньше — лучше» сравнение наоборот)
+  const top5=v=>{const a=items.slice(0,5);return a.length<5||(ASC?v<(+a[4].v||0):v>(+a[4].v||0))};
+  const say=t=>{msg.textContent=t};
+  async function top(){try{const r=await fetch(API+"?a=top&game="+G,{cache:"no-store"}),j=await r.json();ol.textContent="";
+      items=Array.isArray(j.items)?j.items.slice(0,10):[];const nick=getNick().toLowerCase();
+      if(!items.length){const li=document.createElement("li");li.className="mu";li.textContent="Пока пусто. Станьте первым!";ol.appendChild(li);return}
+      items.forEach(x=>{const li=document.createElement("li");li.textContent=S(x.n,30);const b=document.createElement("b");b.textContent=U(Math.round(+x.v||0));li.appendChild(b);if(S(x.n,30).toLowerCase()===nick)li.className="me";ol.appendChild(li)})}
+    catch(_){ol.textContent="";say("Таблица временно недоступна.")}}
+  async function send(v,n,again){say("Отправляем результат…");
+    try{const P=window.IIGRY_PASS,r=await fetch(API+"?a=score",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({game:G,v,n,aid,ms:Date.now()-t0,pass:P?P.get():""})}),j=await r.json();
+      if(r.status===401&&j.need==="captcha"&&P&&!again){P.clear();await P.need();return send(v,n,true)}
+      if(!r.ok)throw new Error(j.error||"Не удалось сохранить");
+      say(fullMsg+(j.improved?"Новый личный рекорд: "+U(j.best)+"!":"Ваш рекорд — "+U(j.best)+". Этот результат не лучше, но вы близко."));fullMsg="";form.hidden=true;save.hidden=true;top()}
+    catch(e){say(S(e.message,200))}}
+  const ask=(v,t)=>{pending=v;say(t+" Впишите ник, чтобы попасть в таблицу.");form.hidden=false;save.hidden=true;try{inp.focus({preventScroll:true})}catch(_){}};
+  // После игры: прошли игру целиком или попали в топ-5 — записываем сами; иначе — кнопка «Записать мой результат»
+  window.IIGRY_SCORE=(v,o)=>{v=Math.round(+v||0);if(!v)return;const n=getNick(),full=!!(o&&o.full),best=top5(v);
+    if(full||best){fullMsg=full?"Игра пройдена — результат записан. ":"Вы в топ-5! ";if(n)send(v,n);else ask(v,(full?"Игра пройдена! ":"Вы в топ-5! ")+"Результат: "+U(v)+".");return}
+    pending=v;form.hidden=true;save.hidden=false;say("Ваш результат: "+U(v)+". В топ-5 пока не вошёл, но его можно записать в таблицу кнопкой ниже.")};
+  save.onclick=()=>{const n=getNick();if(!pending)return;if(n){const v=pending;pending=null;send(v,n)}else ask(pending,"Результат: "+U(pending)+".")};
+  form.addEventListener("submit",e=>{e.preventDefault();const n=S(inp.value,30).trim().replace(/^@/,"");if(!n){say("Впишите ник.");return}setNick(n);if(pending){send(pending,n);pending=null}});
+  top();setInterval(()=>{if(!document.hidden)top()},30000);
+})();
+</script>
+</body></html>
