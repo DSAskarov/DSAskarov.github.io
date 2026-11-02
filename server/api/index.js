@@ -20,7 +20,7 @@ const GAMES = {
   hex:   { min: 1,  max: 200000, asc: false, minMs: v => Math.min(1800000, v * 30) },  // «Пульсар»: десятые секунды × множитель уровня (до ×3)
   hexd:  { min: 1,  max: 100000, asc: false, minMs: v => Math.min(1800000, v * 95) },  // «Пульсар»: испытание дня, десятые секунды
   life:  { min: 1,  max: 100000, asc: false, minMs: v => Math.min(1200000, v * 20) },  // «Жизнь с нуля»: капитал / 100
-  gai:   { min: 1,  max: 400,    asc: false, minMs: v => 60000 },                       // «Жезл»: очки за смену
+  gai:   { min: 1,  max: 1000,   asc: false, minMs: v => 30000 },                       // «Жезл»: очки за смену
   conq:  { min: 3,  max: 500,    asc: true,  minMs: v => v * 2500 }                     // «Континенты»: ходов до победы
 };
 const RESV = /команд|✓|dsaskarov|адм[иi]н|admin|модер|moder|иигр|iigr|поддержк|support|claude|anthropic|официал|official/i;
