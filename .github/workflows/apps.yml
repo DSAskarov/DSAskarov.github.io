@@ -73,7 +73,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
-        with: { path: out, merge-multiple: true }
+        with: { path: out, pattern: "apk-*", merge-multiple: true }
+      - uses: actions/download-artifact@v4
+        with: { path: out, pattern: "win-*", merge-multiple: true }
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: apps

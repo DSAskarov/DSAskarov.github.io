@@ -189,6 +189,13 @@ render();if(!S.log.length){say("☀️ Вы проснулись на лавке
  const fill=(el,i,l,s)=>{const a=document.createElement("span"),b=document.createElement("span"),c=document.createElement("span");a.className="i";a.textContent=i;a.setAttribute("aria-hidden","true");b.className="l";b.textContent=l;c.className="s";c.textContent=s;c.setAttribute("aria-hidden","true");el.append(a,b,c);el.setAttribute("aria-label",l)};
  const b=document.createElement("button");b.type="button";fill(b,"←","Назад","Назад");b.onclick=()=>{if(document.referrer.indexOf(location.origin)===0&&history.length>1)history.back();else location.href=base};n.append(b);
  if(inG||/igra\.html$/.test(P)){const m=document.createElement("button");m.type="button";m.className="gm";fill(m,"↩","В меню игры","В меню");m.title="Вернуться в начальное меню игры";m.onclick=()=>{if(window.IIGRY_TO_MENU)window.IIGRY_TO_MENU();else location.reload()};n.append(m)}
+ if(inG||/(igra|konstruktor)\.html$/.test(P)){const fsb=document.createElement("button");fsb.type="button";fill(fsb,"⛶","Во весь экран","Экран");fsb.title="Развернуть игру на весь экран (на телефоне — горизонтально)";
+  const fsEl=()=>window.IIGRY_FS_EL||document.documentElement,isFs=()=>!!(document.fullscreenElement||document.webkitFullscreenElement);
+  const upd=()=>{fsb.querySelector(".l").textContent=isFs()?"Свернуть":"Во весь экран";fsb.querySelector(".i").textContent=isFs()?"⤢":"⛶"};
+  fsb.onclick=async()=>{try{if(isFs()){(document.exitFullscreen||document.webkitExitFullscreen).call(document);try{screen.orientation.unlock()}catch(_){}}
+    else{const el=fsEl();await (el.requestFullscreen||el.webkitRequestFullscreen).call(el,{navigationUI:"hide"});try{await screen.orientation.lock("landscape")}catch(_){}}}catch(_){alert("Ваш браузер не разрешил полноэкранный режим.")}};
+  document.addEventListener("fullscreenchange",upd);document.addEventListener("webkitfullscreenchange",upd);
+  if(document.fullscreenEnabled||document.webkitFullscreenEnabled)n.append(fsb)}
  [["🏠","Главная","Главная",""],["🎮","Игры","Игры","#catalog"],["🛠","Мастерская","Создать","masterskaya.html"],["👤","Кабинет","Кабинет","kabinet.html"]].forEach(([i,l,s,h])=>{const a=document.createElement("a");fill(a,i,l,s);a.href=base+h;if(h&&h===here)a.setAttribute("aria-current","page");n.append(a)});
  document.body.prepend(n);const pad=()=>{document.body.style.paddingTop="";const pt=parseFloat(getComputedStyle(document.body).paddingTop)||0;document.body.style.paddingTop=(pt+n.offsetHeight+6)+"px";document.documentElement.style.scrollPaddingTop=(n.offsetHeight+8)+"px"};pad();addEventListener("resize",pad)})();
 </script><script>/* Счётчик посещений «ИИгр»: случайный номер устройства хранится только в этом браузере; без cookie и слежки на других сайтах. Команда сайта не считается. */
@@ -283,16 +290,19 @@ render();if(!S.log.length){say("☀️ Вы проснулись на лавке
       if(!items.length){const li=document.createElement("li");li.className="mu";li.textContent="Пока пусто. Станьте первым!";ol.appendChild(li);return}
       items.forEach(x=>{const li=document.createElement("li");li.textContent=S(x.n,30);const b=document.createElement("b");b.textContent=U(Math.round(+x.v||0));li.appendChild(b);if(S(x.n,30).toLowerCase()===nick)li.className="me";ol.appendChild(li)})}
     catch(_){ol.textContent="";say("Таблица временно недоступна.")}}
-  async function send(v,n,again){say("Отправляем результат…");
+  async function send(v,n,again,auto){const PP=window.IIGRY_PASS;
+    // во время игры не показываем проверку «не робот»: без действующего пропуска предлагаем кнопку
+    if(auto&&PP&&!PP.get()){pending=v;form.hidden=true;save.hidden=false;say((fullMsg||"")+"Результат "+U(v)+" можно записать в таблицу кнопкой ниже — когда закончите играть.");fullMsg="";return}
+    say("Отправляем результат…");
     try{const P=window.IIGRY_PASS,r=await fetch(API+"?a=score",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({game:G,v,n,aid,ms:Date.now()-t0,pass:P?P.get():"",token:(()=>{try{return localStorage.getItem("iigry-sess")||""}catch(_){return ""}})()})}),j=await r.json();
-      if(r.status===401&&j.need==="captcha"&&P&&!again){P.clear();await P.need();return send(v,n,true)}
+      if(r.status===401&&j.need==="captcha"&&P&&auto){P.clear();pending=v;form.hidden=true;save.hidden=false;say("Результат "+U(v)+" можно записать кнопкой ниже — когда закончите играть.");return}if(r.status===401&&j.need==="captcha"&&P&&!again){P.clear();await P.need();return send(v,n,true)}
       if(!r.ok)throw new Error(j.error||"Не удалось сохранить");
       say(fullMsg+(j.improved?"Новый личный рекорд: "+U(j.best)+"!":"Ваш рекорд — "+U(j.best)+". Этот результат не лучше, но вы близко."));fullMsg="";form.hidden=true;save.hidden=true;top()}
     catch(e){say(S(e.message,200))}}
   const ask=(v,t)=>{pending=v;say(t+" Впишите ник, чтобы попасть в таблицу.");form.hidden=false;save.hidden=true;try{inp.focus({preventScroll:true})}catch(_){}};
   // После игры: прошли игру целиком или попали в топ-5 — записываем сами; иначе — кнопка «Записать мой результат»
   window.IIGRY_SCORE=(v,o)=>{v=Math.round(+v||0);if(!v)return;const n=getNick(),full=!!(o&&o.full),best=top5(v);
-    if(full||best){fullMsg=full?"Игра пройдена — результат записан. ":"Вы в топ-5! ";if(n)send(v,n);else ask(v,(full?"Игра пройдена! ":"Вы в топ-5! ")+"Результат: "+U(v)+".");return}
+    if(full||best){fullMsg=full?"Игра пройдена — результат записан. ":"Вы в топ-5! ";if(n)send(v,n,false,true);else ask(v,(full?"Игра пройдена! ":"Вы в топ-5! ")+"Результат: "+U(v)+".");return}
     pending=v;form.hidden=true;save.hidden=false;say("Ваш результат: "+U(v)+". В топ-5 пока не вошёл, но его можно записать в таблицу кнопкой ниже.")};
   save.onclick=()=>{const n=getNick();if(!pending)return;if(n){const v=pending;pending=null;send(v,n)}else ask(pending,"Результат: "+U(pending)+".")};
   form.addEventListener("submit",e=>{e.preventDefault();const n=S(inp.value,30).trim().replace(/^@/,"");if(!n){say("Впишите ник.");return}setNick(n);if(pending){send(pending,n);pending=null}});

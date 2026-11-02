@@ -12,7 +12,7 @@ html,body{min-height:100%}html{background:#07060B}body{margin:0;background:var(-
 .wrap{width:min(720px,100%);display:grid;gap:10px}
 h1{margin:0;font:900 clamp(1.6rem,5vw,2.4rem) var(--f-d);letter-spacing:.04em}h1 b{color:var(--gold)}
 .mu{color:var(--mu);margin:0;font-size:.95rem}.small{font-size:.85rem;color:var(--mu);margin:0}
-.stage{position:relative;aspect-ratio:1/1;width:100%;border-radius:16px;overflow:hidden;background:#000;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.stage:fullscreen{border-radius:0;aspect-ratio:auto}.stage{position:relative;aspect-ratio:1/1;width:100%;border-radius:16px;overflow:hidden;background:#000;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 canvas{display:block;width:100%;height:100%}
 .ov{position:absolute;inset:0;display:grid;place-items:center;text-align:center;background:rgba(5,4,9,.72);padding:14px;overflow:auto}.ov[hidden]{display:none}
 .in{display:grid;gap:10px;justify-items:center;width:100%;max-width:520px}.t{font:900 clamp(1.5rem,6vw,2.4rem) var(--f-d);letter-spacing:.06em}
@@ -53,7 +53,7 @@ select{min-height:40px;border-radius:10px;background:#15131c;color:#fff;border:1
 </div>
 <script>
 (function(){
-const cv=document.getElementById("cv"),ctx=cv.getContext("2d"),stage=document.getElementById("stage"),ov=document.getElementById("ov"),$=id=>document.getElementById(id);
+const cv=document.getElementById("cv"),ctx=cv.getContext("2d"),stage=document.getElementById("stage"),ov=document.getElementById("ov"),$=id=>document.getElementById(id);window.IIGRY_FS_EL=stage;document.addEventListener("fullscreenchange",()=>setTimeout(()=>{resize();if(!G.run)draw()},60));
 const TAU=Math.PI*2;
 // ---------- уровни
 const LV=[
@@ -67,7 +67,7 @@ const EVN={slow:"⏳ ЗАМЕДЛЕНИЕ",mirror:"🪞 ЗЕРКАЛО: лево
 const MOM={speed:["⚡ УСКОРЕНИЕ",4.5],spin:["🌀 ВИХРЬ",3],reverse:["↺ РАЗВОРОТ",.1],zoom:["🔭 ПРИБЛИЖЕНИЕ",2.5],wobble:["〰 КАЧКА",4],burst:["💥 РЫВОК",1.4],calm:["🧘 ПЕРЕДЫШКА",2.5]};
 const MOMS=[["speed","spin","reverse","zoom","calm"],["speed","spin","reverse","zoom","calm","wobble"],["speed","spin","reverse","zoom","wobble","burst"],["speed","spin","reverse","zoom","wobble","burst"],["speed","spin","reverse","zoom","wobble","burst"],["speed","spin","reverse","zoom","wobble","burst"]];
 const PHN=["ФАЗА I","ФАЗА II","ФАЗА III","ФАЗА IV","ФАЗА V","ФАЗА VI","ФАЗА VII","ФАЗА VIII","ФАЗА IX","ФАЗА X"];
-const momSp=()=>!G.mom?1:G.mom.k==="speed"?1.28:G.mom.k==="burst"?1.5:G.mom.k==="calm"?.75:1,momRot=()=>!G.mom?1:G.mom.k==="spin"?2.6:G.mom.k==="calm"?.4:1;
+const momSp=()=>!G.mom?1:G.mom.k==="speed"||G.mom.k==="burst"?G.mom.p:G.mom.k==="calm"?.75:1,momRot=()=>!G.mom?1:G.mom.k==="spin"?G.mom.p:G.mom.k==="calm"?.4:1;
 const SHN={3:"ТРЕУГОЛЬНИК",4:"КВАДРАТ",5:"ПЕНТАГОН",6:"ГЕКСАГОН",7:"ГЕПТАГОН"};
 // ---------- хранение
 const ls={get:(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:v}catch(_){return d}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(_){}}};
@@ -142,15 +142,16 @@ function step(dt){G.t+=dt;const k=slowK();
   // минута — открытие следующего уровня
   if(G.mode==="lvl"&&!G.unlockedNow&&G.t>=60&&G.li<5&&!unlocked(G.li+1)){G.unlockedNow=true;setBestL(G.li,Math.max(best(G.li),60000));sfx.unlock();say("🔓 ОТКРЫТ УРОВЕНЬ «"+LV[G.li+1].n.toUpperCase()+"»",3);G.flash=.7}
   // фазы каждые 10 секунд — быстрее и злее
-  G.phaseT-=dt;if(G.phaseT<=0){G.phaseT=10;G.phaseN++;sfx.phase();G.flash=Math.max(G.flash,.35);if(G.msgT<=0)say(PHN[Math.min(9,G.phaseN)],1.4)}
+  G.phaseT-=dt;if(G.phaseT<=0){G.phaseT=10;G.phaseN++;sfx.phase();G.flash=Math.max(G.flash,.35);if(G.msgT<=0&&rng()<.5)say(PHN[Math.min(9,G.phaseN)],1.1)}
   // моменты: ускорения, вихри, развороты, качка — как в оригинале, но свои
-  if(G.mode!=="custom"){if(G.mom){G.mom.t-=dt;if(G.mom.t<=0)G.mom=null}else{G.momT-=dt;if(G.momT<=0){const pool=MOMS[Math.min(5,G.li)],k=pool[R(pool.length)];G.mom={k,t:MOM[k][1],d:MOM[k][1]};G.momT=Math.max(2.5,5.5-G.li*.5)+rng()*3;
-    if(k==="reverse"){G.rotDir*=-1;G.rotSp=2.2;G.flash=.4}if(k==="burst")G.shake=.25;if(G.msgT<=0||k!=="reverse")say(MOM[k][0],1.2)}}}
+  if(G.mode!=="custom"){if(G.mom){G.mom.t-=dt;if(G.mom.t<=0)G.mom=null}else{G.momT-=dt;if(G.momT<=0){const pool=MOMS[Math.min(5,G.li)],k=pool[R(pool.length)],d=MOM[k][1]*(.7+rng()*.7);
+    G.mom={k,t:d,d,p:k==="speed"?1.12+rng()*.28:k==="burst"?1.35+rng()*.25:k==="spin"?1.8+rng()*1.6:1};G.momT=Math.max(1.8,5-G.li*.45)+rng()*4;
+    if(k==="reverse"){G.rotDir*=-1;G.rotSp=1.6+rng()*1.2;G.flash=.25+rng()*.25}if(k==="burst")G.shake=.15+rng()*.2;if(k==="spin"&&rng()<.5)G.rotDir*=-1}}}
   // смена формы арены
   if(G.L.shapes.length>1){G.shapeT-=dt;if(G.shapeT<=0){G.shapeT=14+R(6);const opts=G.L.shapes.filter(n=>n!==G.N);const nN=opts[R(opts.length)];G.walls=[];G.lastRow=null;G.spawnD=0;G.N=nN;G.grace=1.1;G.flash=.8;sfx.phase();say("ФОРМА: "+SHN[nN],1.8)}}
   // события
   if(G.L.ev.length){if(G.ev){G.ev.t-=dt;if(G.ev.t<=0){G.ev=null}}else if(G.warnEv){G.warnT-=dt;if(G.warnT<=0){G.ev={k:G.warnEv,t:G.warnEv==="slow"?3:5};G.warnEv=null}}
-    else{G.evT-=dt;if(G.evT<=0){G.warnEv=G.L.ev[R(G.L.ev.length)];G.warnT=1.2;G.evT=9+R(6);sfx.warn();say(EVN[G.warnEv],2.2)}}}
+    else{G.evT-=dt;if(G.evT<=0){G.warnEv=G.L.ev[R(G.L.ev.length)];G.warnT=1.2;G.evT=9+R(6);sfx.warn();say(EVN[G.warnEv].split(" ")[0],1)}}}
   // вращение и развороты
   G.flipT-=dt;if(G.flipT<=0){G.rotDir*=-1;G.flipT=3+R(4);if(G.li>=2&&rng()<.35)G.rotSp=1.9}G.rotSp+=(1-G.rotSp)*Math.min(1,dt*.8);G.rot+=G.rotDir*G.rotSp*(.8+G.t/90)*G.L.rot*dt*k*momRot();
   // игрок
@@ -178,7 +179,7 @@ function draw(){const N=G.N,seg=TAU/N,hue=(G.L.hue+G.t*10)%360,cx=W/2,cy=H/2,inv
   const f1=Math.max(14,Math.round(30*S)),f2=Math.max(11,Math.round(18*S));ctx.textBaseline="top";ctx.fillStyle="rgba(0,0,0,.5)";ctx.fillRect(W-200*S,0,200*S,50*S);ctx.fillRect(0,0,280*S,50*S);
   ctx.fillStyle="#fff";ctx.font="800 "+f1+"px Rubik,system-ui,sans-serif";ctx.textAlign="right";ctx.fillText(G.t.toFixed(2),W-12*S,9*S);
   ctx.textAlign="left";ctx.font="700 "+f2+"px Rubik,system-ui,sans-serif";ctx.fillText(G.L.n.toUpperCase()+(G.mode==="lvl"&&G.li<5&&!unlocked(G.li+1)?" · "+Math.max(0,60-G.t).toFixed(0)+" с до нового":""),12*S,16*S);
-  if(G.ev){ctx.textAlign="center";ctx.font="700 "+f2+"px Rubik,system-ui,sans-serif";ctx.fillStyle="#fff";ctx.fillText(EVN[G.ev.k].split(":")[0]+" · "+G.ev.t.toFixed(1),W/2,H-34*S)}
+  if(G.ev){ctx.textAlign="center";ctx.font="700 "+f2+"px Rubik,system-ui,sans-serif";ctx.fillStyle="#fff";ctx.fillText(EVN[G.ev.k].split(" ")[0],W/2,H-38*S)}
   if(G.msgT>0&&G.msg){ctx.globalAlpha=Math.min(1,G.msgT*1.5);ctx.textAlign="center";ctx.font="900 "+Math.max(16,Math.round(28*S))+"px Rubik,system-ui,sans-serif";ctx.fillStyle="#fff";ctx.strokeStyle="rgba(0,0,0,.7)";ctx.lineWidth=5*S;ctx.strokeText(G.msg,W/2,H*.2);ctx.fillText(G.msg,W/2,H*.2);ctx.globalAlpha=1}}
 let raf=0,last=0;
 function loop(ts){const dt=last?Math.min(.034,(ts-last)/1000):0;last=ts;if(G.run&&!paused){step(dt);music()}G.shake=Math.max(0,G.shake-dt*2.5);G.flash=Math.max(0,G.flash-dt*2.2);draw();if(G.run||G.shake>0||G.flash>0)raf=requestAnimationFrame(loop)}
@@ -230,6 +231,13 @@ renderLv();draw();if(shE){ED=shE;$("menu").hidden=true;$("editor").hidden=false;
  const fill=(el,i,l,s)=>{const a=document.createElement("span"),b=document.createElement("span"),c=document.createElement("span");a.className="i";a.textContent=i;a.setAttribute("aria-hidden","true");b.className="l";b.textContent=l;c.className="s";c.textContent=s;c.setAttribute("aria-hidden","true");el.append(a,b,c);el.setAttribute("aria-label",l)};
  const b=document.createElement("button");b.type="button";fill(b,"←","Назад","Назад");b.onclick=()=>{if(document.referrer.indexOf(location.origin)===0&&history.length>1)history.back();else location.href=base};n.append(b);
  if(inG||/igra\.html$/.test(P)){const m=document.createElement("button");m.type="button";m.className="gm";fill(m,"↩","В меню игры","В меню");m.title="Вернуться в начальное меню игры";m.onclick=()=>{if(window.IIGRY_TO_MENU)window.IIGRY_TO_MENU();else location.reload()};n.append(m)}
+ if(inG||/(igra|konstruktor)\.html$/.test(P)){const fsb=document.createElement("button");fsb.type="button";fill(fsb,"⛶","Во весь экран","Экран");fsb.title="Развернуть игру на весь экран (на телефоне — горизонтально)";
+  const fsEl=()=>window.IIGRY_FS_EL||document.documentElement,isFs=()=>!!(document.fullscreenElement||document.webkitFullscreenElement);
+  const upd=()=>{fsb.querySelector(".l").textContent=isFs()?"Свернуть":"Во весь экран";fsb.querySelector(".i").textContent=isFs()?"⤢":"⛶"};
+  fsb.onclick=async()=>{try{if(isFs()){(document.exitFullscreen||document.webkitExitFullscreen).call(document);try{screen.orientation.unlock()}catch(_){}}
+    else{const el=fsEl();await (el.requestFullscreen||el.webkitRequestFullscreen).call(el,{navigationUI:"hide"});try{await screen.orientation.lock("landscape")}catch(_){}}}catch(_){alert("Ваш браузер не разрешил полноэкранный режим.")}};
+  document.addEventListener("fullscreenchange",upd);document.addEventListener("webkitfullscreenchange",upd);
+  if(document.fullscreenEnabled||document.webkitFullscreenEnabled)n.append(fsb)}
  [["🏠","Главная","Главная",""],["🎮","Игры","Игры","#catalog"],["🛠","Мастерская","Создать","masterskaya.html"],["👤","Кабинет","Кабинет","kabinet.html"]].forEach(([i,l,s,h])=>{const a=document.createElement("a");fill(a,i,l,s);a.href=base+h;if(h&&h===here)a.setAttribute("aria-current","page");n.append(a)});
  document.body.prepend(n);const pad=()=>{document.body.style.paddingTop="";const pt=parseFloat(getComputedStyle(document.body).paddingTop)||0;document.body.style.paddingTop=(pt+n.offsetHeight+6)+"px";document.documentElement.style.scrollPaddingTop=(n.offsetHeight+8)+"px"};pad();addEventListener("resize",pad)})();
 </script><script>/* Счётчик посещений «ИИгр»: случайный номер устройства хранится только в этом браузере; без cookie и слежки на других сайтах. Команда сайта не считается. */
@@ -324,16 +332,19 @@ renderLv();draw();if(shE){ED=shE;$("menu").hidden=true;$("editor").hidden=false;
       if(!items.length){const li=document.createElement("li");li.className="mu";li.textContent="Пока пусто. Станьте первым!";ol.appendChild(li);return}
       items.forEach(x=>{const li=document.createElement("li");li.textContent=S(x.n,30);const b=document.createElement("b");b.textContent=U(Math.round(+x.v||0));li.appendChild(b);if(S(x.n,30).toLowerCase()===nick)li.className="me";ol.appendChild(li)})}
     catch(_){ol.textContent="";say("Таблица временно недоступна.")}}
-  async function send(v,n,again){say("Отправляем результат…");
+  async function send(v,n,again,auto){const PP=window.IIGRY_PASS;
+    // во время игры не показываем проверку «не робот»: без действующего пропуска предлагаем кнопку
+    if(auto&&PP&&!PP.get()){pending=v;form.hidden=true;save.hidden=false;say((fullMsg||"")+"Результат "+U(v)+" можно записать в таблицу кнопкой ниже — когда закончите играть.");fullMsg="";return}
+    say("Отправляем результат…");
     try{const P=window.IIGRY_PASS,r=await fetch(API+"?a=score",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({game:G,v,n,aid,ms:Date.now()-t0,pass:P?P.get():"",token:(()=>{try{return localStorage.getItem("iigry-sess")||""}catch(_){return ""}})()})}),j=await r.json();
-      if(r.status===401&&j.need==="captcha"&&P&&!again){P.clear();await P.need();return send(v,n,true)}
+      if(r.status===401&&j.need==="captcha"&&P&&auto){P.clear();pending=v;form.hidden=true;save.hidden=false;say("Результат "+U(v)+" можно записать кнопкой ниже — когда закончите играть.");return}if(r.status===401&&j.need==="captcha"&&P&&!again){P.clear();await P.need();return send(v,n,true)}
       if(!r.ok)throw new Error(j.error||"Не удалось сохранить");
       say(fullMsg+(j.improved?"Новый личный рекорд: "+U(j.best)+"!":"Ваш рекорд — "+U(j.best)+". Этот результат не лучше, но вы близко."));fullMsg="";form.hidden=true;save.hidden=true;top()}
     catch(e){say(S(e.message,200))}}
   const ask=(v,t)=>{pending=v;say(t+" Впишите ник, чтобы попасть в таблицу.");form.hidden=false;save.hidden=true;try{inp.focus({preventScroll:true})}catch(_){}};
   // После игры: прошли игру целиком или попали в топ-5 — записываем сами; иначе — кнопка «Записать мой результат»
   window.IIGRY_SCORE=(v,o)=>{v=Math.round(+v||0);if(!v)return;const n=getNick(),full=!!(o&&o.full),best=top5(v);
-    if(full||best){fullMsg=full?"Игра пройдена — результат записан. ":"Вы в топ-5! ";if(n)send(v,n);else ask(v,(full?"Игра пройдена! ":"Вы в топ-5! ")+"Результат: "+U(v)+".");return}
+    if(full||best){fullMsg=full?"Игра пройдена — результат записан. ":"Вы в топ-5! ";if(n)send(v,n,false,true);else ask(v,(full?"Игра пройдена! ":"Вы в топ-5! ")+"Результат: "+U(v)+".");return}
     pending=v;form.hidden=true;save.hidden=false;say("Ваш результат: "+U(v)+". В топ-5 пока не вошёл, но его можно записать в таблицу кнопкой ниже.")};
   save.onclick=()=>{const n=getNick();if(!pending)return;if(n){const v=pending;pending=null;send(v,n)}else ask(pending,"Результат: "+U(pending)+".")};
   form.addEventListener("submit",e=>{e.preventDefault();const n=S(inp.value,30).trim().replace(/^@/,"");if(!n){say("Впишите ник.");return}setNick(n);if(pending){send(pending,n);pending=null}});

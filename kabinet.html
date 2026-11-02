@@ -217,6 +217,13 @@ show();
  const fill=(el,i,l,s)=>{const a=document.createElement("span"),b=document.createElement("span"),c=document.createElement("span");a.className="i";a.textContent=i;a.setAttribute("aria-hidden","true");b.className="l";b.textContent=l;c.className="s";c.textContent=s;c.setAttribute("aria-hidden","true");el.append(a,b,c);el.setAttribute("aria-label",l)};
  const b=document.createElement("button");b.type="button";fill(b,"←","Назад","Назад");b.onclick=()=>{if(document.referrer.indexOf(location.origin)===0&&history.length>1)history.back();else location.href=base};n.append(b);
  if(inG||/igra\.html$/.test(P)){const m=document.createElement("button");m.type="button";m.className="gm";fill(m,"↩","В меню игры","В меню");m.title="Вернуться в начальное меню игры";m.onclick=()=>{if(window.IIGRY_TO_MENU)window.IIGRY_TO_MENU();else location.reload()};n.append(m)}
+ if(inG||/(igra|konstruktor)\.html$/.test(P)){const fsb=document.createElement("button");fsb.type="button";fill(fsb,"⛶","Во весь экран","Экран");fsb.title="Развернуть игру на весь экран (на телефоне — горизонтально)";
+  const fsEl=()=>window.IIGRY_FS_EL||document.documentElement,isFs=()=>!!(document.fullscreenElement||document.webkitFullscreenElement);
+  const upd=()=>{fsb.querySelector(".l").textContent=isFs()?"Свернуть":"Во весь экран";fsb.querySelector(".i").textContent=isFs()?"⤢":"⛶"};
+  fsb.onclick=async()=>{try{if(isFs()){(document.exitFullscreen||document.webkitExitFullscreen).call(document);try{screen.orientation.unlock()}catch(_){}}
+    else{const el=fsEl();await (el.requestFullscreen||el.webkitRequestFullscreen).call(el,{navigationUI:"hide"});try{await screen.orientation.lock("landscape")}catch(_){}}}catch(_){alert("Ваш браузер не разрешил полноэкранный режим.")}};
+  document.addEventListener("fullscreenchange",upd);document.addEventListener("webkitfullscreenchange",upd);
+  if(document.fullscreenEnabled||document.webkitFullscreenEnabled)n.append(fsb)}
  [["🏠","Главная","Главная",""],["🎮","Игры","Игры","#catalog"],["🛠","Мастерская","Создать","masterskaya.html"],["👤","Кабинет","Кабинет","kabinet.html"]].forEach(([i,l,s,h])=>{const a=document.createElement("a");fill(a,i,l,s);a.href=base+h;if(h&&h===here)a.setAttribute("aria-current","page");n.append(a)});
  document.body.prepend(n);const pad=()=>{document.body.style.paddingTop="";const pt=parseFloat(getComputedStyle(document.body).paddingTop)||0;document.body.style.paddingTop=(pt+n.offsetHeight+6)+"px";document.documentElement.style.scrollPaddingTop=(n.offsetHeight+8)+"px"};pad();addEventListener("resize",pad)})();
 </script><script>/* Проверка «не робот» Yandex SmartCaptcha: один раз на 12 часов для всего сайта и игр */
