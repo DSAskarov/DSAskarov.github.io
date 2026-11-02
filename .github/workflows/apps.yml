@@ -44,7 +44,7 @@ jobs:
       - run: npx electron-builder --win nsis --x64 --publish never
         working-directory: build/${{ matrix.slug }}/electron
         env: { CSC_IDENTITY_AUTO_DISCOVERY: "false" }
-      - run: mkdir out; copy build\${{ matrix.slug }}\electron\dist\${{ matrix.slug }}-setup.exe out\
+      - run: mkdir out & copy build\${{ matrix.slug }}\electron\dist\${{ matrix.slug }}-setup.exe out\
         shell: cmd
       - uses: actions/upload-artifact@v4
         with:
@@ -52,7 +52,7 @@ jobs:
           path: out/*.exe
   release:
     needs: [android, windows]
-    if: always() && (needs.android.result == 'success' || needs.windows.result == 'success')
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4

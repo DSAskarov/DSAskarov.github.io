@@ -177,6 +177,7 @@ footer{padding-block:76px 44px;color:var(--muted);font-size:.86rem;display:grid;
 .mkcard{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;border:1px solid rgba(231,189,82,.45);background:rgba(231,189,82,.07);border-radius:16px;padding:14px 16px;margin:0 0 20px}.mkcard p{margin:4px 0 0;color:var(--muted)}.mkbtns{display:flex;gap:8px;flex-wrap:wrap}
 .sortbox select{min-height:40px;border-radius:10px;border:1px solid var(--line);background:var(--solid);color:var(--fg);font:inherit;padding:0 10px}
 .tag.mine{background:rgba(74,222,149,.15);color:#4ADE95;border-color:rgba(74,222,149,.4)}
+.appdl{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:4px 0 8px}
 .gstat{display:flex;gap:10px;flex-wrap:wrap;font-size:.82rem;color:var(--muted);margin:4px 0}.gst{color:#E7BD52;font-weight:700}.gst small{color:var(--muted);font-weight:400}
 .rate{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0}.stars{display:flex;gap:2px}
 .star{border:0;background:transparent;font-size:28px;line-height:1;cursor:pointer;color:rgba(160,155,175,.45);padding:4px;min-width:40px;min-height:40px;transition:transform .15s,color .15s}
@@ -888,6 +889,7 @@ html.tilt .card:hover{transform:perspective(900px) rotateX(var(--rx,0deg)) rotat
 </div>
 
 <footer class="nocopy">
+  <div class="appdl" style="justify-content:center;margin:0 0 14px"><span class="hint">Приложение «ИИгры»:</span><a class="btn ghost sm" href="https://github.com/DSAskarov/DSAskarov.github.io/releases/download/apps/iigry.apk" rel="noopener">📲 Android</a><a class="btn ghost sm" href="https://github.com/DSAskarov/DSAskarov.github.io/releases/download/apps/iigry-setup.exe" rel="noopener">💻 Windows</a></div>
   <span>Ни одна нейросеть не пострадала при создании этого сайта. Пара человек — немного.</span>
   <span><a href="#trust">Почему нам можно доверять</a> · <a href="#roadmap">Дорожная карта</a> · <a href="#claims">Жалобы и претензии</a> · <a href="otvet.html">Ответы на обращения</a> · <a href="kabinet.html">Кабинет автора</a> · <a href="masterskaya.html">Мастерская игр</a> · <a href="#terms">Пользовательское соглашение</a> · <a href="#privacy">Согласие на обработку данных</a></span>
   <span>© DSAskarov, ИИгры онлайн, 2026. Копирование дизайна, текстов и кода без разрешения автора запрещено.</span>
@@ -1169,6 +1171,8 @@ async function dlCheck(a){const t=a.textContent,url=a.href;a.textContent="🛡 �
   try{const r=await fetch("https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av?a=dlcheck",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({url,pid:a.dataset.dl,author:a.dataset.author})}),j=await r.json().catch(()=>({}));
     if(j.ok){window.open(url,"_blank","noopener");if(j.note)toast(j.note)}else toast(j.error||"Скачивание заблокировано: файл не прошёл проверку на вирусы. Мы уже разбираемся.")}catch(_){toast("Не удалось проверить файл — попробуйте через минуту.")}
   a.textContent=t;a.style.pointerEvents=""}
+const APPDL="https://github.com/DSAskarov/DSAskarov.github.io/releases/download/apps/",APPS=new Set(["pulsar","zhezl","s-nulya","kontinenty","lovi-bagi","kot-na-orbite","ferma-slov","origami"]);
+const appBtns=g=>{const s=gslug(g);return APPS.has(s)?`<div class="appdl"><span class="hint">Скачать игру:</span><a class="btn ghost sm" href="${APPDL+s}.apk" rel="noopener">📲 Android (APK)</a><a class="btn ghost sm" href="${APPDL+s}-setup.exe" rel="noopener">💻 Windows</a></div>`:""};
 let GS={};
 function GSof(id){const g=byId[id]||{},a=GS[id]||{},m=/games\/([\w-]+)\.html/.exec(g.demoUrl||""),b=m?GS["g:"+m[1]]||{}:{};return{r:a.r||0,n:a.n||0,v7:(a.v7||0)+(b.v7||0),v:(a.v||0)+(b.v||0)}}
 const plural=(n,a,b,c)=>{const m=n%10,h=n%100;return n+" "+(m===1&&h!==11?a:m>=2&&m<=4&&(h<10||h>=20)?b:c)};
@@ -1258,7 +1262,7 @@ const msgBtn=n=>`<button class="btn ghost sm" data-msg="${esc(n)}">Написа�
 const dlg=$("dlg"),body=$("dlgBody");
 function openGame(id){window.__gid=id;
   const g=byId[id];if(!g)return;const ch=chainOf(g),co=coOf(g);
-  body.innerHTML=`${COV[g.id]?`<img class="dimg" src="${COV[g.id]}" alt="Обложка игры «${esc(g.t)}»">`:""}<h2>${esc(g.t)}</h2><div class="author">${hl(ONE[g.c]||"")} · ${gl(g)} · ${priceLabel(g)}</div><p style="margin:0">${esc(g.d)}</p>${g.soon?"":rateHtml(g)}
+  body.innerHTML=`${COV[g.id]?`<img class="dimg" src="${COV[g.id]}" alt="Обложка игры «${esc(g.t)}»">`:""}<h2>${esc(g.t)}</h2><div class="author">${hl(ONE[g.c]||"")} · ${gl(g)} · ${priceLabel(g)}</div><p style="margin:0">${esc(g.d)}</p>${g.soon?"":rateHtml(g)}${appBtns(g)}
   ${g.soon?`<div class="links"><span class="hint">Автор: @${esc(g.a)}</span>${msgBtn(g.a)}</div>`:`<div><strong>Авторы</strong><ol class="chain">${ch.map((x,i)=>`<li><button class="whoa" data-go="${esc(x.id)}" ${x.id===g.id?'aria-current="true"':''}>@${esc(x.a)}</button><small>${i===0?'оригинал':'доработка '+i}${x.id===g.id?' · вы здесь':''}</small>${tipBtn(x)}${msgBtn(x.a)}<button class="x" data-rep="user|${esc(x.a)}" title="Пожаловаться на автора" aria-label="Пожаловаться на автора">⚑</button></li>`).join("")}</ol>${ch.length>1?'<p class="hint">Нажмите на автора, чтобы открыть его версию.</p>':''}</div>`}
   ${co.length?`<div class="links"><span class="hint">Соавторы:</span>${co.map(n=>`<span>@${esc(n)}</span>${msgBtn(n)}`).join("")}</div>`:''}
   ${treeHtml(g)}
