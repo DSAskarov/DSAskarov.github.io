@@ -79,22 +79,45 @@ function seeded(s){return()=>{s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s
 const R=n=>Math.floor(rng()*n),todayKey=()=>new Date(Date.now()+3*3600e3).toISOString().slice(0,10);
 // ---------- экран
 let W=0,H=0,DPR=1,S=1;function resize(){const r=stage.getBoundingClientRect();DPR=Math.min(2,devicePixelRatio||1);W=Math.round(r.width*DPR);H=Math.round(r.height*DPR);cv.width=W;cv.height=H;S=Math.min(W,H)/720}addEventListener("resize",()=>{resize();if(!G.run)draw()});resize();
-// ---------- звук: у каждого уровня своя музыка
-let AC=null,master=null,noiseBuf=null,soundOn=ls.get("iigry-pulsar-snd","1")!=="0";
+// ---------- звук: свой техно-трек у каждого уровня (бочка, бас с фильтром, хэты, клэп, стэбы, арпеджио, брейкдауны)
+let AC=null,master=null,comp=null,bus=null,busF=null,dly=null,noiseBuf=null,soundOn=ls.get("iigry-pulsar-snd","1")!=="0";
 const sndBtn=$("snd"),sndUI=()=>{sndBtn.textContent=soundOn?"🔊 Звук":"🔇 Без звука"};sndUI();
-sndBtn.onclick=()=>{soundOn=!soundOn;ls.set("iigry-pulsar-snd",soundOn?"1":"0");if(master)master.gain.value=soundOn?.45:0;sndUI()};
-function audio(){if(AC)return;try{AC=new (window.AudioContext||window.webkitAudioContext)();master=AC.createGain();master.gain.value=soundOn?.45:0;master.connect(AC.destination);noiseBuf=AC.createBuffer(1,AC.sampleRate*.3,AC.sampleRate);const d=noiseBuf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1}catch(_){AC=null}}
-function tone(f,t,d,type,vol,slide){if(!AC)return;const o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+d);g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(master);o.start(t);o.stop(t+d+.02)}
-function noise(t,d,vol,hp){if(!AC)return;const s=AC.createBufferSource(),f=AC.createBiquadFilter(),g=AC.createGain();s.buffer=noiseBuf;f.type="highpass";f.frequency.value=hp;g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);s.connect(f);f.connect(g);g.connect(master);s.start(t);s.stop(t+d)}
-const ROOTS=[[110,98,87.3,98],[110,130.8,98,116.5],[123.5,110,98,92.5],[103.8,92.5,123.5,110],[116.5,130.8,146.8,110],[98,87.3,110,123.5]];
-let nextBeat=0,beat=0;
-function music(){if(!AC||!G.run||paused)return;const L=G.L,spb=60/L.bpm/4;while(nextBeat<AC.currentTime+.12){const b=beat%16,bar=Math.floor(beat/16)%4,root=ROOTS[G.li%6][bar];
-  if(b%4===0){tone(140,nextBeat,.16,"sine",.55,40);G.pulse=1}if(b===4||b===12)noise(nextBeat,.12,.25,1800);if(b%2===1)noise(nextBeat,.04,.08,7000);
-  if(b%2===0)tone(root,nextBeat,spb*1.8,"sawtooth",.05);
-  const st=L.scale[(b*3+bar)%L.scale.length]+(b>=8?12:0);if(G.li>=1||b%2===0)tone(root*4*Math.pow(2,st/12),nextBeat,spb*.9,L.wave,.03);
-  if(G.li>=3&&b%8===6)tone(root*8*Math.pow(2,L.scale[(bar+2)%L.scale.length]/12),nextBeat,spb*3,"triangle",.025);
-  beat++;nextBeat+=spb}}
-const sfx={die(){if(!AC)return;const t=AC.currentTime;tone(300,t,.5,"sawtooth",.18,60);noise(t,.4,.3,200)},phase(){if(!AC)return;const t=AC.currentTime;[523,659,784,1046].forEach((f,i)=>tone(f,t+i*.05,.16,"triangle",.08))},warn(){if(!AC)return;const t=AC.currentTime;tone(880,t,.1,"square",.06);tone(660,t+.12,.12,"square",.06)},unlock(){if(!AC)return;const t=AC.currentTime;[392,523,659,784,1046].forEach((f,i)=>tone(f,t+i*.08,.3,"triangle",.1))}};
+sndBtn.onclick=()=>{soundOn=!soundOn;ls.set("iigry-pulsar-snd",soundOn?"1":"0");if(master)master.gain.value=soundOn?.6:0;sndUI()};
+function audio(){if(AC)return;try{AC=new (window.AudioContext||window.webkitAudioContext)();master=AC.createGain();master.gain.value=soundOn?.6:0;comp=AC.createDynamicsCompressor();comp.threshold.value=-14;comp.ratio.value=4;master.connect(comp);comp.connect(AC.destination);
+  busF=AC.createBiquadFilter();busF.type="lowpass";busF.frequency.value=18000;bus=AC.createGain();bus.connect(busF);busF.connect(master);
+  dly=AC.createDelay(1);const fb=AC.createGain();fb.gain.value=.32;const dg=AC.createGain();dg.gain.value=.25;dly.connect(fb);fb.connect(dly);dly.connect(dg);dg.connect(bus);
+  noiseBuf=AC.createBuffer(1,AC.sampleRate*.5,AC.sampleRate);const d=noiseBuf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1}catch(_){AC=null}}
+function env(g,t,a,v,d){g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(v,t+a);g.gain.exponentialRampToValueAtTime(.0001,t+a+d)}
+function tone(f,t,d,type,vol,slide,dest){if(!AC)return;const o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+d);env(g,t,.004,vol,d);o.connect(g);g.connect(dest||bus);o.start(t);o.stop(t+d+.05)}
+function noise(t,d,vol,type,fr,q,dest){if(!AC)return;const s=AC.createBufferSource(),f=AC.createBiquadFilter(),g=AC.createGain();s.buffer=noiseBuf;f.type=type;f.frequency.value=fr;if(q)f.Q.value=q;env(g,t,.002,vol,d);s.connect(f);f.connect(g);g.connect(dest||bus);s.start(t);s.stop(t+d+.05)}
+function kick(t,v){tone(155,t,.28,"sine",.9*v,42,master);noise(t,.02,.25*v,"highpass",3000)}
+function bassN(f,t,len,cut,acc){const o=AC.createOscillator(),o2=AC.createOscillator(),fl=AC.createBiquadFilter(),g=AC.createGain();o.type="sawtooth";o2.type="square";o.frequency.value=f;o2.frequency.value=f*1.005;
+  fl.type="lowpass";fl.Q.value=acc?14:8;fl.frequency.setValueAtTime(cut*(acc?2.2:1),t);fl.frequency.exponentialRampToValueAtTime(120,t+len*.9);env(g,t,.003,acc?.32:.24,len);o.connect(fl);o2.connect(fl);fl.connect(g);g.connect(bus);o.start(t);o2.start(t);o.stop(t+len+.05);o2.stop(t+len+.05)}
+function stab(fs,t,len){fs.forEach(f=>{const o=AC.createOscillator(),fl=AC.createBiquadFilter(),g=AC.createGain();o.type="sawtooth";o.frequency.value=f;fl.type="lowpass";fl.frequency.setValueAtTime(3200,t);fl.frequency.exponentialRampToValueAtTime(400,t+len);env(g,t,.005,.05,len);o.connect(fl);fl.connect(g);g.connect(bus);g.connect(dly);o.start(t);o.stop(t+len+.05)})}
+const mt=(r,s)=>r*Math.pow(2,s/12);
+// треки: темп, тоника, бас (16 шагов: полутон или -1), арпеджио, аккорд, характер
+const TR=[
+ {bpm:124,root:55,bass:[-1,-1,0,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,12,-1],arp:[0,7,12,15],ch:[0,3,7,10],acc:[2,14],cut:900,hat:"off"},
+ {bpm:128,root:49,bass:[0,-1,0,12,-1,0,-1,10,0,-1,0,12,-1,0,7,-1],arp:[0,12,7,15,10,12],ch:[0,3,7],acc:[3,11],cut:1100,hat:"16"},
+ {bpm:132,root:58.3,bass:[0,0,12,0,0,10,0,12,0,0,12,0,7,0,10,12],arp:[0,3,7,12,15,12,7,3],ch:[0,5,7,10],acc:[2,7,14],cut:1400,hat:"16"},
+ {bpm:138,root:51.9,bass:[0,-1,12,0,-1,12,0,13,0,-1,12,0,-1,12,7,6],arp:[0,1,7,12,13,7],ch:[0,1,7],acc:[2,5,13],cut:1600,hat:"16"},
+ {bpm:144,root:61.7,bass:[0,12,0,10,0,12,0,7,0,12,0,10,12,7,5,3],arp:[0,7,10,12,14,17,12,7],ch:[0,3,7,10,14],acc:[1,6,9,14],cut:1900,hat:"16"},
+ {bpm:150,root:46.2,bass:[0,0,12,0,13,0,12,0,0,0,12,0,15,13,12,7],arp:[0,3,6,12,15,18,12,6],ch:[0,3,6,10],acc:[2,4,10,12],cut:2300,hat:"16"}];
+let nextBeat=0,beat=0;const VQ=[];
+function music(){if(!AC||!G.run||paused)return;const T=G.mode==="custom"?TR[2]:TR[G.li%6],spb=60/T.bpm/4;
+  while(nextBeat<AC.currentTime+.12){const t=nextBeat,b=beat%16,bar=Math.floor(beat/16),sec=bar%32,brk=sec>=28,drop=sec===0&&bar>0,intro=bar<2;
+    const prog=[0,0,-2,-4,0,0,3,-2][bar%8],root=mt(T.root,prog);
+    if(b===0){VQ.push({t,k:"bar",drop,brk});if(sec===28&&busF){busF.frequency.cancelScheduledValues(t);busF.frequency.setValueAtTime(18000,t);busF.frequency.exponentialRampToValueAtTime(350,t+spb*16*2);busF.frequency.exponentialRampToValueAtTime(14000,t+spb*16*4)}}
+    if(!brk&&b%4===0){kick(t,1);VQ.push({t,k:"kick"})}
+    if(brk&&sec>=30&&b%(sec===31?1:2)===0)noise(t,.08,.05+.15*((b+(sec-30)*16)/32),"bandpass",2000+b*300,6);
+    if(!brk&&!intro){const bn=T.bass[b];if(bn>=0){bassN(mt(root,bn),t,spb*.9,T.cut+(sec%8)*120,T.acc.includes(b));if(b%2===0)VQ.push({t,k:"bass"})}}
+    if(!intro&&(T.hat==="16"||b%4===2))noise(t,b%4===2?.07:.025,b%4===2?.12:.05,"highpass",b%4===2?6500:9000);
+    if(!brk&&!intro&&(b===4||b===12)){[0,.012,.024].forEach(o=>noise(t+o,.09,.2,"bandpass",1600,1.2));VQ.push({t,k:"clap"})}
+    if(G.li>=1&&bar%4===2&&(b===0||b===6||b===10))stab(T.ch.map(s=>mt(root*4,s)),t,spb*1.6);
+    if((G.li>=2||bar>=8)&&!intro&&b%2===0){const a=T.arp[(b/2+bar)%T.arp.length];tone(mt(root*8,a),t,spb*.8,G.li%2?"square":"sawtooth",.028,0,undefined);}
+    beat++;nextBeat+=spb}}
+
+const sfx={die(){if(!AC)return;const t=AC.currentTime;tone(300,t,.5,"sawtooth",.18,60);noise(t,.4,.3,"lowpass",800)},phase(){if(!AC)return;const t=AC.currentTime;[523,659,784,1046].forEach((f,i)=>tone(f,t+i*.05,.16,"triangle",.08))},warn(){if(!AC)return;const t=AC.currentTime;tone(880,t,.1,"square",.06);tone(660,t+.12,.12,"square",.06)},unlock(){if(!AC)return;const t=AC.currentTime;[392,523,659,784,1046].forEach((f,i)=>tone(f,t+i*.08,.3,"triangle",.1))}};
 // ---------- состояние игры
 const G={run:false,dead:false,t:0,a:0,rot:0,rotDir:1,rotSp:1,walls:[],spawnD:0,pulse:0,shake:0,flash:0,lastRow:null,deadAt:0,N:6,L:LV[0],li:0,mode:"lvl",ev:null,evT:10,warnT:0,warnEv:null,shapeT:15,grace:0,msg:"",msgT:0,inv:0,flipT:5,custom:null,crow:0,unlockedNow:false};
 const K={l:false,r:false};let paused=false;
@@ -126,9 +149,9 @@ function start(mode){audio();if(AC&&AC.state==="suspended")AC.resume();G.mode=mo
   if(G.mode==="daily"){seed=+todayKey().replace(/-/g,"");rng=seeded(seed);G.li=3;G.L=Object.assign({},LV[3],{n:"Испытание "+todayKey().slice(8,10)+"."+todayKey().slice(5,7)})}
   else if(G.mode==="custom"){rng=rngMath;G.li=2;G.L=Object.assign({},LV[2],{n:"Свой уровень",sp:+G.custom.sp,shapes:[G.custom.N],ev:[]})}
   else{rng=rngMath;G.li=lvl;G.L=LV[lvl]}
-  Object.assign(G,{run:true,dead:false,t:0,a:-Math.PI/2+.01,rot:0,rotDir:rng()<.5?1:-1,rotSp:1,walls:[],spawnD:0,pulse:0,shake:0,flash:0,lastRow:null,N:G.L.shapes[0],ev:null,evT:9+R(4),warnT:0,warnEv:null,shapeT:15,grace:.6,msg:G.L.n.toUpperCase(),msgT:1.6,flipT:4+R(3),crow:0,unlockedNow:false,mom:null,momT:3.5,phaseN:0,phaseT:10});
+  VQ.length=0;Object.assign(G,{run:true,dead:false,t:0,bassF:0,clapF:0,brk:false,a:-Math.PI/2+.01,rot:0,rotDir:rng()<.5?1:-1,rotSp:1,walls:[],spawnD:0,pulse:0,shake:0,flash:0,lastRow:null,N:G.L.shapes[0],ev:null,evT:9+R(4),warnT:0,warnEv:null,shapeT:15,grace:.6,msg:G.L.n.toUpperCase(),msgT:1.6,flipT:4+R(3),crow:0,unlockedNow:false,mom:null,momT:3.5,phaseN:0,phaseT:10});
   if(window.IIGRY_LB_GAME)window.IIGRY_LB_GAME(G.mode==="daily"?"hexd":"hex");
-  paused=false;ov.hidden=true;if(AC){nextBeat=AC.currentTime+.05;beat=0}last=0;cancelAnimationFrame(raf);raf=requestAnimationFrame(loop)}
+  paused=false;ov.hidden=true;if(AC){nextBeat=AC.currentTime+.05;beat=0;if(busF){busF.frequency.cancelScheduledValues(AC.currentTime);busF.frequency.setValueAtTime(18000,AC.currentTime)}}last=0;cancelAnimationFrame(raf);raf=requestAnimationFrame(loop)}
 function say(m,t){G.msg=m;G.msgT=t||2}
 function die(){G.dead=true;G.run=false;G.deadAt=performance.now();G.shake=1;G.flash=1;sfx.die();if(navigator.vibrate)try{navigator.vibrate(120)}catch(_){}
   const ms=Math.round(G.t*1000);let head="СТОЛКНОВЕНИЕ",extra="";
@@ -137,6 +160,9 @@ function die(){G.dead=true;G.run=false;G.deadAt=performance.now();G.shake=1;G.fl
   $("ovT").textContent=head;$("ovP").textContent=(ms/1000).toFixed(2)+" с · «"+G.L.n+"»"+extra;
   if(window.IIGRY_SCORE&&G.mode!=="custom"){const sc=G.mode==="daily"?Math.round(ms/100):Math.round(ms/100*G.L.mul);if(sc>0)window.IIGRY_SCORE(sc,G.mode==="lvl"&&G.li===5&&ms>=60000?{full:true}:undefined)}
   renderLv();setTimeout(()=>{if(!G.run){showMenu();$("go").textContent="↻ Ещё раз"}},500)}
+function startMom(big){const pool=MOMS[Math.min(5,G.li)],k=big?["spin","zoom","reverse","burst"][R(4)]:pool[R(pool.length)],d=MOM[k][1]*(.7+rng()*.7);
+  G.mom={k,t:d,d,p:k==="speed"?1.12+rng()*.28:k==="burst"?1.35+rng()*.25:k==="spin"?1.8+rng()*1.6:1};G.momT=Math.max(1.8,5-G.li*.45)+rng()*4;
+  if(k==="reverse"){G.rotDir*=-1;G.rotSp=1.6+rng()*1.2;G.flash=Math.max(G.flash,.25+rng()*.25)}if(k==="burst")G.shake=.15+rng()*.2;if(k==="spin"&&rng()<.5)G.rotDir*=-1}
 function blockedSide(side){const rp=R_PL();return G.walls.some(w=>w.s===side&&w.d<=rp+6*S&&w.d+w.th>=rp-6*S)}
 function step(dt){G.t+=dt;const k=slowK();
   // минута — открытие следующего уровня
@@ -144,7 +170,7 @@ function step(dt){G.t+=dt;const k=slowK();
   // фазы каждые 10 секунд — быстрее и злее
   G.phaseT-=dt;if(G.phaseT<=0){G.phaseT=10;G.phaseN++;sfx.phase();G.flash=Math.max(G.flash,.35);if(G.msgT<=0&&rng()<.5)say(PHN[Math.min(9,G.phaseN)],1.1)}
   // моменты: ускорения, вихри, развороты, качка — как в оригинале, но свои
-  if(G.mode!=="custom"){if(G.mom){G.mom.t-=dt;if(G.mom.t<=0)G.mom=null}else{G.momT-=dt;if(G.momT<=0){const pool=MOMS[Math.min(5,G.li)],k=pool[R(pool.length)],d=MOM[k][1]*(.7+rng()*.7);
+  if(G.mode!=="custom"){if(G.mom){G.mom.t-=dt;if(G.mom.t<=0)G.mom=null}else{G.momT-=dt;if(G.momT<=0&&!AC){const pool=MOMS[Math.min(5,G.li)],k=pool[R(pool.length)],d=MOM[k][1]*(.7+rng()*.7);
     G.mom={k,t:d,d,p:k==="speed"?1.12+rng()*.28:k==="burst"?1.35+rng()*.25:k==="spin"?1.8+rng()*1.6:1};G.momT=Math.max(1.8,5-G.li*.45)+rng()*4;
     if(k==="reverse"){G.rotDir*=-1;G.rotSp=1.6+rng()*1.2;G.flash=.25+rng()*.25}if(k==="burst")G.shake=.15+rng()*.2;if(k==="spin"&&rng()<.5)G.rotDir*=-1}}}
   // смена формы арены
@@ -160,15 +186,18 @@ function step(dt){G.t+=dt;const k=slowK();
   // стены
   if(G.grace>0)G.grace-=dt;else{const sp=wallSpeed()*dt*k;for(const w of G.walls)w.d-=sp;G.spawnD-=sp;G.walls=G.walls.filter(w=>w.d+w.th>R_HEX()-2);if(G.spawnD<R_SPAWN()+40*S)spawn()}
   const ps=sideOf(G.a),rp=R_PL();for(const w of G.walls)if(w.s===ps&&w.d<=rp+6*S&&w.d+w.th>=rp-6*S){die();return}
+  if(AC)while(VQ.length&&VQ[0].t<=AC.currentTime){const e=VQ.shift();if(e.k==="kick")G.pulse=1;else if(e.k==="bass")G.bassF=1;else if(e.k==="clap")G.clapF=1;
+    else if(e.k==="bar"){G.brk=e.brk;if(e.drop){G.flash=.55;G.shake=.3;startMom(true)}else if(!G.mom&&G.momT<=0&&G.mode!=="custom")startMom()}}
+  G.bassF=Math.max(0,(G.bassF||0)-dt*5);G.clapF=Math.max(0,(G.clapF||0)-dt*6);
   G.pulse=Math.max(0,G.pulse-dt*4);if(G.msgT>0)G.msgT-=dt}
 // ---------- рисование
 const col=(h,s,l,a)=>"hsla("+h+","+s+"%,"+l+"%,"+(a==null?1:a)+")";
 function poly(r,N){ctx.beginPath();for(let i=0;i<=N;i++){const a=i*TAU/N;i?ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r):ctx.moveTo(Math.cos(a)*r,Math.sin(a)*r)}ctx.closePath()}
 function draw(){const N=G.N,seg=TAU/N,hue=(G.L.hue+G.t*10)%360,cx=W/2,cy=H/2,inv=G.ev&&G.ev.k==="flash"&&Math.floor(G.t*6)%2;ctx.setTransform(1,0,0,1,0,0);
-  ctx.fillStyle=inv?col(hue,30,85):col(hue,40,6);ctx.fillRect(0,0,W,H);let sx=0,sy=0;if(G.shake>0){sx=(Math.random()-.5)*24*S*G.shake;sy=(Math.random()-.5)*24*S*G.shake}
-  ctx.translate(cx+sx,cy+sy);const mz=G.mom&&G.mom.k==="zoom"?1+.22*Math.sin(Math.PI*(1-G.mom.t/G.mom.d)):1;if(G.mom&&G.mom.k==="wobble"){const w=Math.sin(G.t*7)*.18;ctx.transform(1,w*.6,w,1,0,0)}ctx.rotate(G.rot);const z=(1+G.pulse*.035)*mz;ctx.scale(z,z);const far=Math.hypot(W,H);
+  ctx.fillStyle=inv?col(hue,30,85):col(hue,40,6+G.clapF*6-(G.brk?3:0));ctx.fillRect(0,0,W,H);let sx=0,sy=0;if(G.shake>0){sx=(Math.random()-.5)*24*S*G.shake;sy=(Math.random()-.5)*24*S*G.shake}
+  ctx.translate(cx+sx,cy+sy);const mz=G.mom&&G.mom.k==="zoom"?1+.22*Math.sin(Math.PI*(1-G.mom.t/G.mom.d)):1;if(G.mom&&G.mom.k==="wobble"){const w=Math.sin(G.t*7)*.18;ctx.transform(1,w*.6,w,1,0,0)}ctx.rotate(G.rot);const z=(1+G.pulse*.045+G.clapF*.02)*mz;ctx.scale(z,z);const far=Math.hypot(W,H);
   for(let i=0;i<N;i++){ctx.fillStyle=inv?(i%2?col(hue,30,78):col(hue,30,72)):(i%2?col(hue,45,10):col(hue,45,14));ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(Math.cos(i*seg)*far,Math.sin(i*seg)*far);ctx.lineTo(Math.cos((i+1)*seg)*far,Math.sin((i+1)*seg)*far);ctx.closePath();ctx.fill()}
-  const wc=inv?col(hue,80,25):col(hue,85,62);ctx.fillStyle=wc;
+  const wc=inv?col(hue,80,25):col(hue,85,Math.min(80,58+G.bassF*14));ctx.fillStyle=wc;
   for(const w of G.walls){const a0=w.s*seg,a1=a0+seg,r0=Math.max(w.d,R_HEX()),r1=w.d+w.th;if(r1<=r0)continue;ctx.beginPath();ctx.moveTo(Math.cos(a0)*r0,Math.sin(a0)*r0);ctx.lineTo(Math.cos(a1)*r0,Math.sin(a1)*r0);ctx.lineTo(Math.cos(a1)*r1,Math.sin(a1)*r1);ctx.lineTo(Math.cos(a0)*r1,Math.sin(a0)*r1);ctx.closePath();ctx.fill()}
   const rh=R_HEX()*(1+G.pulse*.12);ctx.fillStyle=inv?col(hue,30,85):col(hue,40,8);ctx.strokeStyle=wc;ctx.lineWidth=6*S;poly(rh,N);ctx.fill();ctx.stroke();
   if(!G.dead||Math.floor(performance.now()/90)%2){const rp=R_PL();ctx.save();ctx.rotate(G.a);ctx.fillStyle=inv?"#111":col(hue,90,78);ctx.beginPath();ctx.moveTo(rp+10*S,0);ctx.lineTo(rp-5*S,-7*S);ctx.lineTo(rp-5*S,7*S);ctx.closePath();ctx.fill();ctx.restore()}
