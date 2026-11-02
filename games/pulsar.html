@@ -250,7 +250,7 @@ renderLv();draw();if(shE){ED=shE;$("menu").hidden=true;$("editor").hidden=false;
 </script>
 </body></html>
 <script>/* Панель навигации «ИИгр»: назад, главная, игры, мастерская, кабинет; в играх — возврат в меню игры. На телефоне — крупные значки с подписями, как в приложениях */
-(function(){if(document.getElementById("iigry-nav"))return;const P=location.pathname,inG=/\/games\//.test(P),base=inG?"../":"./",here=P.replace(/^.*\//,"")||"index.html",APP=/IIgryApp/.test(navigator.userAgent)&&inG;
+(function(){if(document.getElementById("iigry-nav")||(/IIgryApp/.test(navigator.userAgent)&&/\/games\//.test(location.pathname)))return;const P=location.pathname,inG=/\/games\//.test(P),base=inG?"../":"./",here=P.replace(/^.*\//,"")||"index.html",APP=/IIgryApp/.test(navigator.userAgent)&&inG;
  const st=document.createElement("style");st.textContent="#iigry-nav{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:8px 12px;box-sizing:border-box;background:rgba(11,10,14,.94);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:1px solid rgba(255,255,255,.1)}#iigry-nav::-webkit-scrollbar{display:none}"+
   "#iigry-nav a,#iigry-nav button{flex:none;display:inline-flex;align-items:center;gap:5px;border:1px solid rgba(255,255,255,.14);background:#16141B;color:#F4F4F6;border-radius:999px;padding:0 14px;min-height:38px;font:600 13px/1.2 'Golos Text',system-ui,sans-serif;text-decoration:none;cursor:pointer;white-space:nowrap;-webkit-tap-highlight-color:transparent}"+
   "#iigry-nav a[aria-current=page]{border-color:#E7BD52;color:#E7BD52}#iigry-nav .gm{border-color:rgba(231,189,82,.6)}#iigry-nav a:focus-visible,#iigry-nav button:focus-visible{outline:2px solid #E7BD52;outline-offset:2px}#iigry-nav .s{display:none}"+
@@ -380,5 +380,53 @@ renderLv();draw();if(shE){ED=shE;$("menu").hidden=true;$("editor").hidden=false;
   top();setInterval(()=>{if(!document.hidden)top()},30000);
   window.IIGRY_LB_GAME=g=>{if(g&&g!==G){G=g;top()}};
 })();
+</script><script>/* Оболочка приложения «ИИгр»: в APK и установщике игра выглядит как отдельное приложение — своя верхняя панель, рекорды в выезжающей шторке, без страницы сайта */
+(function(){if(!/IIgryApp/.test(navigator.userAgent)||!/\/games\//.test(location.pathname))return;
+ const D=document,H=D.documentElement;H.classList.add("iigry-app");
+ let vp=D.querySelector('meta[name=viewport]');if(!vp){vp=D.createElement("meta");vp.name="viewport";D.head.append(vp)}vp.content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover";
+ const st=D.createElement("style");st.textContent=`
+html.iigry-app,html.iigry-app body{overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
+html.iigry-app body{padding-top:calc(58px + env(safe-area-inset-top))!important;padding-bottom:calc(14px + env(safe-area-inset-bottom))!important;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+html.iigry-app input,html.iigry-app textarea{-webkit-user-select:text;user-select:text}
+html.iigry-app h1,html.iigry-app .app-hide{display:none!important}
+html.iigry-app button,html.iigry-app .btn{touch-action:manipulation;transition:transform .08s ease,filter .12s ease;border-radius:14px}
+html.iigry-app button:active:not(:disabled),html.iigry-app .btn:active:not(:disabled){transform:scale(.95);filter:brightness(1.15)}
+#iapp-bar{position:fixed;left:0;right:0;top:0;z-index:2000;display:grid;grid-template-columns:52px 1fr 52px;align-items:center;gap:4px;padding:calc(4px + env(safe-area-inset-top)) 6px 4px;background:linear-gradient(180deg,rgba(13,12,17,.98),rgba(13,12,17,.9));backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid rgba(255,255,255,.08);font-family:"Golos Text",system-ui,sans-serif}
+#iapp-bar b{text-align:center;font:800 17px/1.1 Rubik,"Golos Text",system-ui,sans-serif;color:#F4F4F6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#iapp-bar button{width:46px;height:46px;border:0;border-radius:14px;background:rgba(255,255,255,.06);color:#F4F4F6;font-size:21px;display:grid;place-items:center;cursor:pointer;padding:0}
+#iapp-bar button[hidden]{visibility:hidden;display:grid}
+#iapp-sh{position:fixed;inset:0;z-index:2100;background:rgba(0,0,0,.55);opacity:0;pointer-events:none;transition:opacity .2s}
+#iapp-sh.on{opacity:1;pointer-events:auto}
+#iapp-sheet{position:fixed;left:0;right:0;bottom:0;z-index:2101;max-height:78vh;overflow:auto;background:#17151D;border-radius:22px 22px 0 0;padding:10px 14px calc(18px + env(safe-area-inset-bottom));transform:translateY(105%);transition:transform .25s cubic-bezier(.2,.8,.2,1);box-shadow:0 -10px 40px rgba(0,0,0,.5);color:#F4F4F6;font-family:"Golos Text",system-ui,sans-serif}
+#iapp-sheet.on{transform:none}#iapp-sheet:before{content:"";display:block;width:44px;height:5px;border-radius:3px;background:rgba(255,255,255,.25);margin:0 auto 10px}
+#iapp-sheet .lb{margin:0;width:100%;background:transparent;border:0;padding:0}
+#iapp-toast{position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:2200;background:rgba(20,18,26,.96);color:#fff;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:10px 18px;font:600 14px "Golos Text",system-ui,sans-serif;opacity:0;transition:opacity .2s;pointer-events:none}
+#iapp-toast.on{opacity:1}`;
+ D.head.append(st);
+ const go=()=>{const h1=D.querySelector("h1"),title=(h1&&h1.textContent.trim())||D.title.replace(/\s+—.*$/,"");
+  const bar=D.createElement("div");bar.id="iapp-bar";const menu=D.createElement("button"),tt=D.createElement("b"),lbB=D.createElement("button");
+  menu.type=lbB.type="button";menu.textContent="☰";menu.setAttribute("aria-label","Меню игры");tt.textContent=title;lbB.textContent="🏆";lbB.setAttribute("aria-label","Таблица лидеров");
+  menu.onclick=()=>{close();if(window.IIGRY_TO_MENU)window.IIGRY_TO_MENU();else location.reload()};bar.append(menu,tt,lbB);D.body.prepend(bar);
+  // Описание игры и подписи страницы сайта в приложении не нужны
+  if(h1){let n=h1.nextElementSibling;if(n&&n.tagName==="P"&&n.textContent.length>40)n.classList.add("app-hide");const par=h1.parentElement;if(par&&par!==D.body&&par.children.length<=3&&par.querySelector("p")){const p=par.querySelector("p");if(p&&p!==h1&&p.textContent.length>40)p.classList.add("app-hide")}}
+  if(h1&&h1.parentElement!==D.body){const n=h1.parentElement.nextElementSibling;if(n&&n.tagName==="P"&&n.textContent.length>40)n.classList.add("app-hide")}
+  if(/Android/.test(navigator.userAgent)){D.querySelectorAll("p").forEach(p=>{if(p.querySelector("kbd")&&/Управление|клавиатур/.test(p.textContent))p.classList.add("app-hide")});
+   D.querySelectorAll("button").forEach(b=>{if(b.children.length===0)b.textContent=b.textContent.replace(/\s*\((?:[A-Za-z]|Enter|Esc|Пробел)\)\s*$/,"")})}
+  D.querySelectorAll("p,small,footer,div").forEach(el=>{if(el.children.length>4)return;const t=el.textContent;if(/площадки «ИИгры онлайн»|площадке «ИИгры онлайн»|Поддержать автора|Хотите своё продолжение|Очки в таблице лидеров/.test(t)&&t.length<400)el.classList.add("app-hide")});
+  // Рекорды — в шторке снизу
+  const sh=D.createElement("div");sh.id="iapp-sh";const sheet=D.createElement("div");sheet.id="iapp-sheet";sheet.setAttribute("role","dialog");sheet.setAttribute("aria-label","Таблица лидеров");D.body.append(sh,sheet);
+  const grab=()=>{const lb=D.querySelector(".lb");if(lb&&lb.parentElement!==sheet)sheet.append(lb);lbB.hidden=!sheet.querySelector(".lb")};grab();setTimeout(grab,600);
+  const open=()=>{grab();sh.classList.add("on");sheet.classList.add("on")};lbB.onclick=open;sh.onclick=close;
+  let y0=null;sheet.addEventListener("touchstart",e=>{y0=sheet.scrollTop<=0?e.touches[0].clientY:null},{passive:true});sheet.addEventListener("touchmove",e=>{if(y0!==null&&e.touches[0].clientY-y0>70){close();y0=null}},{passive:true});
+  // После записи рекорда показываем таблицу
+  const orig=window.IIGRY_SCORE;if(orig)window.IIGRY_SCORE=function(){const r=orig.apply(this,arguments);setTimeout(()=>{if(sheet.querySelector(".lb form:not([hidden]),.lb .lbSave:not([hidden])"))open()},400);return r};
+  window.IIGRY_BACK=()=>{if(sheet.classList.contains("on")){close();return true}if(Date.now()-lastBack<2000)return false;lastBack=Date.now();toast("Нажмите «Назад» ещё раз, чтобы выйти");return true}};
+ let lastBack=0;
+ function close(){const a=D.getElementById("iapp-sh"),b=D.getElementById("iapp-sheet");if(a)a.classList.remove("on");if(b)b.classList.remove("on")}
+ function toast(t){let el=D.getElementById("iapp-toast");if(!el){el=D.createElement("div");el.id="iapp-toast";D.body.append(el)}el.textContent=t;el.classList.add("on");clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove("on"),1800)}
+ // Лёгкая вибрация на кнопках, как в приложениях
+ D.addEventListener("pointerdown",e=>{const b=e.target.closest&&e.target.closest("button,.btn");if(b&&!b.disabled&&navigator.vibrate)try{navigator.vibrate(8)}catch(_){}},{passive:true});
+ D.addEventListener("contextmenu",e=>{if(!e.target.closest("input,textarea"))e.preventDefault()});
+ if(D.readyState==="loading")D.addEventListener("DOMContentLoaded",go);else go()})();
 </script>
 </body></html>

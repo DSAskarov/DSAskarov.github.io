@@ -78,6 +78,9 @@ public class MainActivity extends Activity {{
     s.setJavaScriptEnabled(true); s.setDomStorageEnabled(true); s.setDatabaseEnabled(true);
     s.setMediaPlaybackRequiresUserGesture(false);
     s.setUserAgentString(s.getUserAgentString() + " IIgryApp");
+    s.setTextZoom(100); s.setSupportZoom(false); s.setBuiltInZoomControls(false);
+    w.setBackgroundColor(0xFF0D0C11); w.setOverScrollMode(View.OVER_SCROLL_NEVER);
+    w.setHapticFeedbackEnabled(true); w.setLongClickable(false); w.setOnLongClickListener(x -> true);
     w.setWebChromeClient(new WebChromeClient());
     w.setWebViewClient(new WebViewClient() {{
       @Override public void onReceivedError(WebView v, WebResourceRequest r, WebResourceError e) {{
@@ -91,11 +94,20 @@ public class MainActivity extends Activity {{
       }}
     }});
     setContentView(w);
-    if ({imm}) getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY | View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+    immersive();
     if (b != null) w.restoreState(b); else w.loadUrl("{url}");
   }}
   @Override protected void onSaveInstanceState(Bundle o) {{ super.onSaveInstanceState(o); w.saveState(o); }}
-  @Override public void onBackPressed() {{ if (w.canGoBack()) w.goBack(); else super.onBackPressed(); }}
+  private void immersive() {{ if ({imm}) getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY | View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_LAYOUT_STABLE); }}
+  @Override public void onWindowFocusChanged(boolean f) {{ super.onWindowFocusChanged(f); if (f) immersive(); }}
+  @Override protected void onPause() {{ super.onPause(); w.onPause(); }}
+  @Override protected void onResume() {{ super.onResume(); w.onResume(); immersive(); }}
+  @Override public void onBackPressed() {{
+    w.evaluateJavascript("(window.IIGRY_BACK&&window.IIGRY_BACK())?'1':'0'", v -> {{
+      if (v != null && v.contains("1")) return;
+      if (w.canGoBack()) w.goBack(); else finish();
+    }});
+  }}
 }}
 """)
     shutil.copy(local, os.path.join(a, "app/src/main/assets", asset))
