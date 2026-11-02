@@ -64,6 +64,10 @@ const LV=[
  {n:"Гиперпульсар",sp:1.52,rot:1.45,shapes:[6,5,7,4],ev:["dark","mirror","gravity","flash"],mul:2.5,bpm:150,hue:120,scale:[0,2,5,7,9],wave:"sawtooth",pool:8},
  {n:"Сверхновая",sp:1.66,rot:1.6,shapes:[6,5,4,3,7],ev:["dark","mirror","gravity","flash","slow"],mul:3.0,bpm:160,hue:50,scale:[0,3,6,7,10],wave:"square",pool:8}];
 const EVN={slow:"⏳ ЗАМЕДЛЕНИЕ",mirror:"🪞 ЗЕРКАЛО: лево и право поменялись",dark:"🌑 ТЬМА",flash:"⚡ ВСПЫШКИ",gravity:"🌀 ГРАВИТАЦИЯ: искру сносит"};
+const MOM={speed:["⚡ УСКОРЕНИЕ",4.5],spin:["🌀 ВИХРЬ",3],reverse:["↺ РАЗВОРОТ",.1],zoom:["🔭 ПРИБЛИЖЕНИЕ",2.5],wobble:["〰 КАЧКА",4],burst:["💥 РЫВОК",1.4],calm:["🧘 ПЕРЕДЫШКА",2.5]};
+const MOMS=[["speed","spin","reverse","zoom","calm"],["speed","spin","reverse","zoom","calm","wobble"],["speed","spin","reverse","zoom","wobble","burst"],["speed","spin","reverse","zoom","wobble","burst"],["speed","spin","reverse","zoom","wobble","burst"],["speed","spin","reverse","zoom","wobble","burst"]];
+const PHN=["ФАЗА I","ФАЗА II","ФАЗА III","ФАЗА IV","ФАЗА V","ФАЗА VI","ФАЗА VII","ФАЗА VIII","ФАЗА IX","ФАЗА X"];
+const momSp=()=>!G.mom?1:G.mom.k==="speed"?1.28:G.mom.k==="burst"?1.5:G.mom.k==="calm"?.75:1,momRot=()=>!G.mom?1:G.mom.k==="spin"?2.6:G.mom.k==="calm"?.4:1;
 const SHN={3:"ТРЕУГОЛЬНИК",4:"КВАДРАТ",5:"ПЕНТАГОН",6:"ГЕКСАГОН",7:"ГЕПТАГОН"};
 // ---------- хранение
 const ls={get:(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:v}catch(_){return d}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(_){}}};
@@ -112,7 +116,7 @@ function rowsFor(){const N=G.N,o=R(N),mir=rng()<.5?1:-1,sd=k=>((o+mir*k)%N+N)%N,
   return Rw.map(r=>[...new Set(r)].filter(x=>x>=0&&x<N)).filter(r=>r.length&&r.length<N)}
 function travel(A,B){if(!A)return 0;const N=G.N,oa=[],ob=[];for(let i=0;i<N;i++){if(!A.includes(i))oa.push(i);if(!B.includes(i))ob.push(i)}if(!ob.length)return N;let worst=0;for(const a of oa){let b9=99;for(const b of ob){const d=Math.min((a-b+N)%N,(b-a+N)%N);if(d<b9)b9=d}worst=Math.max(worst,b9)}return worst}
 const slowK=()=>G.ev&&G.ev.k==="slow"?.55:G.ev&&G.ev.k==="dark"?.85:1;
-function wallSpeed(){return 400*S*G.L.sp*(1+Math.min(.35,G.t/220))}
+function wallSpeed(){return 400*S*G.L.sp*(1+Math.min(.35,G.t/220))*(1+Math.min(.3,G.phaseN*.045))*momSp()}
 function angSpeed(){return TAU*1.6*Math.min(1.2,.97+G.t/300)}
 function spawn(){const rows=G.custom?[G.custom.rows[G.crow++%G.custom.rows.length]]:rowsFor(),sp=wallSpeed(),th=Math.max(22*S,sp*.075);let d=Math.max(G.spawnD,R_SPAWN());
   for(const row of rows){const need=travel(G.lastRow,row),time=.22+need*SEG()/angSpeed()+.1;d+=G.lastRow?Math.max(th+sp*time,th+70*S):0;for(const s of row)G.walls.push({s,d,th});G.lastRow=row}
@@ -122,7 +126,7 @@ function start(mode){audio();if(AC&&AC.state==="suspended")AC.resume();G.mode=mo
   if(G.mode==="daily"){seed=+todayKey().replace(/-/g,"");rng=seeded(seed);G.li=3;G.L=Object.assign({},LV[3],{n:"Испытание "+todayKey().slice(8,10)+"."+todayKey().slice(5,7)})}
   else if(G.mode==="custom"){rng=rngMath;G.li=2;G.L=Object.assign({},LV[2],{n:"Свой уровень",sp:+G.custom.sp,shapes:[G.custom.N],ev:[]})}
   else{rng=rngMath;G.li=lvl;G.L=LV[lvl]}
-  Object.assign(G,{run:true,dead:false,t:0,a:-Math.PI/2+.01,rot:0,rotDir:rng()<.5?1:-1,rotSp:1,walls:[],spawnD:0,pulse:0,shake:0,flash:0,lastRow:null,N:G.L.shapes[0],ev:null,evT:9+R(4),warnT:0,warnEv:null,shapeT:15,grace:.6,msg:G.L.n.toUpperCase(),msgT:1.6,flipT:4+R(3),crow:0,unlockedNow:false});
+  Object.assign(G,{run:true,dead:false,t:0,a:-Math.PI/2+.01,rot:0,rotDir:rng()<.5?1:-1,rotSp:1,walls:[],spawnD:0,pulse:0,shake:0,flash:0,lastRow:null,N:G.L.shapes[0],ev:null,evT:9+R(4),warnT:0,warnEv:null,shapeT:15,grace:.6,msg:G.L.n.toUpperCase(),msgT:1.6,flipT:4+R(3),crow:0,unlockedNow:false,mom:null,momT:3.5,phaseN:0,phaseT:10});
   if(window.IIGRY_LB_GAME)window.IIGRY_LB_GAME(G.mode==="daily"?"hexd":"hex");
   paused=false;ov.hidden=true;if(AC){nextBeat=AC.currentTime+.05;beat=0}last=0;cancelAnimationFrame(raf);raf=requestAnimationFrame(loop)}
 function say(m,t){G.msg=m;G.msgT=t||2}
@@ -137,13 +141,18 @@ function blockedSide(side){const rp=R_PL();return G.walls.some(w=>w.s===side&&w.
 function step(dt){G.t+=dt;const k=slowK();
   // минута — открытие следующего уровня
   if(G.mode==="lvl"&&!G.unlockedNow&&G.t>=60&&G.li<5&&!unlocked(G.li+1)){G.unlockedNow=true;setBestL(G.li,Math.max(best(G.li),60000));sfx.unlock();say("🔓 ОТКРЫТ УРОВЕНЬ «"+LV[G.li+1].n.toUpperCase()+"»",3);G.flash=.7}
+  // фазы каждые 10 секунд — быстрее и злее
+  G.phaseT-=dt;if(G.phaseT<=0){G.phaseT=10;G.phaseN++;sfx.phase();G.flash=Math.max(G.flash,.35);if(G.msgT<=0)say(PHN[Math.min(9,G.phaseN)],1.4)}
+  // моменты: ускорения, вихри, развороты, качка — как в оригинале, но свои
+  if(G.mode!=="custom"){if(G.mom){G.mom.t-=dt;if(G.mom.t<=0)G.mom=null}else{G.momT-=dt;if(G.momT<=0){const pool=MOMS[Math.min(5,G.li)],k=pool[R(pool.length)];G.mom={k,t:MOM[k][1],d:MOM[k][1]};G.momT=Math.max(2.5,5.5-G.li*.5)+rng()*3;
+    if(k==="reverse"){G.rotDir*=-1;G.rotSp=2.2;G.flash=.4}if(k==="burst")G.shake=.25;if(G.msgT<=0||k!=="reverse")say(MOM[k][0],1.2)}}}
   // смена формы арены
   if(G.L.shapes.length>1){G.shapeT-=dt;if(G.shapeT<=0){G.shapeT=14+R(6);const opts=G.L.shapes.filter(n=>n!==G.N);const nN=opts[R(opts.length)];G.walls=[];G.lastRow=null;G.spawnD=0;G.N=nN;G.grace=1.1;G.flash=.8;sfx.phase();say("ФОРМА: "+SHN[nN],1.8)}}
   // события
   if(G.L.ev.length){if(G.ev){G.ev.t-=dt;if(G.ev.t<=0){G.ev=null}}else if(G.warnEv){G.warnT-=dt;if(G.warnT<=0){G.ev={k:G.warnEv,t:G.warnEv==="slow"?3:5};G.warnEv=null}}
     else{G.evT-=dt;if(G.evT<=0){G.warnEv=G.L.ev[R(G.L.ev.length)];G.warnT=1.2;G.evT=9+R(6);sfx.warn();say(EVN[G.warnEv],2.2)}}}
   // вращение и развороты
-  G.flipT-=dt;if(G.flipT<=0){G.rotDir*=-1;G.flipT=3+R(4);if(G.li>=2&&rng()<.35)G.rotSp=1.9}G.rotSp+=(1-G.rotSp)*Math.min(1,dt*.8);G.rot+=G.rotDir*G.rotSp*(.8+G.t/90)*G.L.rot*dt*k;
+  G.flipT-=dt;if(G.flipT<=0){G.rotDir*=-1;G.flipT=3+R(4);if(G.li>=2&&rng()<.35)G.rotSp=1.9}G.rotSp+=(1-G.rotSp)*Math.min(1,dt*.8);G.rot+=G.rotDir*G.rotSp*(.8+G.t/90)*G.L.rot*dt*k*momRot();
   // игрок
   let dir=(K.r?1:0)-(K.l?1:0);if(G.ev&&G.ev.k==="mirror")dir=-dir;let dA=dir*angSpeed()*dt;if(G.ev&&G.ev.k==="gravity"&&!dir)dA=G.rotDir*angSpeed()*.33*dt;
   if(dA){const na=wrap(G.a+dA),ns=sideOf(na),os=sideOf(G.a);if(ns===os||!blockedSide(ns))G.a=na;else{const edge=dA>0?(os+1)*SEG()-1e-4:os*SEG()+1e-4;G.a=wrap(edge)}}
@@ -156,7 +165,7 @@ const col=(h,s,l,a)=>"hsla("+h+","+s+"%,"+l+"%,"+(a==null?1:a)+")";
 function poly(r,N){ctx.beginPath();for(let i=0;i<=N;i++){const a=i*TAU/N;i?ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r):ctx.moveTo(Math.cos(a)*r,Math.sin(a)*r)}ctx.closePath()}
 function draw(){const N=G.N,seg=TAU/N,hue=(G.L.hue+G.t*10)%360,cx=W/2,cy=H/2,inv=G.ev&&G.ev.k==="flash"&&Math.floor(G.t*6)%2;ctx.setTransform(1,0,0,1,0,0);
   ctx.fillStyle=inv?col(hue,30,85):col(hue,40,6);ctx.fillRect(0,0,W,H);let sx=0,sy=0;if(G.shake>0){sx=(Math.random()-.5)*24*S*G.shake;sy=(Math.random()-.5)*24*S*G.shake}
-  ctx.translate(cx+sx,cy+sy);ctx.rotate(G.rot);const z=1+G.pulse*.035;ctx.scale(z,z);const far=Math.hypot(W,H);
+  ctx.translate(cx+sx,cy+sy);const mz=G.mom&&G.mom.k==="zoom"?1+.22*Math.sin(Math.PI*(1-G.mom.t/G.mom.d)):1;if(G.mom&&G.mom.k==="wobble"){const w=Math.sin(G.t*7)*.18;ctx.transform(1,w*.6,w,1,0,0)}ctx.rotate(G.rot);const z=(1+G.pulse*.035)*mz;ctx.scale(z,z);const far=Math.hypot(W,H);
   for(let i=0;i<N;i++){ctx.fillStyle=inv?(i%2?col(hue,30,78):col(hue,30,72)):(i%2?col(hue,45,10):col(hue,45,14));ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(Math.cos(i*seg)*far,Math.sin(i*seg)*far);ctx.lineTo(Math.cos((i+1)*seg)*far,Math.sin((i+1)*seg)*far);ctx.closePath();ctx.fill()}
   const wc=inv?col(hue,80,25):col(hue,85,62);ctx.fillStyle=wc;
   for(const w of G.walls){const a0=w.s*seg,a1=a0+seg,r0=Math.max(w.d,R_HEX()),r1=w.d+w.th;if(r1<=r0)continue;ctx.beginPath();ctx.moveTo(Math.cos(a0)*r0,Math.sin(a0)*r0);ctx.lineTo(Math.cos(a1)*r0,Math.sin(a1)*r0);ctx.lineTo(Math.cos(a1)*r1,Math.sin(a1)*r1);ctx.lineTo(Math.cos(a0)*r1,Math.sin(a0)*r1);ctx.closePath();ctx.fill()}
