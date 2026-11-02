@@ -143,6 +143,7 @@ const clean = (s, n) => String(s == null ? "" : s).replace(/[\u0000-\u0008\u000B
 // Ник: команда сайта (вошла в панель модерации) может писать под служебным ником с отметкой «✓ команда»; остальным — понятная ошибка вместо тихой замены
 async function nickFor(b, ip) { const raw = clean(b.n, 30).replace(/^@/, "");
   if (b.k) { const me = await modAuth(b.k, ip); if (me && !me.blocked) { const base = (raw && !BAD.test(raw) && !LINK.test(raw) ? raw : me.name).replace(/\s*✓.*$/, "").slice(0, 20); return { n: base + " ✓ команда", team: me.name } } }
+  if (raw && b.token && RESV.test(raw)) { const u = await userOf(b.token).catch(() => null); if (u && String(u.nick || "").toLowerCase() === raw.toLowerCase()) return { n: u.nick } }
   if (raw && (RESV.test(raw) || BAD.test(raw) || LINK.test(raw))) return { err: "Ник «" + raw + "» нельзя использовать: он похож на ник команды сайта, содержит ссылку или запрещённое слово. Выберите другой." };
   return { n: nickOf(b) } }
 const nickOf = b => { const n = clean(b.n, 30).replace(/^@/, ""); return !n || RESV.test(n) || BAD.test(n) || LINK.test(n) ? "Аноним #" + clean(b.aid, 6).replace(/[^0-9A-Z]/g, "").slice(0, 6) : n };

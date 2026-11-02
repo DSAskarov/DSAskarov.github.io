@@ -220,7 +220,7 @@ draw(0);
       items.forEach(x=>{const li=document.createElement("li");li.textContent=S(x.n,30);const b=document.createElement("b");b.textContent=U(Math.round(+x.v||0));li.appendChild(b);if(S(x.n,30).toLowerCase()===nick)li.className="me";ol.appendChild(li)})}
     catch(_){ol.textContent="";say("Таблица временно недоступна.")}}
   async function send(v,n,again){say("Отправляем результат…");
-    try{const P=window.IIGRY_PASS,r=await fetch(API+"?a=score",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({game:G,v,n,aid,ms:Date.now()-t0,pass:P?P.get():""})}),j=await r.json();
+    try{const P=window.IIGRY_PASS,r=await fetch(API+"?a=score",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({game:G,v,n,aid,ms:Date.now()-t0,pass:P?P.get():"",token:(()=>{try{return localStorage.getItem("iigry-sess")||""}catch(_){return ""}})()})}),j=await r.json();
       if(r.status===401&&j.need==="captcha"&&P&&!again){P.clear();await P.need();return send(v,n,true)}
       if(!r.ok)throw new Error(j.error||"Не удалось сохранить");
       say(fullMsg+(j.improved?"Новый личный рекорд: "+U(j.best)+"!":"Ваш рекорд — "+U(j.best)+". Этот результат не лучше, но вы близко."));fullMsg="";form.hidden=true;save.hidden=true;top()}

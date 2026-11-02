@@ -246,7 +246,7 @@ const HEROES=["🧺","🚀","🏃","🐱","🐶","🦊","🐸","🤖","👾","�
 const GOAL={catch:["Очков для победы","0 — играть до конца времени или жизней"],dodge:["Секунд продержаться для победы","0 — бесконечно, пока есть жизни"],runner:["Очков для победы","0 — бесконечный забег"],clicker:["Очков для победы","0 — без конца"],quiz:["Процент верных ответов для победы","Например, 70"]};
 function form(){const b=$("ed");b.innerHTML="";
   b.append(el("h2","1. Шаблон"));const tp=el("div",null,"tpl");Object.entries(E.T).forEach(([t,x])=>{const k=el("button");k.type="button";k.setAttribute("aria-pressed",C.t===t);k.append(el("b",x.e),x.n,el("small",x.d));
-    k.onclick=()=>{if(C.t===t)return;if(!confirm("Сменить шаблон на «"+x.n+"»? Настройки правил и предметов станут стандартными для этого шаблона, название и тексты останутся."))return;const keep={title:C.title,startText:C.startText,winText:C.winText,loseText:C.loseText,accent:C.accent};C=Object.assign(E.preset(t),keep);changed(true)};tp.append(k)});b.append(tp);
+    k.onclick=()=>{if(C.t===t)return;const keep={title:C.title,startText:C.startText,winText:C.winText,loseText:C.loseText,accent:C.accent};C=Object.assign(E.preset(t),keep);changed(true)};tp.append(k)});b.append(tp);
   b.append(el("h2","2. Название и герой"),lab("Название игры",inp("title",40,"Например, Котик ловит рыбку")),lab(C.t==="clicker"?"Значок игры":C.t==="quiz"?"Ведущий викторины":"Герой",emoOne("hero",HEROES),"Любой эмодзи: вставьте свой или выберите ниже"));
   b.append(el("h2","3. Внешний вид"));const cl=el("div",null,"two");cl.append(lab("Фон сверху",colr("bg1")),lab("Фон снизу",colr("bg2")),lab("Цвет кнопок",colr("accent")));b.append(cl);
   b.append(el("h2","4. Правила"));const r=el("div",null,"two");
