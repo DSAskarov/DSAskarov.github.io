@@ -1,1 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#B3141F"/><text x="32" y="44" font-size="30" font-family="Arial,sans-serif" font-weight="700" text-anchor="middle" fill="#F6DE8D">ИИ</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<defs>
+<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F0434F"/><stop offset=".55" stop-color="#B3141F"/><stop offset="1" stop-color="#5E0A12"/></linearGradient>
+<radialGradient id="hl" cx=".22" cy=".15" r=".65"><stop offset="0" stop-color="#fff" stop-opacity=".32"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+<linearGradient id="gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF3C9"/><stop offset=".5" stop-color="#F2C45A"/><stop offset="1" stop-color="#B07C22"/></linearGradient>
+<filter id="sh" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#2a0005" flood-opacity=".55"/></filter>
+</defs>
+<rect width="512" height="512" rx="112" fill="url(#bg)"/><rect width="512" height="512" rx="112" fill="url(#hl)"/>
+<path filter="url(#sh)" fill="url(#gold)" d="M150 182 H362 C420 182 452 224 462 286 L476 362 C484 410 452 436 418 425 C395 418 381 398 367 374 L350 346 H162 L145 374 C131 398 117 418 94 425 C60 436 28 410 36 362 L50 286 C60 224 92 182 150 182 Z"/>
+<g fill="#6E0C16"><path d="M180 228h19v88h-19z M223 228h19v88h-19z M199 286 L223 228 V258 L199 316z"/><path d="M270 228h19v88h-19z M313 228h19v88h-19z M289 286 L313 228 V258 L289 316z"/></g>
+<path d="M410 64 C415 98 423 106 456 111 C423 116 415 124 410 158 C405 124 397 116 364 111 C397 106 405 98 410 64Z" fill="#FFF3C9"/>
+</svg>
