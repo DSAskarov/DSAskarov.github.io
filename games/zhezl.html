@@ -9,193 +9,313 @@
 <style>
 :root{--bg:#0D0C11;--card:#17151D;--line:rgba(255,255,255,.1);--fg:#F4F4F6;--mu:#B9B6C2;--gold:#E7BD52;--red:#E8333F;--grn:#4ADE95;--blu:#7AB8FF;--f-b:"Golos Text",system-ui,sans-serif;--f-d:"Rubik",system-ui,sans-serif}
 html,body{min-height:100%}html{background:#0D0C11}body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-b);padding:10px}
-.w{max-width:960px;margin:0 auto;display:grid;gap:10px}
+.w{max-width:980px;margin:0 auto;display:grid;gap:10px}
 h1{margin:0;font:900 clamp(1.4rem,5vw,2.1rem) var(--f-d)}h1 b{color:var(--gold)}
 .mu{color:var(--mu);margin:0;font-size:.92rem}
-.hud{display:flex;gap:6px;flex-wrap:wrap}.hud span{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:5px 11px;font-weight:700;font-size:.86rem}
-.main{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,330px);gap:10px}
-@media(max-width:780px){.main{grid-template-columns:minmax(0,1fr)}}
+.hud{display:flex;gap:6px;flex-wrap:wrap}.hud span{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:5px 11px;font-weight:700;font-size:.85rem}
+.main{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,340px);gap:10px}
+@media(max-width:800px){.main{grid-template-columns:minmax(0,1fr)}}
 .stage{position:relative;border-radius:16px;overflow:hidden;background:#2b2f35;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+.stage:fullscreen{display:grid;place-items:center;background:#000}.stage:fullscreen canvas{height:100%;width:auto;max-width:100%}
 canvas{display:block;width:100%;height:auto;cursor:pointer}
 .panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px;display:grid;gap:8px;align-content:start}
 .panel h2{margin:0;font:800 1.05rem var(--f-d)}
-.drv{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center}.drv .face{font-size:48px;width:64px;height:64px;display:grid;place-items:center;background:#0F0E13;border-radius:50%}
+.drv{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center}.drv .face{font-size:46px;width:62px;height:62px;display:grid;place-items:center;background:#0F0E13;border-radius:50%}
 .say{font-size:.93rem;background:#0F0E13;border-radius:12px;padding:8px 10px;border-left:3px solid var(--gold)}
-.facts{display:grid;gap:4px;font-size:.88rem}.facts div{display:flex;justify-content:space-between;gap:8px;border-bottom:1px dashed var(--line);padding:3px 0}.facts b.bad{color:#FF8A8F}.facts b.ok{color:var(--grn)}.facts b.unk{color:var(--mu)}
+.facts{display:grid;gap:3px;font-size:.86rem}.facts div{display:flex;justify-content:space-between;gap:8px;border-bottom:1px dashed var(--line);padding:3px 0}.facts b.bad{color:#FF8A8F}.facts b.ok{color:var(--grn)}.facts b.unk{color:var(--mu)}
 .tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
 .btn{min-height:42px;padding:0 12px;border-radius:12px;border:1px solid var(--line);background:#221F2A;color:#fff;font:700 13.5px var(--f-b);cursor:pointer}.btn.go{background:linear-gradient(135deg,#F2C45A,#C98E2B);color:#1A1306;border:0}.btn.red{background:#3a171b;border-color:#E8333F}.btn.blu{background:#162538;border-color:#4A8CF0}
 .btn:disabled{opacity:.45;cursor:default}.row{display:flex;gap:6px;flex-wrap:wrap}
-.vio{display:grid;gap:2px}.vio label{display:flex;gap:8px;align-items:center;font-size:.88rem;min-height:30px;cursor:pointer}
-.ov{position:absolute;inset:0;display:grid;place-items:center;background:rgba(7,6,11,.82);padding:14px;overflow:auto}.ov[hidden]{display:none}
-.card{width:100%;max-width:540px;display:grid;gap:10px}.card .t{font:900 1.5rem var(--f-d);color:var(--gold);text-align:center}
-.boss{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start;background:#15131c;border:1px solid var(--line);border-radius:14px;padding:10px}.boss .face{font-size:44px}
-.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.stats div{background:#15131c;border:1px solid var(--line);border-radius:12px;padding:8px;text-align:center;font-size:.8rem;color:var(--mu)}.stats b{display:block;font:800 1.1rem var(--f-d);color:#fff}
-.meter{height:8px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden}.meter b{display:block;height:100%}
-.shop{display:grid;gap:6px}.shop button{display:flex;justify-content:space-between;align-items:center;gap:8px;text-align:left;min-height:48px}
-.task{background:rgba(231,189,82,.08);border:1px solid rgba(231,189,82,.35);border-radius:12px;padding:7px 12px;font-size:.88rem}
-.pad{display:none;justify-content:center;gap:12px}.pad button{width:70px;height:60px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:#fff;font-size:26px}
-.pad.show{display:flex}
+.vio{display:grid;gap:1px}.vio label{display:flex;gap:8px;align-items:center;font-size:.86rem;min-height:29px;cursor:pointer}
+.ov{position:absolute;inset:0;display:grid;place-items:center;background:rgba(7,6,11,.86);padding:14px;overflow:auto}.ov[hidden]{display:none}
+.card{width:100%;max-width:560px;display:grid;gap:10px}.card .t{font:900 1.45rem var(--f-d);color:var(--gold);text-align:center}
+.boss{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start;background:#15131c;border:1px solid var(--line);border-radius:14px;padding:10px}.boss .face{font-size:42px}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.stats div{background:#15131c;border:1px solid var(--line);border-radius:12px;padding:8px;text-align:center;font-size:.78rem;color:var(--mu)}.stats b{display:block;font:800 1.05rem var(--f-d);color:#fff}
+.attr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.attr>div{background:#15131c;border:1px solid var(--line);border-radius:12px;padding:7px 9px;font-size:.8rem}
+.meter{height:7px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:4px}.meter b{display:block;height:100%}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}.tabs button{min-height:36px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:#15131c;color:#fff;font:700 13px var(--f-b);cursor:pointer}.tabs button[aria-pressed=true]{border-color:var(--gold);color:var(--gold)}
+.posts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.posts button{min-height:64px;text-align:left;display:grid;gap:2px;padding:8px 10px}.posts small{font-weight:500;color:var(--mu)}
+.perk{display:block;font-size:.84rem;padding:5px 0;border-bottom:1px dashed var(--line)}.perk.on{color:#FFE6A8}.perk.off{color:var(--mu)}
+.task{background:rgba(231,189,82,.08);border:1px solid rgba(231,189,82,.35);border-radius:12px;padding:7px 12px;font-size:.87rem;display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between}
+.pad{display:none;justify-content:center;gap:12px}.pad button{width:72px;height:60px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:#fff;font-size:26px}.pad.show{display:flex}
+.dtp{display:grid;gap:8px}.dtp canvas{border-radius:12px;background:#2b2f35;max-width:100%}.wit{font-size:.88rem;background:#15131c;border-radius:10px;padding:6px 9px}
 </style></head><body>
 <div class="w">
   <h1>Жезл: <b>смена инспектора</b></h1>
-  <div class="hud"><span id="hRank"></span><span id="hT">⏱ 3:00</span><span id="hS">⭐ 0</span><span id="hK">⚖️ честь 50</span><span id="hW"></span><span id="hM">🚗 упущено 0</span></div>
+  <div class="hud"><span id="hRank"></span><span id="hPost"></span><span id="hT">⏱ 3:00</span><span id="hS">⭐ 0</span><span id="hW"></span><span id="hM">🚗 упущено 0</span></div>
   <div class="task" id="task"></div>
   <div class="main">
-    <div class="stage" id="stage"><canvas id="cv" width="560" height="660" aria-label="Пост ДПС — нажмите на машину, чтобы остановить её"></canvas>
+    <div class="stage" id="stage"><canvas id="cv" width="600" height="700" aria-label="Пост ДПС — нажмите на машину, чтобы остановить её"></canvas>
       <div class="ov" id="ov"><div class="card" id="office"></div></div>
     </div>
-    <div class="panel" id="panel"><h2>Водитель</h2><div id="insp"><p class="mu">Нажмите на машину на дороге, чтобы остановить её. Над машиной — скорость с радара; знаки 🔦 и 🕶 видны сразу, остальное выясняйте проверками.</p></div></div>
+    <div class="panel" id="panel"><h2>Водитель</h2><div id="insp"></div></div>
   </div>
   <div class="pad" id="pad"><button id="pL" aria-label="Влево">◀</button><button id="pR" aria-label="Вправо">▶</button></div>
 </div>
 <script>
 (function(){
-const $=id=>document.getElementById(id),cv=$("cv"),ctx=cv.getContext("2d"),W=cv.width,H=cv.height,R=n=>Math.floor(Math.random()*n),ch=p=>Math.random()<p,clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-const LANES=[175,280,385],POST_Y=150;
+const $=id=>document.getElementById(id),cv=$("cv"),ctx=cv.getContext("2d"),W=cv.width,H=cv.height,R=n=>Math.floor(Math.random()*n),ch=p=>Math.random()<p,clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),pick=a=>a[R(a.length)];
+window.IIGRY_FS_EL=$("stage");
+const RX0=150,RX1=450,LANES=[200,300,400],POST_Y=150,STOP_Y=470;
+// ---------- данные
 const RANKS=["Сержант","Старший сержант","Прапорщик","Лейтенант","Старший лейтенант","Капитан","Майор"],XP_NEED=[0,40,100,180,280,400,560];
-const COLORS=["#E8333F","#4A8CF0","#F2C45A","#4ADE95","#E6E6EA","#2B2B33","#B79CFF","#FF8A3D","#8C5A3C"];
-const NAMES=[["👨","Иван"],["👩","Ольга"],["👴","Пётр Ильич"],["👱‍♀️","Анна"],["🧔","Сергей"],["👩‍🦰","Марина"],["👨‍🦱","Тимур"],["👧","Алёна"],["🧑","Виктор"],["👵","Дарья Ивановна"],["🤵","Аркадий"],["🧑‍🎤","Макс"]];
-const VN={speed:"Превышение скорости",belt:"Без ремня",phone:"Телефон за рулём",lights:"Без ближнего света",tint:"Тонировка",osago:"Нет ОСАГО",licence:"Просрочены права",drunk:"Алкоголь"};
-const FINE={speed:1500,belt:1000,phone:1500,lights:500,tint:500,osago:800,licence:5000,drunk:30000};
-const EXCUSE={speed:["Я спешил в роддом! Жена рожает!","Да я 60 ехал, радар врёт!","Опаздываю на собеседование, простите…"],belt:["Я пристёгнут был, только отстегнулся!","Ремень сломан, сегодня починю"],phone:["Это навигатор был, честно!","Я не говорил, просто время смотрел"],
- osago:["Страховка есть, просто не распечатал","Вчера купил, в базу ещё не попала"],licence:["Права дома забыл","Продлеваю, справка где-то тут…"],drunk:["Я трезвый! Это квас!","Только кефир пил, клянусь"],none:["Здравствуйте! Что-то случилось?","Добрый день, командир. Я ничего не нарушал вроде.","Здравствуйте. Документы вот, пожалуйста."]};
-// ---------- карьера (сохраняется)
-const KEY="iigry-zhezl2";const ls={get:()=>{try{return JSON.parse(localStorage.getItem(KEY)||"null")}catch(_){return null}},set:v=>{try{localStorage.setItem(KEY,JSON.stringify(v))}catch(_){}}};
-let C=ls.get()||{xp:0,rank:0,honor:50,trust:50,prem:0,shifts:0,gear:{},best:0};
-const save=()=>ls.set(C);
-const GEAR=[["radar","📡 Цифровой радар","Скорость видна раньше и точнее",3000],["cam","🎥 Нагрудная камера","Проверка «Запись камеры» вдвое быстрее; взятки фиксируются автоматически",4000],["alco","🌬 Новый алкотестер","Мгновенный результат",2500],["car","🚓 Патрульная машина","Погони легче: машина быстрее и манёвреннее",8000]];
+const POSTS={
+ city:{n:"Город",ic:"🏙",lim:60,d:"Перекрёсток со светофором и зеброй: проезд на красный, пешеходы",side:"city",light:true,zebra:true},
+ highway:{n:"Трасса",ic:"🛣",lim:90,d:"Высокие скорости, фуры с перегрузом",side:"highway",trucks:true,need:1},
+ school:{n:"У школы",ic:"🏫",lim:40,d:"Дети на зебре, жёсткий скоростной режим",side:"school",zebra:true,kids:true,need:2},
+ village:{n:"Деревня",ic:"🏡",lim:60,d:"Трактора, машины без номеров, грунтовка",side:"village",village:true,need:3}};
+const CARTYPES=[{t:"sedan",w:44,h:84},{t:"hatch",w:42,h:72},{t:"suv",w:48,h:88},{t:"taxi",w:44,h:84},{t:"van",w:48,h:96},{t:"truck",w:54,h:150},{t:"tractor",w:46,h:70}];
+const COLORS=["#C9302C","#2E6BD6","#E8B931","#2FA866","#E6E6EA","#2B2B33","#8E6BD8","#E36F2A","#7A5232","#9AA3AD"];
+const CNAME={"#C9302C":"красный","#2E6BD6":"синий","#E8B931":"жёлтый","#2FA866":"зелёный","#E6E6EA":"белый","#2B2B33":"чёрный","#8E6BD8":"фиолетовый","#E36F2A":"оранжевый","#7A5232":"коричневый","#9AA3AD":"серый"};
+const TNAME={sedan:"седан",hatch:"хэтчбек",suv:"внедорожник",taxi:"такси",van:"фургон",truck:"фура",tractor:"трактор"};
+const NAMES=[["👨","Иван"],["👩","Ольга"],["👴","Пётр Ильич"],["👱‍♀️","Анна"],["🧔","Сергей"],["👩‍🦰","Марина"],["👨‍🦱","Тимур"],["👧","Алёна"],["🧑","Виктор"],["👵","Дарья Ивановна"],["🤵","Аркадий"],["🧑‍🎤","Макс"],["👨‍🌾","Фёдор"],["👷","Николай"]];
+const VN={speed:"Превышение скорости",red:"Проезд на красный",zebra:"Не пропустил пешехода",belt:"Без ремня",phone:"Телефон за рулём",lights:"Без ближнего света",tint:"Тонировка",osago:"Нет ОСАГО",licence:"Нет/просрочены права",drunk:"Алкоголь",plates:"Без номеров",overload:"Перегруз"};
+const FINE={speed:1500,red:1000,zebra:1500,belt:1000,phone:1500,lights:500,tint:500,osago:800,licence:5000,drunk:30000,plates:5000,overload:10000};
+const EXCUSE={speed:["Я спешил в роддом! Жена рожает!","Да я по ограничению ехал, радар врёт!","Опаздываю на собеседование, простите…"],red:["Был жёлтый, честное слово!","Я уже на стоп-линии был, когда переключилось"],zebra:["Он же далеко был, я бы успел!","Не заметил, солнце в глаза"],belt:["Я пристёгнут был, только отстегнулся!","Ремень сломан, сегодня починю"],phone:["Это навигатор был, честно!","Я не говорил, просто время смотрел"],osago:["Страховка есть, просто не распечатал","Вчера купил, в базу ещё не попала"],licence:["Права дома забыл","Продлеваю, справка где-то тут…"],drunk:["Я трезвый! Это квас!","Только кефир пил, клянусь"],plates:["Номера в багажнике, только с завода!","Отвалились по дороге…"],overload:["Да тут пустые коробки!","Груз по документам — 10 тонн, всё честно"],none:["Здравствуйте! Что-то случилось?","Добрый день, командир. Вроде ничего не нарушал.","Здравствуйте. Документы вот, пожалуйста."]};
+const LET="АВЕКМНОРСТУХ",plate=()=>LET[R(12)]+String(100+R(900))+LET[R(12)]+LET[R(12)]+" "+pick(["69","77","177","50","799","33"]);
+// ---------- навыки и способности (каждое решение на что-то влияет)
+const ATTR={eye:["👁","Внимательность"],law:["⚖️","Принципиальность"],heart:["💛","Человечность"],auth:["🗣","Авторитет"]};
+const PERKS=[["eye",20,"Намётанный глаз","Над машинами видны 🧷 ремень и 📱 телефон"],["eye",45,"Чуйка","Лжеца выдаёт значок 🤥 в карточке"],["eye",70,"Рентген","Проверки по базе и камере — мгновенно"],
+ ["law",20,"Неподкупный","Взятки больше не предлагают тем, кто знает вашу репутацию; за отказ +8"],["law",45,"Гроза лихачей","Лихачи реже уезжают незамеченными"],["law",70,"Буква закона","+50% к очкам за верные штрафы"],
+ ["heart",20,"Свой парень","Предупреждения дают больше очков"],["heart",45,"Народная любовь","Честь растёт вдвое быстрее"],["heart",70,"Ангел-хранитель","Помощь на ДТП и заносах — +6 очков"],
+ ["auth",20,"Командный голос","Реже пытаются удрать"],["auth",45,"Ас погонь","Погони заметно легче"],["auth",70,"Легенда отдела","Начальник прощает одну ошибку за смену"]];
+// ---------- сохранение карьеры
+const KEY="iigry-zhezl3";const store={get:()=>{try{return JSON.parse(localStorage.getItem(KEY)||"null")}catch(_){return null}},set:v=>{try{localStorage.setItem(KEY,JSON.stringify(v))}catch(_){}}};
+let C=store.get()||{xp:0,rank:0,honor:50,trust:50,prem:0,shifts:0,gear:{},best:0,a:{eye:5,law:5,heart:5,auth:5},story:0,flags:{}};
+const save=()=>store.set(C),perk=(k,lv)=>C.a[k]>=lv,grow=(k,v)=>{const was=PERKS.filter(p=>p[0]===k&&C.a[k]>=p[1]).length;C.a[k]=clamp(C.a[k]+v,0,100);const now=PERKS.filter(p=>p[0]===k&&C.a[k]>=p[1]);if(now.length>was){const p=now[now.length-1];flash("✨ Новая способность: «"+p[2]+"»","#E7BD52")}};
+const GEAR=[["radar","📡 Цифровой радар","Скорость видна раньше",3000],["cam","🎥 Нагрудная камера","Проверка записи быстрее; взятки фиксируются",4000],["alco","🌬 Новый алкотестер","Мгновенный результат",2500],["scale","⚖️ Переносные весы","Проверка перегруза фур",3500],["car","🚓 Патрульная машина","Погони легче",8000]];
+// ---------- сюжет: служебные истории с продолжением
+const STORY=[
+ {need:()=>C.shifts>=1,t:"Стажёр",p:"👨‍🎓",txt:"Начальник: «К тебе прикрепляют стажёра Петрова. Научи его работать честно — или как получится».",ch:[["Учить по закону",()=>{C.flags.trainee="law";grow("law",6)}],["Учить по-человечески",()=>{C.flags.trainee="heart";grow("heart",6)}]]},
+ {need:()=>C.shifts>=3,t:"Угонщики",p:"🕵️",txt:"По району орудует банда угонщиков. В ориентировках теперь будут угнанные машины — ловите их, это главное.",ch:[["Есть!",()=>{C.flags.wanted=1;grow("auth",4)}]]},
+ {need:()=>C.shifts>=5&&C.flags.wanted,t:"Коллега",p:"👮‍♂️",txt:"Сослуживец Гусев шепчет: «Есть тема — номера угнанных можно не замечать, ребята делятся». Что ответите?",ch:[["Доложить начальнику",()=>{C.flags.gusev="report";grow("law",10);C.trust=clamp(C.trust+10,0,100)}],["Промолчать",()=>{C.flags.gusev="silent";C.honor=clamp(C.honor-8,0,100)}],["Отказаться, но не сдавать",()=>{C.flags.gusev="refuse";grow("heart",5)}]]},
+ {need:()=>C.shifts>=8&&C.flags.gusev,t:"Развязка",p:"👨‍✈️",txt:()=>C.flags.gusev==="report"?"Благодаря вам банду и Гусева взяли. Вас представили к награде!":C.flags.gusev==="silent"?"Банду взяли без вас. Начальник косо смотрит: «Знал — и молчал?»":"Банду взяли. Гусев уволился, перед уходом пожал вам руку.",ch:[["Служу закону",()=>{if(C.flags.gusev==="report"){C.prem+=10000;C.xp+=60}else if(C.flags.gusev==="silent"){C.trust=clamp(C.trust-15,0,100)}else{C.xp+=30}}]]},
+ {need:()=>C.shifts>=11,t:"Перевод",p:"🏛",txt:()=>"Вам предлагают перевод: в областное управление (карьера) или остаться на земле (люди).",ch:[["В управление",()=>{C.flags.end="career";C.xp+=80}],["Остаться с людьми",()=>{C.flags.end="people";C.honor=clamp(C.honor+15,0,100)}]]}];
+// ---------- текстуры (рисуются один раз)
+function tex(w,h,fn){const c=document.createElement("canvas");c.width=w;c.height=h;fn(c.getContext("2d"),w,h);return c}
+const grain=(g,w,h,base,amp,n)=>{g.fillStyle=base;g.fillRect(0,0,w,h);for(let i=0;i<n;i++){const v=R(amp*2)-amp;g.fillStyle=v>0?"rgba(255,255,255,"+v/255+")":"rgba(0,0,0,"+(-v)/255+")";g.fillRect(R(w),R(h),1+R(2),1+R(2))}};
+const TX={
+ asphalt:tex(300,256,(g,w,h)=>{grain(g,w,h,"#3a3d43",26,9000);g.strokeStyle="rgba(0,0,0,.35)";g.lineWidth=1;for(let i=0;i<5;i++){g.beginPath();let x=R(w),y=R(h);g.moveTo(x,y);for(let k=0;k<6;k++){x+=R(30)-15;y+=R(20);g.lineTo(x,y)}g.stroke()}g.fillStyle="rgba(0,0,0,.12)";for(let i=0;i<3;i++)g.fillRect(R(w),R(h),20+R(40),12+R(30))}),
+ dirt:tex(300,256,(g,w,h)=>{grain(g,w,h,"#7a6143",30,9000);g.fillStyle="rgba(60,40,20,.25)";for(let i=0;i<14;i++){g.beginPath();g.ellipse(R(w),R(h),6+R(18),3+R(8),0,0,7);g.fill()}}),
+ grass:tex(150,256,(g,w,h)=>{grain(g,w,h,"#4f8a3f",30,6000);g.strokeStyle="rgba(30,70,20,.5)";for(let i=0;i<300;i++){const x=R(w),y=R(h);g.beginPath();g.moveTo(x,y);g.lineTo(x+R(3)-1,y-3-R(4));g.stroke()}}),
+ tile:tex(150,256,(g,w,h)=>{grain(g,w,h,"#a3a39b",14,3000);g.strokeStyle="rgba(0,0,0,.18)";for(let y=0;y<h;y+=32){g.beginPath();g.moveTo(0,y);g.lineTo(w,y);g.stroke();for(let x=(y/32)%2*16;x<w;x+=32){g.beginPath();g.moveTo(x,y);g.lineTo(x,y+32);g.stroke()}}}),
+ field:tex(150,256,(g,w,h)=>{grain(g,w,h,"#9a8a3e",28,5000);g.strokeStyle="rgba(90,70,20,.35)";for(let x=4;x<w;x+=12){g.beginPath();g.moveTo(x,0);g.lineTo(x,h);g.stroke()}})};
+const carSprites={};
+function carSprite(type,col){const k=type+col;if(carSprites[k])return carSprites[k];const T=CARTYPES.find(c=>c.t===type),cw=T.w,chh=T.h;
+  carSprites[k]=tex(cw+16,chh+16,(g)=>{g.translate(8,8);const rr=(x,y,w,h,r)=>{g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath()};
+   g.fillStyle="#111";[[-3,chh*.16],[cw-3,chh*.16],[-3,chh*.7],[cw-3,chh*.7]].forEach(([x,y])=>{rr(x,y,6,chh*.16,2);g.fill()});
+   if(type==="truck"){g.fillStyle=col;rr(2,0,cw-4,chh*.28,8);g.fill();g.fillStyle="#d8d8dc";rr(0,chh*.3,cw,chh*.7,4);g.fill();g.strokeStyle="rgba(0,0,0,.2)";for(let y=chh*.34;y<chh;y+=10){g.beginPath();g.moveTo(2,y);g.lineTo(cw-2,y);g.stroke()}g.fillStyle="#9fd3ff";rr(6,chh*.05,cw-12,chh*.08,3);g.fill();return}
+   if(type==="tractor"){g.fillStyle="#2a2a2a";rr(-4,chh*.55,12,chh*.4,3);g.fill();rr(cw-8,chh*.55,12,chh*.4,3);g.fill();g.fillStyle=col;rr(4,0,cw-8,chh*.6,6);g.fill();g.fillStyle="#9fd3ff";rr(8,chh*.45,cw-16,chh*.35,4);g.fill();g.fillStyle="#555";g.fillRect(cw/2-3,chh*.05,6,10);return}
+   const grd=g.createLinearGradient(0,0,cw,0);grd.addColorStop(0,"rgba(0,0,0,.25)");grd.addColorStop(.25,"rgba(255,255,255,.18)");grd.addColorStop(.6,"rgba(255,255,255,0)");grd.addColorStop(1,"rgba(0,0,0,.3)");
+   g.fillStyle=type==="taxi"?"#F2C230":col;rr(0,0,cw,chh,cw*.28);g.fill();g.fillStyle=grd;rr(0,0,cw,chh,cw*.28);g.fill();
+   const wsY=type==="van"?chh*.1:chh*.22,roofH=type==="van"?chh*.6:type==="suv"?chh*.42:chh*.34;
+   const gl=g.createLinearGradient(0,wsY,0,wsY+chh*.14);gl.addColorStop(0,"#bfe4ff");gl.addColorStop(1,"#4a7391");g.fillStyle=gl;rr(cw*.12,wsY,cw*.76,chh*.14,6);g.fill();
+   g.fillStyle="rgba(0,0,0,.12)";rr(cw*.14,wsY+chh*.15,cw*.72,roofH,6);g.fill();g.fillStyle="#3c5a70";rr(cw*.14,wsY+chh*.16+roofH,cw*.72,chh*.09,5);g.fill();
+   if(type==="taxi"){g.fillStyle="#222";g.fillRect(cw*.3,wsY+chh*.2,cw*.4,6);g.fillStyle="#fff";for(let i=0;i<4;i++)g.fillRect(cw*.3+i*cw*.1,wsY+chh*.2+(i%2)*3,cw*.05,3)}
+   g.fillStyle="rgba(255,255,255,.5)";g.fillRect(cw*.2,wsY+2,cw*.18,2)})
+  return carSprites[k]}
 // ---------- смена
-let G=null,raf=0,last=0,paused=false;
+let G=null,raf=0,last=0,paused=false,fl=[];
 const WEATHERS=[["clear","☀️ ясно"],["rain","🌧 дождь"],["fog","🌫 туман"],["snow","❄️ снег"]];
-const TASKS=[["belt","Рейд «Ремень»: 3 водителя без ремня",3],["speed","План по скорости: 4 лихача",4],["osago","Проверка страховок: 2 без ОСАГО",2],["phone","Рейд «Не отвлекайся»: 3 с телефоном",3],["drunk","Рейд «Трезвый водитель»: 1 нетрезвый",1]];
-function newShift(night){const wx=WEATHERS[R(night?3:4)];const t=TASKS[R(TASKS.length)];
-  G={t:180,score:0,budget:0,compl:0,miss:0,cars:[],spawn:1,sel:null,task:t,taskN:0,taskDone:false,over:false,night,wx:wx[0],wxN:wx[1],chase:null,drops:[],honorD:0,lvl:C.rank,stats:{fines:0,free:0,bribes:0,chase:0}};
+const flash=(t,c)=>{const o=fl.find(f=>f.t===t);if(o){o.a=2.2;return}fl.push({t,c,a:2.2})};
+function newShift(post,night){const P=POSTS[post],wx=pick(WEATHERS.slice(0,night?3:4)),tasks=[["belt","Рейд «Ремень»: 3 без ремня",3],["speed","План по скорости: 4 лихача",4],["osago","Проверка страховок: 2 без ОСАГО",2],["phone","Рейд «Не отвлекайся»: 3 с телефоном",3]];
+  if(P.light)tasks.push(["red","Рейд «Светофор»: 3 проезда на красный",3]);if(P.zebra)tasks.push(["zebra","Рейд «Пешеход»: 2 не пропустивших",2]);if(P.trucks)tasks.push(["overload","Весовой контроль: 1 перегруз",1]);if(P.village)tasks.push(["plates","Без номеров: 2 машины",2]);
+  const wanted=C.flags.wanted||ch(.5)?{col:pick(COLORS.slice(0,8)),type:pick(["sedan","hatch","suv"]),plate:plate(),seen:false}:null;
+  G={post,P,t:180,score:0,budget:0,compl:0,miss:0,cars:[],peds:[],spawn:1,sel:null,task:pick(tasks),taskN:0,taskDone:false,over:false,night,wx:wx[0],wxN:wx[1],chase:null,drops:[],honorD:0,lvl:C.rank,stats:{fines:0,free:0,bribes:0,chase:0,dtp:0,wanted:0},
+    light:{s:"green",t:6},wanted,wantedSpawn:30+R(80),dtp:null,dtpT:50+R(70),forgive:perk("auth",70)?1:0,off:0};
   $("ov").hidden=true;insp();hud();last=0;cancelAnimationFrame(raf);raf=requestAnimationFrame(loop)}
-function newCar(){const lane=R(3),bad=ch(.42+G.lvl*.03),n=NAMES[R(NAMES.length)],c={lane,x:LANES[lane],y:H+60,col:COLORS[R(COLORS.length)],state:"drive",face:n[0],name:n[1],checked:{}};
-  c.speed=bad&&ch(.5)?(G.wx==="clear"?72:62)+R(40):32+R(26);c.belt=!(bad&&ch(.35));c.phone=bad&&ch(.25);c.lights=!(bad&&ch(.25));c.tint=bad&&ch(.18);
-  c.osago=!(bad&&ch(.25));c.licence=!(bad&&ch(.12));c.drunk=bad&&ch(G.night?.25:.1);c.bribe=ch(.15+G.lvl*.025);c.flee=c.drunk&&ch(.5)||(!c.licence&&ch(.3));
-  c.vy=-(70+c.speed*1.6);const v=viol(c),k=v.length?v[R(v.length)]:"none";c.excuse=EXCUSE[k][R(EXCUSE[k].length)];c.lie=v.length>0;return c}
-function viol(c){const v=[];if(c.speed>80)v.push("speed");if(!c.belt)v.push("belt");if(c.phone)v.push("phone");if(!c.lights&&(G.night||G.wx!=="clear"))v.push("lights");if(c.tint)v.push("tint");if(!c.osago)v.push("osago");if(!c.licence)v.push("licence");if(c.drunk)v.push("drunk");return v}
-function hud(){const r=RANKS[C.rank];$("hRank").textContent="🎖 "+r;if(!G)return;$("hT").textContent="⏱ "+Math.floor(G.t/60)+":"+String(Math.floor(G.t%60)).padStart(2,"0");$("hS").textContent="⭐ "+G.score;
-  $("hK").textContent="⚖️ честь "+Math.round(clamp(C.honor+G.honorD,0,100));$("hW").textContent=(G.night?"🌙 ночь · ":"☀️ день · ")+G.wxN;$("hM").textContent="🚗 упущено "+G.miss;
-  $("task").textContent="📋 Задание начальника: "+G.task[1]+" — "+Math.min(G.taskN,G.task[2])+"/"+G.task[2]+(G.taskDone?" ✅":"")}
-let fl=[];const flash=(t,c)=>{fl.push({t,c,a:2})};
-function step(dt){if(G.chase)return chaseStep(dt);G.t-=dt;if(G.t<=0){G.t=0;return endShift()}
+function newCar(forceWanted){const P=G.P,lane=R(3),bad=ch(.42+G.lvl*.03);let type=P.trucks&&ch(.3)?"truck":P.village&&ch(.22)?"tractor":pick(["sedan","sedan","hatch","suv","taxi","van"]);
+  const n=pick(NAMES),T=CARTYPES.find(c=>c.t===type);
+  const c={lane,x:LANES[lane],y:H+T.h,type,w:T.w,h:T.h,col:pick(COLORS),state:"drive",face:n[0],name:n[1],checked:{},plate:plate(),brake:0,vy:0};
+  if(forceWanted){Object.assign(c,{col:G.wanted.col,type:G.wanted.type,plate:G.wanted.plate,stolen:true,w:CARTYPES.find(x=>x.t===G.wanted.type).w,h:CARTYPES.find(x=>x.t===G.wanted.type).h})}
+  const lim=P.lim;c.speed=type==="tractor"?25+R(15):bad&&ch(.5)?lim+15+R(35):Math.max(20,lim-25+R(28));
+  c.belt=!(bad&&ch(.35));c.phone=bad&&ch(.25);c.lights=!(bad&&ch(.25));c.tint=bad&&ch(.18);c.osago=!(bad&&ch(.25));c.licence=!(bad&&ch(type==="tractor"?.4:.12));c.drunk=bad&&ch(G.night||P.village?.25:.1);
+  c.noplates=(P.village&&bad&&ch(.35))||forceWanted&&ch(.3);if(c.noplates)c.plate="";c.overload=type==="truck"&&bad&&ch(.5);
+  c.bribe=!perk("law",20)&&ch(.15+G.lvl*.025);c.flee=!perk("auth",20)?(c.drunk&&ch(.5))||(!c.licence&&ch(.3))||forceWanted:(c.drunk&&ch(.25))||forceWanted&&ch(.6);
+  c.vy=-(70+c.speed*1.6);const v=viol(c),k=v.length?pick(v):"none";c.excuse=pick(EXCUSE[k]||EXCUSE.none);c.lie=v.length>0;c.ranRed=false;c.noYield=false;return c}
+function viol(c){const v=[],lim=G.P.lim;if(c.speed>lim+20)v.push("speed");if(c.ranRed)v.push("red");if(c.noYield)v.push("zebra");if(!c.belt)v.push("belt");if(c.phone)v.push("phone");if(!c.lights&&(G.night||G.wx!=="clear"))v.push("lights");if(c.tint)v.push("tint");if(!c.osago)v.push("osago");if(!c.licence)v.push("licence");if(c.drunk)v.push("drunk");if(c.noplates)v.push("plates");if(c.overload)v.push("overload");return v}
+function hud(){$("hRank").textContent="🎖 "+RANKS[C.rank];if(!G){$("task").innerHTML="";return}$("hPost").textContent=G.P.ic+" "+G.P.n+" · "+G.P.lim+" км/ч";
+  $("hT").textContent="⏱ "+Math.floor(G.t/60)+":"+String(Math.floor(G.t%60)).padStart(2,"0");$("hS").textContent="⭐ "+G.score;$("hW").textContent=(G.night?"🌙 ночь · ":"")+G.wxN;$("hM").textContent="🚗 упущено "+G.miss;
+  $("task").innerHTML="<span>📋 "+G.task[1]+" — "+Math.min(G.taskN,G.task[2])+"/"+G.task[2]+(G.taskDone?" ✅":"")+"</span>"+(G.wanted?"<span>🚨 Ориентировка: "+CNAME[G.wanted.col]+" "+TNAME[G.wanted.type]+", номер "+G.wanted.plate+(G.wanted.done?" ✅":"")+"</span>":"")}
+// ---------- шаг игры
+function step(dt){if(G.chase)return chaseStep(dt);G.t-=dt;if(G.t<=0){G.t=0;return endShift()}const P=G.P;
+  if(P.light){G.light.t-=dt;if(G.light.t<=0){G.light.s=G.light.s==="green"?"yellow":G.light.s==="yellow"?"red":"green";G.light.t=G.light.s==="yellow"?1.6:G.light.s==="red"?5:7}}
+  if(P.zebra&&ch(dt*(P.kids?.35:.2))&&G.peds.length<3)G.peds.push({x:RX0-20,y:STOP_Y-40,dir:1,e:P.kids?pick(["🧒","👧","👦"]):pick(["🚶","🚶‍♀️","👵"])});
+  for(const p of G.peds)p.x+=p.dir*60*dt;G.peds=G.peds.filter(p=>p.x<RX1+30);
   G.spawn-=dt;const busy=G.cars.filter(c=>c.state!=="gone").length;if(G.spawn<=0&&busy<7){G.cars.push(newCar());G.spawn=Math.max(.7,1.9-G.lvl*.12)+Math.random()*.8}
+  if(G.wanted&&!G.wanted.seen){G.wantedSpawn-=dt;if(G.wantedSpawn<=0){G.wanted.seen=true;G.cars.push(newCar(true))}}
+  G.dtpT-=dt;if(G.dtpT<=0&&!G.dtp){G.dtpT=999;const a=G.cars.find(c=>c.state==="drive"&&c.y<H*.75&&c.y>H*.35);if(a){a.state="crash";a.dtp=true;G.dtp={car:a};flash("💥 ДТП на дороге! Нажмите на место аварии","#F2C45A")}}
   const slip=G.wx==="snow"||G.wx==="rain";
-  for(const c of G.cars){if(c.state==="drive"){c.y+=c.vy*dt;if(c.y<-80){c.state="gone";if(viol(c).includes("speed")||c.drunk){G.miss++;G.score-=2;flash("Упустили нарушителя: −2","#FF8A8F")}}}
-    else if(c.state==="pull"){const tx=490,ty=POST_Y+50;c.x+=(tx-c.x)*Math.min(1,dt*3);c.y+=(ty-c.y)*Math.min(1,dt*3);if(Math.abs(c.y-ty)<2)c.state="stop"}
-    else if(c.state==="leave"){c.x+=(LANES[2]-c.x)*Math.min(1,dt*2);c.y-=200*dt;if(c.y<-80)c.state="gone"}}
-  for(const a of G.cars)if(a.state==="drive")for(const b of G.cars)if(b!==a&&b.state==="drive"&&b.lane===a.lane&&b.y<a.y&&a.y-b.y<92)a.y=b.y+92;
-  // ДТП в гололёд
-  if(slip&&ch(dt*.012)){const c=G.cars.find(c=>c.state==="drive"&&c.y<H*.7&&c.y>H*.3);if(c){c.state="crash";flash("💥 Машину занесло! Помогите водителю","#F2C45A")}}
+  for(const c of G.cars){if(c.state==="drive"){let vy=c.vy;
+      // светофор и зебра: часть водителей тормозит, часть нарушает
+      if(P.light&&G.light.s!=="green"&&c.y>STOP_Y+c.h/2&&c.y<STOP_Y+c.h/2+120){if(c.obey===undefined)c.obey=!ch(.25+(c.drunk?.4:0));if(c.obey){vy=Math.min(0,(STOP_Y+c.h/2+6-c.y)*3);c.brake=1}}
+      else if(P.zebra&&G.peds.some(p=>p.x>RX0&&p.x<RX1)&&c.y>STOP_Y+c.h/2&&c.y<STOP_Y+c.h/2+120){if(c.yield===undefined)c.yield=!ch(.25);if(c.yield){vy=Math.min(0,(STOP_Y+c.h/2+6-c.y)*3);c.brake=1}}
+      else c.brake=Math.max(0,c.brake-dt*3);
+      const prevY=c.y;c.y+=vy*dt;if(prevY>STOP_Y&&c.y<=STOP_Y){if(P.light&&G.light.s==="red")c.ranRed=true;if(P.zebra&&G.peds.some(p=>p.x>RX0&&p.x<RX1)&&c.yield===false)c.noYield=true}
+      if(c.y<-c.h){c.state="gone";const v=viol(c);if(c.stolen){G.miss++;G.score-=4;flash("Угнанная машина ушла! −4","#FF8A8F")}else if((v.includes("speed")||c.drunk)&&!(perk("law",45)&&ch(.5))){G.miss++;G.score-=2;flash("Упустили нарушителя: −2","#FF8A8F")}}}
+    else if(c.state==="pull"){const tx=510,ty=POST_Y+70;c.x+=(tx-c.x)*Math.min(1,dt*3);c.y+=(ty-c.y)*Math.min(1,dt*3);c.brake=1;if(Math.abs(c.y-ty)<2)c.state="stop"}
+    else if(c.state==="leave"){c.x+=(LANES[2]-c.x)*Math.min(1,dt*2);c.y-=200*dt;c.brake=0;if(c.y<-c.h)c.state="gone"}}
+  for(const a of G.cars)if(a.state==="drive")for(const b of G.cars)if(b!==a&&(b.state==="drive"||b.state==="crash")&&b.lane===a.lane&&b.y<a.y&&a.y-b.y<(a.h+b.h)/2+10){a.y=b.y+(a.h+b.h)/2+10;a.brake=1}
+  if(slip&&ch(dt*.01)){const c=G.cars.find(c=>c.state==="drive"&&c.y<H*.7&&c.y>H*.3);if(c){c.state="crash";flash("💥 Машину занесло! Помогите водителю","#F2C45A")}}
   G.cars=G.cars.filter(c=>c.state!=="gone");
-  if(G.wx!=="clear")for(let i=0;i<(G.wx==="fog"?0:3);i++)G.drops.push({x:Math.random()*W,y:-10,v:G.wx==="snow"?80+Math.random()*60:500+Math.random()*200});
-  G.drops.forEach(d=>d.y+=d.v*dt);G.drops=G.drops.filter(d=>d.y<H);hud()}
-// ---------- рисование
+  if(G.wx==="rain"||G.wx==="snow")for(let i=0;i<4;i++)G.drops.push({x:Math.random()*W,y:-10,v:G.wx==="snow"?70+Math.random()*60:560+Math.random()*200,s:Math.random()});
+  G.drops.forEach(d=>{d.y+=d.v*dt;if(G.wx==="snow")d.x+=Math.sin(d.y*.03+d.s*6)*.6});G.drops=G.drops.filter(d=>d.y<H);hud()}
+// ---------- отрисовка: текстуры, свет, отражения, погода
+function tileV(img,x,w,off){const ih=img.height;let y=(off%ih)-ih;for(;y<H;y+=ih)ctx.drawImage(img,0,0,Math.min(img.width,w),ih,x,y,w,ih)}
+function drawWorld(dt){const P=G?G.P:POSTS.city,road=P.village?TX.dirt:TX.asphalt,side=P.side==="city"||P.side==="school"?TX.tile:P.side==="village"?TX.field:TX.grass;
+  const spd=G&&!paused?(G.chase?620:230):0;if(G)G.off+=dt*spd;const off=G?G.off:0;
+  tileV(side,0,RX0,off*.98);tileV(side,RX1,W-RX1,off*.98);tileV(road,RX0,RX1-RX0,off);
+  ctx.fillStyle="#cfd2d6";ctx.fillRect(RX0-6,0,6,H);ctx.fillRect(RX1,0,6,H);
+  if(!P.village){ctx.strokeStyle="rgba(238,238,232,.85)";ctx.lineWidth=4;ctx.setLineDash([34,26]);ctx.lineDashOffset=-off;[250,350].forEach(x=>{ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()});ctx.setLineDash([])}
+  // обочина: здания, деревья, дома
+  const items=P.side==="city"?["🏢","🏬","🏪"]:P.side==="school"?["🏫","🌳","🛝"]:P.side==="village"?["🏡","🌻","🐄"]:["🌲","🌳","🌲"];
+  for(let i=0;i<7;i++){const y=((i*120+off)%(H+120))-60;ctx.font="38px system-ui";ctx.textAlign="center";ctx.fillStyle="rgba(0,0,0,.25)";ctx.beginPath();ctx.ellipse(70+6,y+18,22,8,0,0,7);ctx.fill();ctx.fillStyle="#fff";ctx.fillText(items[i%3],70,y);ctx.fillText(items[(i+1)%3],W-48,((i*120+off+60)%(H+120))-60)}
+  // фонари
+  for(let i=0;i<4;i++){const y=((i*200+off)%(H+200))-100;ctx.fillStyle="#555";ctx.fillRect(RX0-14,y,4,4);ctx.fillRect(RX1+10,y+100,4,4)}
+  if(G&&G.P.zebra){for(let x=RX0+8;x<RX1-8;x+=26){ctx.fillStyle="rgba(240,240,240,.88)";ctx.fillRect(x,STOP_Y-58,16,40)}ctx.fillStyle="rgba(255,255,255,.8)";ctx.fillRect(RX0,STOP_Y,RX1-RX0,4)}
+  if(G&&G.P.light){ctx.fillStyle="#222";ctx.fillRect(RX1+14,STOP_Y-90,22,58);[["red",STOP_Y-80],["yellow",STOP_Y-62],["green",STOP_Y-44]].forEach(([c,y])=>{const on=G.light.s===c;ctx.fillStyle=on?{red:"#ff3b3b",yellow:"#ffd23b",green:"#3bff7a"}[c]:"#333";ctx.beginPath();ctx.arc(RX1+25,y,7,0,7);ctx.fill();if(on){ctx.globalCompositeOperation="lighter";const g=ctx.createRadialGradient(RX1+25,y,2,RX1+25,y,30);g.addColorStop(0,ctx.fillStyle);g.addColorStop(1,"rgba(0,0,0,0)");ctx.fillStyle=g;ctx.fillRect(RX1-5,y-30,60,60);ctx.globalCompositeOperation="source-over"}});if(!G.P.zebra){ctx.fillStyle="rgba(255,255,255,.8)";ctx.fillRect(RX0,STOP_Y,RX1-RX0,4)}}
+  // пост ДПС
+  ctx.fillStyle="rgba(0,0,0,.3)";ctx.fillRect(482,POST_Y-72,96,64);ctx.fillStyle="#dfe3e8";rr(474,POST_Y-80,96,64,8);ctx.fill();ctx.fillStyle="#2f5aa8";ctx.fillRect(474,POST_Y-80,96,16);ctx.fillStyle="#fff";ctx.font="800 12px Rubik,system-ui";ctx.textAlign="center";ctx.fillText("ДПС",522,POST_Y-68);ctx.font="34px system-ui";ctx.fillText("👮",522,POST_Y-30);
+  ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(64,POST_Y-70,24,0,7);ctx.fill();ctx.strokeStyle="#E8333F";ctx.lineWidth=6;ctx.stroke();ctx.fillStyle="#111";ctx.font="800 20px Rubik,system-ui";ctx.fillText(String(P.lim),64,POST_Y-63)}
 function rr(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath()}
-function car(c,x,y,rot){ctx.save();ctx.translate(x,y);if(rot)ctx.rotate(rot);ctx.fillStyle="rgba(0,0,0,.35)";rr(-22,-36,50,80,10);ctx.fill();ctx.fillStyle=c.col;rr(-25,-40,50,80,11);ctx.fill();
-  ctx.fillStyle="rgba(255,255,255,.18)";rr(-21,-36,10,72,5);ctx.fill();ctx.fillStyle=c.tint?"#0b0b0f":"#9fd3ff";rr(-19,-24,38,17,5);ctx.fill();ctx.fillStyle=c.tint?"#0b0b0f":"#7fb6e0";rr(-19,14,38,13,5);ctx.fill();
-  ctx.fillStyle="#111";[[-27,-26],[22,-26],[-27,16],[22,16]].forEach(([a,b])=>ctx.fillRect(a,b,5,12));
-  ctx.fillStyle=c.lights?"#FFF6B0":"#444";ctx.fillRect(-21,-43,11,5);ctx.fillRect(10,-43,11,5);ctx.fillStyle="#C2262E";ctx.fillRect(-21,38,11,4);ctx.fillRect(10,38,11,4);
-  if(c.police){ctx.fillStyle=Math.floor(performance.now()/180)%2?"#E8333F":"#4A8CF0";ctx.fillRect(-12,-4,24,7)}
-  if(G&&G.sel===c){ctx.strokeStyle="#E7BD52";ctx.lineWidth=4;rr(-30,-45,60,90,12);ctx.stroke()}ctx.restore()}
-let off=0;
-function scene(dt){const n=G&&G.night;ctx.fillStyle=n?"#24402a":"#5b8f4b";ctx.fillRect(0,0,W,H);ctx.fillStyle=n?"#2a2d33":"#9a9a92";ctx.fillRect(110,0,20,H);ctx.fillRect(450,0,110,H);
-  ctx.fillStyle=n?"#24272d":"#3b3f46";ctx.fillRect(125,0,310,H);off=(off+dt*240)%60;ctx.strokeStyle="#EDEDED";ctx.lineWidth=4;ctx.setLineDash([30,30]);ctx.lineDashOffset=-off;[228,332].forEach(x=>{ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()});ctx.setLineDash([]);
-  ctx.fillStyle="#fff";ctx.fillRect(125,0,4,H);ctx.fillRect(431,0,4,H);
-  for(let i=0;i<6;i++){const y=(i*130+off*2)%(H+80)-40;ctx.font="34px system-ui";ctx.textAlign="center";ctx.fillText(i%2?"🌳":"🌲",55,y)}
-  ctx.fillStyle="#cfd3da";rr(462,POST_Y-80,84,60,8);ctx.fill();ctx.fillStyle="#3a5a8c";ctx.fillRect(462,POST_Y-80,84,14);ctx.fillStyle="#fff";ctx.font="800 11px Rubik,system-ui";ctx.fillText("ДПС",504,POST_Y-69);ctx.font="34px system-ui";ctx.fillText("👮",504,POST_Y-34);
-  ctx.fillStyle="rgba(255,255,255,.14)";ctx.fillRect(125,POST_Y+280,310,5);ctx.font="700 12px Golos Text,system-ui";ctx.fillStyle="#fff";ctx.textAlign="left";ctx.fillText("📡 радар",440,POST_Y+296);
-  ctx.textAlign="center";ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(60,POST_Y-60,26,0,7);ctx.fill();ctx.strokeStyle="#E8333F";ctx.lineWidth=6;ctx.stroke();ctx.fillStyle="#111";ctx.font="800 22px Rubik,system-ui";ctx.fillText("60",60,POST_Y-52);
-  if(n){ctx.fillStyle="rgba(255,240,180,.08)";ctx.beginPath();ctx.arc(504,POST_Y,170,0,7);ctx.fill()}}
-function drawShift(dt){scene(dt);if(!G)return;
-  for(const c of G.cars){const crash=c.state==="crash";car(c,c.x,c.y,crash?.6:0);if(crash){ctx.font="28px system-ui";ctx.fillText("💥",c.x+28,c.y-30)}
-    if(c.state==="drive"&&c.y<H-10){const seen=C.gear.radar?c.y<H-20:c.y<POST_Y+290;ctx.font="700 14px Rubik,system-ui";ctx.textAlign="center";ctx.fillStyle="rgba(0,0,0,.72)";rr(c.x-31,c.y-72,62,22,8);ctx.fill();
-      ctx.fillStyle=!seen?"#9aa":c.speed>80?"#FF6B70":c.speed>60?"#F2C45A":"#C8F7DA";ctx.fillText(seen?c.speed+" км/ч":"…",c.x,c.y-56);const ic=(c.lights?"":"🔦")+(c.tint?"🕶":"");if(ic){ctx.font="17px system-ui";ctx.fillText(ic,c.x,c.y-82)}}}
-  if(G.night){const g=ctx.createRadialGradient(504,POST_Y+60,80,280,330,520);g.addColorStop(0,"rgba(0,0,10,.1)");g.addColorStop(1,"rgba(0,0,15,.62)");ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
-    for(const c of G.cars)if(c.lights&&c.state!=="gone"){ctx.fillStyle="rgba(255,245,190,.18)";ctx.beginPath();ctx.moveTo(c.x-18,c.y-42);ctx.lineTo(c.x-45,c.y-170);ctx.lineTo(c.x+45,c.y-170);ctx.lineTo(c.x+18,c.y-42);ctx.fill()}}
-  if(G.wx==="fog"){const g=ctx.createLinearGradient(0,H,0,0);g.addColorStop(0,"rgba(200,205,210,.75)");g.addColorStop(.5,"rgba(200,205,210,.1)");g.addColorStop(1,"rgba(200,205,210,.25)");ctx.fillStyle=g;ctx.fillRect(0,0,W,H)}
-  ctx.strokeStyle=G.wx==="snow"?"rgba(255,255,255,.9)":"rgba(170,200,255,.55)";ctx.lineWidth=G.wx==="snow"?3:1.5;for(const d of G.drops){ctx.beginPath();ctx.moveTo(d.x,d.y);ctx.lineTo(d.x+(G.wx==="snow"?.5:-2),d.y+(G.wx==="snow"?2:12));ctx.stroke()}
-  fl=fl.filter(f=>f.a>0);fl.slice(-2).forEach((f,i)=>{ctx.globalAlpha=Math.min(1,f.a);ctx.fillStyle="rgba(0,0,0,.65)";rr(W/2-200,H-80-i*46,400,38,12);ctx.fill();ctx.fillStyle=f.c;ctx.font="700 15px Golos Text,system-ui";ctx.textAlign="center";ctx.fillText(f.t,W/2,H-55-i*46);ctx.globalAlpha=1;f.a-=dt})}
-function loop(ts){const dt=last?Math.min(.05,(ts-last)/1000):0;last=ts;if(G&&!G.over&&!paused)step(dt);if(G&&G.chase)drawChase(paused?0:dt);else drawShift(paused?0:dt);if(G&&!G.over)raf=requestAnimationFrame(loop)}
-// ---------- остановка и проверка
-cv.addEventListener("pointerdown",e=>{if(!G||G.over)return;const r=cv.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*W,y=(e.clientY-r.top)/r.height*H;
+function drawCar(c,x,y,rot,police){const s=carSprite(c.type,c.col);ctx.save();ctx.translate(x,y);if(rot)ctx.rotate(rot);ctx.fillStyle="rgba(0,0,0,.35)";rr(-c.w/2+5,-c.h/2+7,c.w,c.h,10);ctx.fill();
+  ctx.drawImage(s,-c.w/2-8,-c.h/2-8);if(c.tint){ctx.fillStyle="rgba(5,5,10,.75)";rr(-c.w*.38,-c.h/2+c.h*.22,c.w*.76,c.h*.14,6);ctx.fill()}
+  ctx.fillStyle=c.lights?"#FFF6C0":"#555";ctx.fillRect(-c.w/2+5,-c.h/2-2,10,4);ctx.fillRect(c.w/2-15,-c.h/2-2,10,4);
+  ctx.fillStyle=c.brake>.3?"#ff2a2a":"#8a1c1c";ctx.fillRect(-c.w/2+4,c.h/2-3,11,4);ctx.fillRect(c.w/2-15,c.h/2-3,11,4);
+  if(c.brake>.3){ctx.globalCompositeOperation="lighter";ctx.fillStyle="rgba(255,40,40,.35)";ctx.beginPath();ctx.ellipse(0,c.h/2+8,c.w*.6,10,0,0,7);ctx.fill();ctx.globalCompositeOperation="source-over"}
+  if(c.plate&&c.type!=="tractor"){ctx.fillStyle="#f4f4f4";ctx.fillRect(-14,c.h/2-1,28,8);ctx.fillStyle="#111";ctx.font="700 6px Golos Text,system-ui";ctx.textAlign="center";ctx.fillText(c.plate.split(" ")[0],0,c.h/2+5)}
+  if(police){ctx.globalCompositeOperation="lighter";const on=Math.floor(performance.now()/160)%2;ctx.fillStyle=on?"rgba(255,40,40,.8)":"rgba(40,90,255,.8)";ctx.beginPath();ctx.arc(0,0,22,0,7);ctx.fill();ctx.globalCompositeOperation="source-over"}
+  if(G&&G.sel===c){ctx.strokeStyle="#E7BD52";ctx.lineWidth=4;rr(-c.w/2-5,-c.h/2-5,c.w+10,c.h+10,12);ctx.stroke()}ctx.restore()}
+function drawShift(dt){drawWorld(dt);if(!G)return;const night=G.night;
+  for(const p of G.peds){ctx.font="24px system-ui";ctx.textAlign="center";ctx.fillText(p.e,p.x,p.y)}
+  for(const c of G.cars){const crash=c.state==="crash";drawCar(c,c.x,c.y,crash?.6:0);if(crash){ctx.font="26px system-ui";ctx.fillText(c.dtp?"🚧":"💥",c.x+30,c.y-30)}
+    if(c.state==="drive"&&c.y<H-10){const seen=C.gear.radar?c.y<H-30:c.y<POST_Y+330;ctx.font="700 14px Rubik,system-ui";ctx.textAlign="center";ctx.fillStyle="rgba(0,0,0,.72)";rr(c.x-32,c.y-c.h/2-30,64,22,8);ctx.fill();
+      ctx.fillStyle=!seen?"#9aa":c.speed>G.P.lim+20?"#FF6B70":c.speed>G.P.lim?"#F2C45A":"#C8F7DA";ctx.fillText(seen?c.speed+" км/ч":"…",c.x,c.y-c.h/2-14);
+      const ic=(c.lights?"":"🔦")+(c.tint?"🕶":"")+(c.noplates?"🚫":"")+(perk("eye",20)?(c.belt?"":"🧷")+(c.phone?"📱":""):"")+(c.ranRed?"🚦":"")+(c.noYield?"🚸":"");if(ic){ctx.font="16px system-ui";ctx.fillText(ic,c.x,c.y-c.h/2-38)}}}
+  // ночь: темнота, фонари, фары (аддитивный свет), отражения на мокром асфальте
+  if(night){ctx.fillStyle="rgba(5,8,25,.62)";ctx.fillRect(0,0,W,H);ctx.globalCompositeOperation="lighter";
+    for(let i=0;i<4;i++){const y=((i*200+G.off)%(H+200))-100;[[RX0-12,y],[RX1+12,y+100]].forEach(([x,yy])=>{const g=ctx.createRadialGradient(x,yy,4,x,yy,110);g.addColorStop(0,"rgba(255,220,150,.35)");g.addColorStop(1,"rgba(0,0,0,0)");ctx.fillStyle=g;ctx.fillRect(x-110,yy-110,220,220)})}
+    const g=ctx.createRadialGradient(522,POST_Y,10,522,POST_Y,180);g.addColorStop(0,"rgba(255,230,170,.3)");g.addColorStop(1,"rgba(0,0,0,0)");ctx.fillStyle=g;ctx.fillRect(342,POST_Y-180,360,360);
+    for(const c of G.cars)if(c.lights&&c.state!=="gone"){const top=c.y-c.h/2,gg=ctx.createLinearGradient(0,top,0,top-190);gg.addColorStop(0,"rgba(255,245,200,.45)");gg.addColorStop(1,"rgba(255,245,200,0)");ctx.fillStyle=gg;ctx.beginPath();ctx.moveTo(c.x-c.w/2+6,top);ctx.lineTo(c.x-55,top-190);ctx.lineTo(c.x+55,top-190);ctx.lineTo(c.x+c.w/2-6,top);ctx.fill()}
+    for(const c of G.cars)if(c.brake>.3||night){ctx.fillStyle="rgba(255,30,30,.25)";ctx.beginPath();ctx.ellipse(c.x,c.y+c.h/2+6,c.w*.55,9,0,0,7);ctx.fill()}
+    ctx.globalCompositeOperation="source-over"}
+  if(G.wx==="rain"){ctx.globalCompositeOperation="lighter";for(const c of G.cars){ctx.fillStyle=night?"rgba(255,240,200,.12)":"rgba(255,255,255,.05)";ctx.fillRect(c.x-c.w/2,c.y+c.h/2+4,c.w,40)}ctx.globalCompositeOperation="source-over";ctx.fillStyle="rgba(60,80,110,.12)";ctx.fillRect(0,0,W,H)}
+  if(G.wx==="fog"){const g=ctx.createLinearGradient(0,H,0,0);g.addColorStop(0,"rgba(205,210,215,.78)");g.addColorStop(.45,"rgba(205,210,215,.15)");g.addColorStop(1,"rgba(205,210,215,.35)");ctx.fillStyle=g;ctx.fillRect(0,0,W,H)}
+  if(G.wx==="snow"){ctx.fillStyle="rgba(230,240,255,.08)";ctx.fillRect(0,0,W,H)}
+  ctx.strokeStyle=G.wx==="snow"?"rgba(255,255,255,.95)":"rgba(170,200,255,.5)";ctx.lineWidth=G.wx==="snow"?3:1.4;for(const d of G.drops){ctx.beginPath();ctx.moveTo(d.x,d.y);ctx.lineTo(d.x+(G.wx==="snow"?.5:-2),d.y+(G.wx==="snow"?2:13));ctx.stroke()}
+  // виньетка — «шейдер» кадра
+  const v=ctx.createRadialGradient(W/2,H/2,H*.35,W/2,H/2,H*.75);v.addColorStop(0,"rgba(0,0,0,0)");v.addColorStop(1,"rgba(0,0,0,.35)");ctx.fillStyle=v;ctx.fillRect(0,0,W,H);
+  drawFlash(dt)}
+function drawFlash(dt){fl=fl.filter(f=>f.a>0);fl.slice(-2).forEach((f,i)=>{ctx.globalAlpha=Math.min(1,f.a);ctx.fillStyle="rgba(0,0,0,.7)";rr(W/2-215,H-82-i*46,430,38,12);ctx.fill();ctx.fillStyle=f.c;ctx.font="700 14.5px Golos Text,system-ui";ctx.textAlign="center";ctx.fillText(f.t,W/2,H-57-i*46);ctx.globalAlpha=1;f.a-=dt})}
+function loop(ts){const dt=last?Math.min(.05,(ts-last)/1000):0;last=ts;if(G&&!G.over&&!paused&&!G.dtpOpen)step(dt);if(G&&G.chase)drawChase(paused?0:dt);else drawShift(paused?0:dt);if(G&&!G.over)raf=requestAnimationFrame(loop)}
+// ---------- нажатия
+cv.addEventListener("pointerdown",e=>{if(!G||G.over||G.dtpOpen)return;const r=cv.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*W,y=(e.clientY-r.top)/r.height*H;
   if(G.chase){G.chase.tx=x<W/2?-1:1;return}
-  const cr=G.cars.find(c=>c.state==="crash"&&Math.abs(c.x-x)<45&&Math.abs(c.y-y)<55);if(cr){cr.state="leave";G.score+=3;G.honorD+=3;G.t-=6;flash("Помогли водителю после заноса: +3, честь +3","#4ADE95");return}
+  const cr=G.cars.find(c=>c.state==="crash"&&Math.abs(c.x-x)<50&&Math.abs(c.y-y)<c.h/2+20);
+  if(cr){if(cr.dtp){openDTP(cr);return}cr.state="leave";const b=perk("heart",70)?6:3;G.score+=b;G.honorD+=3;grow("heart",2);G.t-=6;flash("Помогли водителю после заноса: +"+b,"#4ADE95");return}
   if(G.sel){flash("Сначала закончите с текущим водителем","#F2C45A");return}
-  const c=G.cars.find(c=>c.state==="drive"&&Math.abs(c.x-x)<40&&Math.abs(c.y-y)<55);if(!c)return;
+  const c=G.cars.find(c=>c.state==="drive"&&Math.abs(c.x-x)<c.w/2+14&&Math.abs(c.y-y)<c.h/2+14);if(!c)return;
   if(c.flee&&ch(.7)){c.state="gone";startChase(c);return}c.state="pull";G.sel=c;insp()});
-function fact(lbl,val,cls){return`<div><span>${lbl}</span><b class="${cls}">${val}</b></div>`}
-function insp(){const box=$("insp"),c=G&&G.sel;if(!c){box.innerHTML='<p class="mu">Нажмите на машину, чтобы остановить. Над машиной — скорость с радара; 🔦 и 🕶 видны сразу, остальное выясняйте проверками. Машина после заноса — помогите водителю (нажмите на неё).</p>';return}
-  const k=c.checked,v=viol(c);
-  box.innerHTML=`<div class="drv"><div class="face">${c.face}</div><div><b>${c.name}</b><div class="mu">${c.lie?"Нервничает, смотрит в сторону":"Спокоен"}</div></div></div>
+// ---------- карточка водителя
+function fact(l,v,cls){return`<div><span>${l}</span><b class="${cls}">${v}</b></div>`}
+function insp(){const box=$("insp"),c=G&&G.sel;
+  if(!c){box.innerHTML='<p class="mu">Нажмите на машину на дороге, чтобы остановить. Над машиной — скорость с радара и замеченные нарушения (🔦 без фар, 🕶 тонировка, 🚫 без номеров, 🚦 красный, 🚸 пешеход). Остальное выясняйте проверками. 🚧 — ДТП, 💥 — занос: нажмите, чтобы помочь.</p>'+(G?"":'<p class="mu">Сначала выберите пост в отделе.</p>');return}
+  const k=c.checked,v=viol(c),fast=perk("eye",70);
+  box.innerHTML=`<div class="drv"><div class="face">${c.face}</div><div><b>${c.name}</b>${c.stolen?" <b style='color:#FF8A8F'>🚨 угнанная!</b>":""}<div class="mu">${CNAME[c.col]||""} ${TNAME[c.type]} · ${c.plate||"без номеров"}${perk("eye",45)&&c.lie?" · 🤥 врёт":""}</div></div></div>
    <div class="say" id="say">— ${c.excuse}</div>
-   <div class="facts">${fact("Скорость по радару",c.speed+" км/ч",c.speed>80?"bad":"ok")}${fact("Фары · стёкла",(c.lights?"свет есть":"без света")+" · "+(c.tint?"тонировка":"прозрачные"),!c.lights||c.tint?"bad":"ok")}
-   ${fact("Права",k.docs?(c.licence?"действуют":"просрочены"):"не проверено",k.docs?(c.licence?"ok":"bad"):"unk")}${fact("ОСАГО по базе",k.base?(c.osago?"действует":"нет полиса"):"не проверено",k.base?(c.osago?"ok":"bad"):"unk")}
-   ${fact("Ремень · телефон",k.cam?(c.belt?"пристёгнут":"без ремня")+" · "+(c.phone?"с телефоном":"без телефона"):"не проверено",k.cam?(c.belt&&!c.phone?"ok":"bad"):"unk")}${fact("Алкотестер",k.alco?(c.drunk?"0,62 мг/л":"0,00 мг/л"):"не проверено",k.alco?(c.drunk?"bad":"ok"):"unk")}</div>
-   <div class="tools"><button class="btn" data-t="docs" ${k.docs?"disabled":""}>🪪 Документы</button><button class="btn" data-t="base" ${k.base?"disabled":""}>📋 Проверить по базе</button><button class="btn" data-t="cam" ${k.cam?"disabled":""}>🎥 Запись камеры</button><button class="btn" data-t="alco" ${k.alco?"disabled":""}>🌬 Алкотестер</button></div>
-   <p class="mu" style="font-size:.82rem">Каждая проверка тратит время смены. Отметьте нарушения:</p>
-   <div class="vio">${Object.keys(VN).map(x=>`<label><input type="checkbox" value="${x}"> ${VN[x]} — ${FINE[x].toLocaleString("ru-RU")} ₽</label>`).join("")}</div>
-   <div class="row"><button class="btn go" id="fine">📝 Выписать штраф</button><button class="btn" id="warn">🗣 Предупредить</button><button class="btn" id="free">👋 Счастливого пути</button></div>`;
-  box.querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>{const t=b.dataset.t,cost={docs:3,base:5,cam:C.gear.cam?3:6,alco:C.gear.alco?1:4}[t];G.t-=cost;c.checked[t]=1;
-    const lines={docs:c.licence?"— Вот, всё в порядке.":"— Ну… продлить не успел.",base:c.osago?"— Видите, полис есть.":"— Ой… а мне сказали, что продлили.",cam:c.belt&&!c.phone?"— Я же говорил!":"— Ну да… было дело.",alco:c.drunk?"— Это… квас был!":"— Я же трезвый, видите."};insp();$("say").textContent=lines[t]});
-  $("fine").onclick=()=>decide("fine");$("warn").onclick=()=>decide("warn");$("free").onclick=()=>decide("free");
-  if(c.bribe&&v.length&&!c.offered){c.offered=1;setTimeout(()=>{if(G.sel!==c)return;$("say").textContent="— Командир, давай без протокола? Тут пять тысяч…";const r=document.createElement("div");r.className="row";r.innerHTML='<button class="btn red" id="b1">💵 Взять</button><button class="btn blu" id="b2">🙅 «Это дача взятки»</button>';$("say").after(r);
-    $("b1").onclick=()=>{G.stats.bribes++;if(C.gear.cam||ch(.6)){G.over=true;C.honor=Math.max(0,C.honor-30);C.trust=Math.max(0,C.trust-30);save();endShift("Служебная проверка","Запись камеры всё показала. Смена закончена, честь −30, доверие начальства −30.")}else{G.honorD-=15;G.budget-=0;r.remove();$("say").textContent="— Вот и договорились…";flash("Взятка… Честь −15. Совесть не обманешь.","#FF8A8F")}};
-    $("b2").onclick=()=>{G.score+=5;G.honorD+=5;r.remove();$("say").textContent="— Понял, понял… Выписывайте.";flash("Отказ от взятки: +5, честь +5","#4ADE95")}},900)}}
-function decide(kind){const c=G.sel,v=viol(c),marked=[...document.querySelectorAll("#insp .vio input:checked")].map(x=>x.value);
-  if(kind==="fine"){if(!marked.length){flash("Отметьте, за что штраф","#F2C45A");return}const right=marked.filter(m=>v.includes(m)),wrong=marked.filter(m=>!v.includes(m));
-    if(right.length){G.score+=3*right.length;G.stats.fines++;const sum=right.reduce((a,m)=>a+FINE[m],0);G.budget+=sum;flash("Штраф "+sum.toLocaleString("ru-RU")+" ₽: +"+3*right.length,"#4ADE95");right.forEach(m=>{if(G.task[0]===m)G.taskN++})}
-    if(wrong.length){G.compl+=wrong.length;G.score-=4*wrong.length;G.honorD-=3*wrong.length;flash("Жалоба: штраф без нарушения −"+4*wrong.length,"#FF8A8F")}
+   <div class="facts">${fact("Скорость",c.speed+" км/ч (лимит "+G.P.lim+")",c.speed>G.P.lim+20?"bad":"ok")}${c.ranRed||c.noYield?fact("Камера перекрёстка",(c.ranRed?"проезд на красный ":"")+(c.noYield?"не пропустил пешехода":""),"bad"):""}
+   ${fact("Права",k.docs?(c.licence?"действуют":"нет / просрочены"):"не проверено",k.docs?(c.licence?"ok":"bad"):"unk")}${fact("ОСАГО",k.base?(c.osago?"действует":"нет полиса"):"не проверено",k.base?(c.osago?"ok":"bad"):"unk")}
+   ${fact("Ремень · телефон",k.cam?(c.belt?"пристёгнут":"без ремня")+" · "+(c.phone?"с телефоном":"без"):"не проверено",k.cam?(c.belt&&!c.phone?"ok":"bad"):"unk")}${fact("Алкотестер",k.alco?(c.drunk?"0,62 мг/л":"0,00 мг/л"):"не проверено",k.alco?(c.drunk?"bad":"ok"):"unk")}
+   ${c.type==="truck"?fact("Весы",k.scale?(c.overload?"перегруз 4 т":"норма"):C.gear.scale?"не проверено":"нужны весы",k.scale?(c.overload?"bad":"ok"):"unk"):""}${fact("Номера · по базе угонов",(c.plate?"есть":"нет")+(k.base?(c.stolen?" · В УГОНЕ!":" · чисто"):""),c.noplates||(k.base&&c.stolen)?"bad":k.base?"ok":"unk")}</div>
+   <div class="tools"><button class="btn" data-t="docs" ${k.docs?"disabled":""}>🪪 Документы</button><button class="btn" data-t="base" ${k.base?"disabled":""}>📋 По базе</button><button class="btn" data-t="cam" ${k.cam?"disabled":""}>🎥 Запись камеры</button><button class="btn" data-t="alco" ${k.alco?"disabled":""}>🌬 Алкотестер</button>${c.type==="truck"&&C.gear.scale?`<button class="btn" data-t="scale" ${k.scale?"disabled":""}>⚖️ Весы</button>`:""}</div>
+   <div class="vio">${Object.keys(VN).filter(x=>(x!=="red"||G.P.light)&&(x!=="zebra"||G.P.zebra)&&(x!=="overload"||c.type==="truck")).map(x=>`<label><input type="checkbox" value="${x}"> ${VN[x]} — ${FINE[x].toLocaleString("ru-RU")} ₽</label>`).join("")}</div>
+   <div class="row"><button class="btn go" id="fine">📝 Штраф</button><button class="btn" id="warn">🗣 Предупредить</button><button class="btn" id="free">👋 Отпустить</button>${c.stolen?'<button class="btn red" id="arrest">🚔 Задержать</button>':""}</div>`;
+  box.querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>{const t=b.dataset.t,cost=fast?1:{docs:3,base:5,cam:C.gear.cam?3:6,alco:C.gear.alco?1:4,scale:6}[t];G.t-=cost;c.checked[t]=1;grow("eye",.5);
+    const lines={docs:c.licence?"— Вот, всё в порядке.":"— Ну… продлить не успел.",base:c.stolen?"— Это… не моя машина, мне друг дал!":c.osago?"— Видите, полис есть.":"— Ой… а мне сказали, что продлили.",cam:c.belt&&!c.phone?"— Я же говорил!":"— Ну да… было дело.",alco:c.drunk?"— Это… квас был!":"— Я же трезвый, видите.",scale:c.overload?"— Да там чуть-чуть лишнего…":"— Всё по накладной."};insp();$("say").textContent=lines[t]});
+  $("fine").onclick=()=>decide("fine");$("warn").onclick=()=>decide("warn");$("free").onclick=()=>decide("free");if($("arrest"))$("arrest").onclick=()=>decide("arrest");
+  if(c.bribe&&v.length&&!c.offered){c.offered=1;setTimeout(()=>{if(!G||G.sel!==c)return;$("say").textContent="— Командир, давай без протокола? Тут пять тысяч…";const r=document.createElement("div");r.className="row";r.innerHTML='<button class="btn red" id="b1">💵 Взять</button><button class="btn blu" id="b2">🙅 «Это дача взятки»</button>';$("say").after(r);
+    $("b1").onclick=()=>{G.stats.bribes++;grow("law",-15);if(C.gear.cam||ch(.6)){G.over=true;C.honor=clamp(C.honor-30,0,100);C.trust=clamp(C.trust-30,0,100);save();endShift("Служебная проверка","Запись камеры всё показала. Смена закончена: честь −30, доверие −30, принципиальность −15.")}else{G.honorD-=15;r.remove();$("say").textContent="— Вот и договорились…";flash("Взятка… Честь −15, принципиальность −15","#FF8A8F")}};
+    $("b2").onclick=()=>{G.score+=5;G.honorD+=5;grow("law",6);r.remove();$("say").textContent="— Понял, понял… Выписывайте.";flash("Отказ от взятки: +5, принципиальность растёт","#4ADE95")}},900)}}
+function decide(kind){const c=G.sel,v=viol(c),marked=[...document.querySelectorAll("#insp .vio input:checked")].map(x=>x.value),mul=perk("law",70)?1.5:1;
+  if(kind==="arrest"){if(c.stolen){G.score+=15;G.stats.wanted++;G.wanted.done=true;grow("auth",6);grow("eye",4);flash("🚔 Угнанная машина задержана: +15","#E7BD52")}else{G.score-=3;flash("Машина не в угоне: −3","#FF8A8F")}}
+  else if(kind==="fine"){if(!marked.length){flash("Отметьте, за что штраф","#F2C45A");return}const right=marked.filter(m=>v.includes(m)),wrong=marked.filter(m=>!v.includes(m));
+    if(right.length){const pts=Math.round(3*right.length*mul);G.score+=pts;G.stats.fines++;const sum=right.reduce((a,m)=>a+FINE[m],0);G.budget+=sum;grow("law",1.5*right.length);flash("Штраф "+sum.toLocaleString("ru-RU")+" ₽: +"+pts,"#4ADE95");right.forEach(m=>{if(G.task[0]===m)G.taskN++})}
+    if(wrong.length){if(G.forgive>0){G.forgive--;flash("Ошибка, но начальник простил (Легенда отдела)","#F2C45A")}else{G.compl+=wrong.length;G.score-=4*wrong.length;G.honorD-=3*wrong.length;grow("heart",-2);flash("Жалоба: штраф без нарушения −"+4*wrong.length,"#FF8A8F")}}
     const missed=v.filter(m=>!marked.includes(m));if(missed.length&&!wrong.length)flash("Не заметили: "+missed.map(m=>VN[m].toLowerCase()).join(", "),"#F2C45A");
-    if(c.drunk&&marked.includes("drunk"))flash("Нетрезвого отстранили от управления. Вы спасли чьи-то жизни","#E7BD52")}
-  else if(kind==="warn"){const minor=v.every(m=>["lights","belt"].includes(m));if(v.length&&minor){G.score+=1;G.honorD+=2;flash("Предупреждение по мелочи — водитель благодарен. Честь +2","#4ADE95")}else if(!v.length){G.score+=0;flash("Нарушений не было — вы зря его задержали","#F2C45A")}else{G.score-=2;flash("Серьёзное нарушение без штрафа: −2","#FF8A8F")}}
-  else{if(!v.length){G.score+=1;G.stats.free++;flash("Честный водитель: +1","#4ADE95")}else{G.score-=1;flash("Отпустили нарушителя: −1","#FF8A8F")}}
+    if(c.drunk&&marked.includes("drunk")){grow("law",2);flash("Нетрезвого отстранили. Вы спасли чьи-то жизни","#E7BD52")}
+    if(c.stolen)flash("Это была угнанная машина — её надо было задержать!","#FF8A8F")}
+  else if(kind==="warn"){const minor=v.length&&v.every(m=>["lights","belt","tint"].includes(m));if(minor){const b=perk("heart",20)?3:1;G.score+=b;G.honorD+=(perk("heart",45)?4:2);grow("heart",2);flash("Предупреждение по мелочи: +"+b+", водитель благодарен","#4ADE95")}else if(!v.length)flash("Нарушений не было — зря задержали","#F2C45A");else{G.score-=2;grow("law",-1);flash("Серьёзное нарушение без штрафа: −2","#FF8A8F")}}
+  else{if(!v.length){G.score+=1;G.stats.free++;grow("heart",.5);flash("Честный водитель: +1","#4ADE95")}else{G.score-=1;flash("Отпустили нарушителя: −1","#FF8A8F")}}
   if(G.taskN>=G.task[2]&&!G.taskDone){G.taskDone=true;G.score+=10;flash("Задание начальника выполнено: +10","#E7BD52")}
   c.state="leave";G.sel=null;insp();hud()}
+// ---------- ДТП: схема, свидетели, решение
+function openDTP(car){G.dtpOpen=true;const guilty=R(2),cause=pick(["скорость","перестроение","дистанция","красный"]);const A={col:car.col,type:car.type,n:pick(NAMES)},B={col:pick(COLORS),type:pick(["sedan","hatch","suv"]),n:pick(NAMES)};
+  const wit=[["🧓","Пенсионер у остановки",guilty===0?"Первая машина неслась как угорелая, а потом в бок второй влетела.":"Вторая резко перестроилась прямо перед первой — я всё видел."],
+   ["🧑‍💼","Водитель автобуса",cause==="дистанция"?"Ехали впритык, вот и не успели затормозить.":cause==="красный"?"Кто-то из них проскочил на красный, вроде "+(guilty===0?"первый":"второй")+".":"Я заметил, что "+(guilty===0?"первая":"вторая")+" ехала странно."],
+   ["👩","Прохожая",ch(.35)?"Ой, я ничего не поняла, всё так быстро…":"Виноват "+(guilty===0?"тот, кто ехал сзади":"тот, кто перестраивался")+", точно."]];
+  const o=$("office");o.innerHTML=`<div class="t">🚧 Оформление ДТП</div><div class="dtp"><canvas id="sch" width="420" height="200"></canvas>
+   <div class="wit">🚗 1: ${A.n[1]} — «Он меня подрезал!» · 🚙 2: ${B.n[1]} — «Он в меня въехал сзади!»</div>
+   ${wit.map(w=>`<div class="wit">${w[0]} <b>${w[1]}:</b> ${w[2]}</div>`).join("")}
+   <p class="mu">Кто виноват?</p><div class="row"><button class="btn" data-g="0">🚗 Машина 1</button><button class="btn" data-g="1">🚙 Машина 2</button></div>
+   <p class="mu">Причина:</p><div class="row">${["скорость","перестроение","дистанция","красный"].map(x=>`<button class="btn" data-c="${x}">${x}</button>`).join("")}</div>
+   <button class="btn go" id="dOk" disabled>Оформить</button></div>`;
+  const sc=$("sch").getContext("2d");sc.fillStyle="#3a3d43";sc.fillRect(0,40,420,120);sc.strokeStyle="#eee";sc.setLineDash([20,14]);sc.lineWidth=3;sc.beginPath();sc.moveTo(0,100);sc.lineTo(420,100);sc.stroke();sc.setLineDash([]);
+  sc.drawImage(carSprite(A.type,A.col),0,0,carSprite(A.type,A.col).width,carSprite(A.type,A.col).height,150,110,40,72);sc.drawImage(carSprite(B.type,B.col),0,0,carSprite(B.type,B.col).width,carSprite(B.type,B.col).height,200,60,40,72);
+  sc.strokeStyle="#E7BD52";sc.lineWidth=3;sc.beginPath();sc.moveTo(170,190);sc.lineTo(170,130);sc.stroke();sc.beginPath();sc.moveTo(250,190);sc.quadraticCurveTo(250,120,220,80);sc.stroke();sc.font="22px system-ui";sc.fillText("💥",188,108);sc.fillStyle="#fff";sc.font="700 14px Golos Text";sc.fillText("1",140,120);sc.fillText("2",246,70);
+  let sg=null,scs=null;const upd=()=>{$("dOk").disabled=sg===null||!scs};o.querySelectorAll("[data-g]").forEach(b=>b.onclick=()=>{sg=+b.dataset.g;o.querySelectorAll("[data-g]").forEach(x=>x.classList.toggle("go",x===b));upd()});
+  o.querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>{scs=b.dataset.c;o.querySelectorAll("[data-c]").forEach(x=>x.classList.toggle("go",x===b));upd()});
+  $("dOk").onclick=()=>{let pts=0;if(sg===guilty)pts+=6;if(scs===cause)pts+=4;if(sg!==guilty){G.compl++;pts-=4}G.score+=pts;G.stats.dtp++;grow("eye",sg===guilty?4:-1);G.t-=15;
+    flash(sg===guilty?"ДТП оформлено верно: +"+pts:"Ошибка в оформлении: виноват был водитель "+(guilty+1)+" ("+cause+")",sg===guilty?"#4ADE95":"#FF8A8F");car.state="leave";car.dtp=false;G.dtp=null;G.dtpOpen=false;$("ov").hidden=true;last=0};
+  $("ov").hidden=false}
 // ---------- погоня
-function startChase(c){G.chase={target:Object.assign({},c,{y:120,lane:1,x:LANES[1]}),me:{lane:1,x:LANES[1],y:H-120,col:"#F4F4F6",police:true},dist:420,t:20,obs:[],spawn:.5,tx:0,cool:0};flash("🚨 Водитель не остановился! Погоня!","#FF8A8F");$("pad").classList.add("show")}
-function chaseStep(dt){const P=G.chase,sp=C.gear.car?1.25:1;P.t-=dt;P.spawn-=dt;if(P.spawn<=0){P.obs.push({lane:R(3),y:-60,col:COLORS[R(COLORS.length)],lights:true});P.spawn=Math.max(.45,.9-G.lvl*.05)+Math.random()*.4}
-  for(const o of P.obs)o.y+=(330+G.lvl*20)*dt;P.obs=P.obs.filter(o=>o.y<H+60);P.cool-=dt;
+function startChase(c){G.chase={target:Object.assign({},c,{y:120,lane:1,x:LANES[1],brake:0}),me:{type:"sedan",col:"#F4F4F6",w:44,h:84,lane:1,x:LANES[1],y:H-120,lights:true,brake:0},dist:440,t:22,obs:[],spawn:.5,tx:0,cool:0};flash("🚨 Водитель не остановился! Погоня!","#FF8A8F");$("pad").classList.add("show")}
+function chaseStep(dt){const P=G.chase,sp=(C.gear.car?1.25:1)*(perk("auth",45)?1.2:1);P.t-=dt;P.spawn-=dt;if(P.spawn<=0){const t=pick(["sedan","hatch","suv","van"]);P.obs.push({type:t,col:pick(COLORS),w:CARTYPES.find(x=>x.t===t).w,h:CARTYPES.find(x=>x.t===t).h,lane:R(3),y:-60,lights:true,brake:0});P.spawn=Math.max(.45,.9-G.lvl*.05)+Math.random()*.4}
+  for(const o of P.obs)o.y+=(330+G.lvl*20)*dt;P.obs=P.obs.filter(o=>o.y<H+80);P.cool-=dt;
   const want=(K.r?1:0)-(K.l?1:0)||P.tx;if(want&&P.cool<=0){P.me.lane=clamp(P.me.lane+want,0,2);P.cool=.22/sp;P.tx=0}P.me.x+=(LANES[P.me.lane]-P.me.x)*Math.min(1,dt*10*sp);
   if(ch(dt*.8))P.target.lane=clamp(P.target.lane+(ch(.5)?1:-1),0,2);P.target.x+=(LANES[P.target.lane]-P.target.x)*Math.min(1,dt*4);
-  P.dist-=dt*(38*sp);for(const o of P.obs){if(Math.abs(o.y-P.me.y)<70&&Math.abs(LANES[o.lane]-P.me.x)<45){P.dist+=90;o.y=H+100;flash("Столкновение! Цель отрывается","#FF8A8F")}}
-  if(P.dist<=60){G.score+=8;G.honorD+=2;G.stats.chase++;flash("Задержали беглеца: +8","#4ADE95");endChase();return}
-  if(P.t<=0||P.dist>700){G.score-=3;flash("Беглец ушёл: −3","#FF8A8F");endChase()}hud()}
+  P.dist-=dt*38*sp;for(const o of P.obs){if(Math.abs(o.y-P.me.y)<(o.h+84)/2-6&&Math.abs(LANES[o.lane]-P.me.x)<45){P.dist+=90;o.y=H+200;flash("Столкновение! Цель отрывается","#FF8A8F")}}
+  if(P.dist<=60){const b=P.target.stolen?15:8;G.score+=b;G.honorD+=2;G.stats.chase++;grow("auth",4);if(P.target.stolen&&G.wanted){G.wanted.done=true;G.stats.wanted++}flash((P.target.stolen?"Угонщик задержан":"Задержали беглеца")+": +"+b,"#4ADE95");endChase();return}
+  if(P.t<=0||P.dist>720){G.score-=3;grow("auth",-2);flash("Беглец ушёл: −3","#FF8A8F");endChase()}hud()}
 function endChase(){G.chase=null;$("pad").classList.remove("show")}
-function drawChase(dt){const P=G.chase;off=(off+dt*600)%60;ctx.fillStyle=G.night?"#1d331f":"#4f7f40";ctx.fillRect(0,0,W,H);ctx.fillStyle="#2e3238";ctx.fillRect(125,0,310,H);ctx.strokeStyle="#EDEDED";ctx.lineWidth=4;ctx.setLineDash([30,30]);ctx.lineDashOffset=-off;[228,332].forEach(x=>{ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()});ctx.setLineDash([]);
-  const ty=clamp(P.me.y-P.dist,60,P.me.y-90);car(P.target,P.target.x,ty);for(const o of P.obs)car(o,LANES[o.lane],o.y);car(P.me,P.me.x,P.me.y);
-  ctx.fillStyle="rgba(0,0,0,.65)";rr(10,10,250,54,12);ctx.fill();ctx.fillStyle="#fff";ctx.font="800 16px Rubik,system-ui";ctx.textAlign="left";ctx.fillText("🚨 ПОГОНЯ · "+P.t.toFixed(1)+" с",22,32);ctx.font="600 13px Golos Text,system-ui";ctx.fillText("До цели: "+Math.round(P.dist)+" м · объезжайте машины",22,52);
-  if(G.night){ctx.fillStyle="rgba(0,0,15,.45)";ctx.fillRect(0,0,W,H)}fl=fl.filter(f=>f.a>0);fl.slice(-1).forEach(f=>{ctx.fillStyle="rgba(0,0,0,.65)";rr(W/2-200,H-60,400,38,12);ctx.fill();ctx.fillStyle=f.c;ctx.font="700 15px Golos Text,system-ui";ctx.textAlign="center";ctx.fillText(f.t,W/2,H-35);f.a-=dt})}
+function drawChase(dt){const P=G.chase;drawWorld(dt);const ty=clamp(P.me.y-P.dist,70,P.me.y-100);drawCar(P.target,P.target.x,ty);for(const o of P.obs)drawCar(o,LANES[o.lane],o.y);drawCar(P.me,P.me.x,P.me.y,0,true);
+  if(G.night){ctx.fillStyle="rgba(5,8,25,.5)";ctx.fillRect(0,0,W,H)}ctx.fillStyle="rgba(0,0,0,.7)";rr(10,10,270,56,12);ctx.fill();ctx.fillStyle="#fff";ctx.font="800 16px Rubik,system-ui";ctx.textAlign="left";ctx.fillText("🚨 ПОГОНЯ · "+P.t.toFixed(1)+" с",22,32);ctx.font="600 13px Golos Text,system-ui";ctx.fillText("До цели: "+Math.round(P.dist)+" м · объезжайте машины",22,53);drawFlash(dt)}
 const K={l:false,r:false};addEventListener("keydown",e=>{if(!G||!G.chase)return;if(e.code==="ArrowLeft"||e.code==="KeyA"){K.l=true;e.preventDefault()}if(e.code==="ArrowRight"||e.code==="KeyD"){K.r=true;e.preventDefault()}});
 addEventListener("keyup",e=>{if(e.code==="ArrowLeft"||e.code==="KeyA")K.l=false;if(e.code==="ArrowRight"||e.code==="KeyD")K.r=false});
 $("pL").onpointerdown=()=>{if(G&&G.chase)G.chase.tx=-1};$("pR").onpointerdown=()=>{if(G&&G.chase)G.chase.tx=1};
-// ---------- итоги смены и отдел (интерактивное меню)
-function endShift(title,text){if(G.chase)endChase();G.over=true;cancelAnimationFrame(raf);const fair=!G.stats.bribes||text;C.honor=clamp(C.honor+G.honorD,0,100);
-  const xp=Math.max(0,G.score)+(G.taskDone?10:0);C.xp+=xp;C.shifts++;const prem=Math.max(0,Math.round(G.budget*.05+(G.taskDone?1500:0)+(C.honor>=70?500:0)));C.prem+=prem;
-  C.trust=clamp(C.trust+(G.taskDone?8:-3)+(G.compl?-4*G.compl:2)+(G.miss>2?-5:0),0,100);let up="";while(C.rank<RANKS.length-1&&C.xp>=XP_NEED[C.rank+1]&&C.trust>=30){C.rank++;up="🎖 Повышение: теперь вы — "+RANKS[C.rank]+"!"}
+// ---------- итоги и отдел
+function endShift(title,text){if(G.chase)endChase();G.over=true;cancelAnimationFrame(raf);const gain=perk("heart",45)?2:1;C.honor=clamp(C.honor+G.honorD*(G.honorD>0?gain:1),0,100);
+  const xp=Math.max(0,G.score)+(G.taskDone?10:0);C.xp+=xp;C.shifts++;const prem=Math.max(0,Math.round(G.budget*.05+(G.taskDone?1500:0)+(C.honor>=70?500:0)+G.stats.wanted*2000));C.prem+=prem;
+  C.trust=clamp(C.trust+(G.taskDone?8:-3)+(G.compl?-4*G.compl:2)+(G.miss>2?-5:0)+G.stats.wanted*5,0,100);let up="";while(C.rank<RANKS.length-1&&C.xp>=XP_NEED[C.rank+1]&&C.trust>=30){C.rank++;up="🎖 Повышение: теперь вы — "+RANKS[C.rank]+"!"}
   if(G.score>C.best)C.best=G.score;save();if(window.IIGRY_SCORE&&G.score>0&&!G.stats.bribes)window.IIGRY_SCORE(G.score,C.rank>=RANKS.length-1?{full:true}:undefined);
-  office(title||"Смена окончена",text||("Очки: "+G.score+" · штрафов на "+G.budget.toLocaleString("ru-RU")+" ₽ · жалоб: "+G.compl+" · упущено: "+G.miss+" · погонь выиграно: "+G.stats.chase),{xp,prem,up})}
-function office(title,text,res){const o=$("office"),bossLine=C.trust<30?"Опять жалобы? Ещё одна такая смена — и пойдёшь регулировать перекрёсток у рынка.":C.honor>=80?"Горжусь тобой. Водители пишут благодарности — редкость в нашем деле!":C.shifts===0?"Заступай на смену. Штрафуй по делу, взяток не бери — камеры везде.":"Работаем. План сам себя не выполнит.";
+  office(title||"Смена окончена",text||("Очки: "+G.score+" · штрафов на "+G.budget.toLocaleString("ru-RU")+" ₽ · жалоб "+G.compl+" · упущено "+G.miss+" · погонь "+G.stats.chase+" · ДТП "+G.stats.dtp+" · угонщиков "+G.stats.wanted),{prem,up})}
+let tab="posts";
+function office(title,text,res){const o=$("office");const st=STORY[C.story];if(st&&st.need()&&!(res&&res.noStory)){const tx=typeof st.txt==="function"?st.txt():st.txt;
+    o.innerHTML=`<div class="t">📖 ${st.t}</div><div class="boss"><div class="face">${st.p}</div><div><p class="mu" style="margin:0;color:#F4F4F6">${tx}</p></div></div><div class="row" style="justify-content:center">${st.ch.map((c,i)=>`<button class="btn ${i?"":"go"}" data-s="${i}">${c[0]}</button>`).join("")}</div>`;
+    o.querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{st.ch[+b.dataset.s][1]();C.story++;save();office(title,text,Object.assign({},res,{noStory:true}))});$("ov").hidden=false;return}
+  const boss=C.trust<30?"Опять жалобы? Ещё одна такая смена — и пойдёшь регулировать перекрёсток у рынка.":C.honor>=80?"Горжусь тобой. Водители пишут благодарности — редкость!":C.shifts===0?"Заступай на смену. Выбирай пост, штрафуй по делу, взяток не бери.":C.flags.end==="career"?"Областное управление ждёт отчётов. Но и на земле тебя помнят.":"Работаем. План сам себя не выполнит.";
+  const attrs=Object.entries(ATTR).map(([k,[i,n]])=>`<div>${i} ${n}: <b>${Math.round(C.a[k])}</b><div class="meter"><b style="width:${C.a[k]}%;background:${{eye:"#7AB8FF",law:"#E7BD52",heart:"#FF8AB0",auth:"#4ADE95"}[k]}"></b></div></div>`).join("");
+  const posts=Object.entries(POSTS).map(([k,p])=>{const ok=!p.need||C.rank>=p.need;return`<button class="btn" data-p="${k}" ${ok?"":"disabled"}><b>${p.ic} ${p.n} · ${p.lim} км/ч</b><small>${ok?p.d:"Откроется со звания «"+RANKS[p.need]+"»"}</small></button>`}).join("");
+  const perks=PERKS.map(([k,lv,n,d])=>`<div class="perk ${perk(k,lv)?"on":"off"}">${perk(k,lv)?"✨":"🔒"} <b>${ATTR[k][0]} ${n}</b> <span>— ${d} ${perk(k,lv)?"":"("+ATTR[k][1].toLowerCase()+" "+lv+")"}</span></div>`).join("");
+  const gear=GEAR.map(([k,n,d,p])=>`<button class="btn" data-g="${k}" ${C.gear[k]||C.prem<p?"disabled":""} style="display:flex;justify-content:space-between;align-items:center;gap:8px;text-align:left;min-height:48px"><span><b>${n}</b><br><small class="mu">${d}</small></span><span>${C.gear[k]?"✓":p.toLocaleString("ru-RU")+" ₽"}</span></button>`).join("");
   o.innerHTML=`<div class="t">${title||"Отдел ДПС"}</div>${text?`<p class="mu" style="text-align:center">${text}</p>`:""}${res&&res.up?`<p style="text-align:center;font-weight:800;color:#E7BD52">${res.up}</p>`:""}
-   <div class="boss"><div class="face">👨‍✈️</div><div><b>Начальник отдела</b><p class="mu" style="margin:4px 0 0">${bossLine}</p></div></div>
+   <div class="boss"><div class="face">👨‍✈️</div><div><b>Начальник отдела</b><p class="mu" style="margin:4px 0 0">${boss}</p></div></div>
    <div class="stats"><div><b>${RANKS[C.rank]}</b>звание</div><div><b>${C.xp}${C.rank<RANKS.length-1?" / "+XP_NEED[C.rank+1]:""}</b>опыт</div><div><b>${C.prem.toLocaleString("ru-RU")} ₽</b>премии${res&&res.prem?" (+"+res.prem+")":""}</div></div>
-   <div><span class="mu">⚖️ Честь у водителей: ${C.honor}</span><div class="meter"><b style="width:${C.honor}%;background:${C.honor>=60?"#4ADE95":C.honor>=30?"#F2C45A":"#E8333F"}"></b></div></div>
-   <div><span class="mu">🤝 Доверие начальства: ${C.trust}</span><div class="meter"><b style="width:${C.trust}%;background:#7AB8FF"></b></div></div>
-   <div class="shop" id="shop">${GEAR.map(([k,n,d,p])=>`<button class="btn" data-g="${k}" ${C.gear[k]||C.prem<p?"disabled":""}><span><b>${n}</b><br><small class="mu">${d}</small></span><span>${C.gear[k]?"✓ есть":p.toLocaleString("ru-RU")+" ₽"}</span></button>`).join("")}</div>
-   <div class="row" style="justify-content:center"><button class="btn go" id="sDay">☀️ Дневная смена</button><button class="btn blu" id="sNight" ${C.rank<1?"disabled title='С звания «Старший сержант»'":""}>🌙 Ночная смена</button></div>
-   <p class="mu" style="font-size:.82rem;text-align:center">Ночью больше нетрезвых водителей и беглецов, видно хуже — но очков больше.${C.rank<1?" Ночные смены — со звания «Старший сержант».":""}</p>`;
-  o.querySelectorAll("[data-g]").forEach(b=>b.onclick=()=>{const g=GEAR.find(x=>x[0]===b.dataset.g);if(C.prem>=g[3]){C.prem-=g[3];C.gear[g[0]]=1;save();office(title,text,res)}});
-  $("sDay").onclick=()=>newShift(false);$("sNight").onclick=()=>newShift(true);$("ov").hidden=false;hud()}
+   <div class="attr"><div>⚖️ Честь у водителей: <b>${C.honor}</b><div class="meter"><b style="width:${C.honor}%;background:#4ADE95"></b></div></div><div>🤝 Доверие начальства: <b>${C.trust}</b><div class="meter"><b style="width:${C.trust}%;background:#7AB8FF"></b></div></div></div>
+   <div class="tabs"><button data-tab="posts" aria-pressed="${tab==="posts"}">🚓 На смену</button><button data-tab="me" aria-pressed="${tab==="me"}">🧠 Навыки</button><button data-tab="gear" aria-pressed="${tab==="gear"}">🛒 Снаряжение</button></div>
+   ${tab==="posts"?`<div class="posts">${posts}</div><label class="mu" style="display:flex;gap:8px;align-items:center;justify-content:center"><input type="checkbox" id="night" ${C.rank<1?"disabled":""}> 🌙 Ночная смена ${C.rank<1?"(со звания «Старший сержант»)":"— больше нетрезвых и беглецов, но и очков"}</label>`:
+     tab==="me"?`<div class="attr">${attrs}</div><p class="mu" style="font-size:.82rem">Навыки растут от ваших решений: верные штрафы — принципиальность, мягкость к мелочам и помощь — человечность, проверки и ДТП — внимательность, погони и задержания — авторитет. Взятки и ошибки отнимают очки навыков.</p>${perks}`:
+     `<div style="display:grid;gap:6px">${gear}</div>`}`;
+  o.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{tab=b.dataset.tab;office(title,text,Object.assign({},res,{noStory:true}))});
+  o.querySelectorAll("[data-g]").forEach(b=>b.onclick=()=>{const g=GEAR.find(x=>x[0]===b.dataset.g);if(C.prem>=g[3]){C.prem-=g[3];C.gear[g[0]]=1;save();office(title,text,Object.assign({},res,{noStory:true}))}});
+  o.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>newShift(b.dataset.p,!!($("night")&&$("night").checked)));$("ov").hidden=false;hud();if(!G)drawWorld(0)}
 document.addEventListener("visibilitychange",()=>{paused=document.hidden;last=0});
-window.IIGRY_TO_MENU=()=>{if(G&&!G.over){G.over=true;cancelAnimationFrame(raf)}office("Отдел ДПС","")};
-hud();scene(0);office("Отдел ДПС","");
+window.IIGRY_TO_MENU=()=>{if(G&&G.chase)endChase();if(G&&!G.over){G.over=true;cancelAnimationFrame(raf)}if(G){G.dtpOpen=false}office("Отдел ДПС","",{noStory:true})};
+insp();hud();drawWorld(0);office("Отдел ДПС","");
 })();
 </script>
 </body></html>
 <script>/* Панель навигации «ИИгр»: назад, главная, игры, мастерская, кабинет; в играх — возврат в меню игры. На телефоне — крупные значки с подписями, как в приложениях */
-(function(){if(document.getElementById("iigry-nav"))return;const P=location.pathname,inG=/\/games\//.test(P),base=inG?"../":"./",here=P.replace(/^.*\//,"")||"index.html";
+(function(){if(document.getElementById("iigry-nav"))return;const P=location.pathname,inG=/\/games\//.test(P),base=inG?"../":"./",here=P.replace(/^.*\//,"")||"index.html",APP=/IIgryApp/.test(navigator.userAgent)&&inG;
  const st=document.createElement("style");st.textContent="#iigry-nav{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:8px 12px;box-sizing:border-box;background:rgba(11,10,14,.94);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:1px solid rgba(255,255,255,.1)}#iigry-nav::-webkit-scrollbar{display:none}"+
   "#iigry-nav a,#iigry-nav button{flex:none;display:inline-flex;align-items:center;gap:5px;border:1px solid rgba(255,255,255,.14);background:#16141B;color:#F4F4F6;border-radius:999px;padding:0 14px;min-height:38px;font:600 13px/1.2 'Golos Text',system-ui,sans-serif;text-decoration:none;cursor:pointer;white-space:nowrap;-webkit-tap-highlight-color:transparent}"+
   "#iigry-nav a[aria-current=page]{border-color:#E7BD52;color:#E7BD52}#iigry-nav .gm{border-color:rgba(231,189,82,.6)}#iigry-nav a:focus-visible,#iigry-nav button:focus-visible{outline:2px solid #E7BD52;outline-offset:2px}#iigry-nav .s{display:none}"+
@@ -203,7 +323,7 @@ hud();scene(0);office("Отдел ДПС","");
   "#iigry-nav .i{font-size:20px;line-height:1}#iigry-nav .l{display:none}#iigry-nav .s{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis}#iigry-nav a[aria-current=page]{background:rgba(231,189,82,.14)}#iigry-nav .gm{background:rgba(231,189,82,.1);color:#E7BD52}#iigry-nav a:active,#iigry-nav button:active{background:rgba(255,255,255,.08)}}";
  document.head.append(st);const n=document.createElement("nav");n.id="iigry-nav";n.setAttribute("aria-label","Навигация по сайту");
  const fill=(el,i,l,s)=>{const a=document.createElement("span"),b=document.createElement("span"),c=document.createElement("span");a.className="i";a.textContent=i;a.setAttribute("aria-hidden","true");b.className="l";b.textContent=l;c.className="s";c.textContent=s;c.setAttribute("aria-hidden","true");el.append(a,b,c);el.setAttribute("aria-label",l)};
- const b=document.createElement("button");b.type="button";fill(b,"←","Назад","Назад");b.onclick=()=>{if(document.referrer.indexOf(location.origin)===0&&history.length>1)history.back();else location.href=base};n.append(b);
+ const b=document.createElement("button");b.type="button";fill(b,"←","Назад","Назад");b.onclick=()=>{if(document.referrer.indexOf(location.origin)===0&&history.length>1)history.back();else location.href=base};if(!APP)n.append(b);
  if(inG||/igra\.html$/.test(P)){const m=document.createElement("button");m.type="button";m.className="gm";fill(m,"↩","В меню игры","В меню");m.title="Вернуться в начальное меню игры";m.onclick=()=>{if(window.IIGRY_TO_MENU)window.IIGRY_TO_MENU();else location.reload()};n.append(m)}
  if(inG||/(igra|konstruktor)\.html$/.test(P)){const fsb=document.createElement("button");fsb.type="button";fill(fsb,"⛶","Во весь экран","Экран");fsb.title="Развернуть игру на весь экран (на телефоне — горизонтально)";
   const fsEl=()=>window.IIGRY_FS_EL||document.documentElement,isFs=()=>!!(document.fullscreenElement||document.webkitFullscreenElement);
@@ -211,8 +331,8 @@ hud();scene(0);office("Отдел ДПС","");
   fsb.onclick=async()=>{try{if(isFs()){(document.exitFullscreen||document.webkitExitFullscreen).call(document);try{screen.orientation.unlock()}catch(_){}}
     else{const el=fsEl();await (el.requestFullscreen||el.webkitRequestFullscreen).call(el,{navigationUI:"hide"});try{await screen.orientation.lock("landscape")}catch(_){}}}catch(_){alert("Ваш браузер не разрешил полноэкранный режим.")}};
   document.addEventListener("fullscreenchange",upd);document.addEventListener("webkitfullscreenchange",upd);
-  if(document.fullscreenEnabled||document.webkitFullscreenEnabled)n.append(fsb)}
- [["🏠","Главная","Главная",""],["🎮","Игры","Игры","#catalog"],["🛠","Мастерская","Создать","masterskaya.html"],["👤","Кабинет","Кабинет","kabinet.html"]].forEach(([i,l,s,h])=>{const a=document.createElement("a");fill(a,i,l,s);a.href=base+h;if(h&&h===here)a.setAttribute("aria-current","page");n.append(a)});
+  if(!APP&&(document.fullscreenEnabled||document.webkitFullscreenEnabled))n.append(fsb)}
+ [["🏠","Главная","Главная",""],["🎮","Игры","Игры","#catalog"],["🛠","Мастерская","Создать","masterskaya.html"],["👤","Кабинет","Кабинет","kabinet.html"]].forEach(([i,l,s,h])=>{if(APP)return;const a=document.createElement("a");fill(a,i,l,s);a.href=base+h;if(h&&h===here)a.setAttribute("aria-current","page");n.append(a)});
  document.body.prepend(n);const pad=()=>{document.body.style.paddingTop="";const pt=parseFloat(getComputedStyle(document.body).paddingTop)||0;document.body.style.paddingTop=(pt+n.offsetHeight+6)+"px";document.documentElement.style.scrollPaddingTop=(n.offsetHeight+8)+"px"};pad();addEventListener("resize",pad)})();
 </script><script>/* Счётчик посещений «ИИгр»: случайный номер устройства хранится только в этом браузере; без cookie и слежки на других сайтах. Команда сайта не считается. */
 (function(){try{if(navigator.webdriver||localStorage.getItem("iigry-team")||localStorage.getItem("iigry-mod"))return;let d=localStorage.getItem("iigry-did");
@@ -253,7 +373,7 @@ hud();scene(0);office("Отдел ДПС","");
  fetch("https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av?a=u",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({op:"whoami",token:t})}).then(r=>r.ok?r.json():null).then(j=>{if(j&&j.named&&j.nick){localStorage.setItem("iigry-nick",j.nick);localStorage.setItem("iigry-nick-ts",String(Date.now()))}}).catch(()=>{})}catch(_){}})();
 /* Приложение: офлайн-режим и кнопка «Установить» (Android, Chrome, Яндекс Браузер) */
 (function(){try{if("serviceWorker" in navigator)navigator.serviceWorker.register("/sw.js").catch(()=>{})}catch(_){}
- addEventListener("beforeinstallprompt",e=>{e.preventDefault();try{if(localStorage.getItem("iigry-pwa-no"))return}catch(_){}const b=document.createElement("div");b.id="iigry-pwa";
+ addEventListener("beforeinstallprompt",e=>{e.preventDefault();if(/IIgryApp/.test(navigator.userAgent))return;try{if(localStorage.getItem("iigry-pwa-no"))return}catch(_){}const b=document.createElement("div");b.id="iigry-pwa";
   b.style.cssText="position:fixed;left:12px;bottom:12px;z-index:2147482000;display:flex;gap:6px;align-items:center;background:#16141B;border:1px solid #E7BD52;border-radius:999px;padding:6px 6px 6px 14px;color:#F4F4F6;font:600 13px 'Golos Text',system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.4)";
   b.innerHTML='<span>📲 ИИгры как приложение</span><button type="button" style="border:0;border-radius:999px;background:#E7BD52;color:#1A1306;font:700 13px inherit;padding:8px 12px;cursor:pointer">Установить</button><button type="button" aria-label="Скрыть" style="border:0;background:transparent;color:#B9B6C2;font-size:16px;cursor:pointer;padding:4px 8px">✕</button>';
   b.children[1].onclick=async()=>{b.remove();e.prompt();try{await e.userChoice}catch(_){}};b.children[2].onclick=()=>{b.remove();try{localStorage.setItem("iigry-pwa-no","1")}catch(_){}};document.body.append(b)})})();

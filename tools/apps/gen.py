@@ -24,12 +24,15 @@ def main():
     pkg = "io.github.dsaskarov." + slug.replace("-", "")
     root = os.path.join("build", slug)
     shutil.rmtree(root, ignore_errors=True)
-    icon = "icon-512.png"
+    game = slug != "iigry"
+    icon = os.path.join("tools/apps/icons", slug + ".png")
+    if not os.path.exists(icon): icon = "icon-512.png"
+    asset = "games/" + slug + ".html" if game else "index.html"  # путь с /games/ включает в игре режим приложения
 
     # ---------- Android
     a = os.path.join(root, "android")
     j = os.path.join(a, "app/src/main/java", *pkg.split("."))
-    os.makedirs(j); os.makedirs(os.path.join(a, "app/src/main/assets"))
+    os.makedirs(j); os.makedirs(os.path.join(a, "app/src/main/assets/games"))
     os.makedirs(os.path.join(a, "app/src/main/res/mipmap-xxxhdpi"))
     open(os.path.join(a, "settings.gradle"), "w").write(
         "pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }\n"
@@ -55,9 +58,14 @@ android {{
   </application>
 </manifest>
 """)
+    keep = url if game else SITE + "/"
+    imm = "true" if game else "false"
     open(os.path.join(j, "MainActivity.java"), "w").write(f"""package {pkg};
 import android.app.Activity;
 import android.os.Bundle;
+import android.content.Intent;
+import android.net.Uri;
+import android.view.View;
 import android.view.Window;
 import android.webkit.*;
 public class MainActivity extends Activity {{
@@ -69,38 +77,49 @@ public class MainActivity extends Activity {{
     WebSettings s = w.getSettings();
     s.setJavaScriptEnabled(true); s.setDomStorageEnabled(true); s.setDatabaseEnabled(true);
     s.setMediaPlaybackRequiresUserGesture(false);
+    s.setUserAgentString(s.getUserAgentString() + " IIgryApp");
     w.setWebChromeClient(new WebChromeClient());
     w.setWebViewClient(new WebViewClient() {{
       @Override public void onReceivedError(WebView v, WebResourceRequest r, WebResourceError e) {{
-        if (r.isForMainFrame()) v.loadUrl("file:///android_asset/index.html");
+        if (r.isForMainFrame()) v.loadUrl("file:///android_asset/{asset}");
+      }}
+      @Override public boolean shouldOverrideUrlLoading(WebView v, WebResourceRequest r) {{
+        String u = r.getUrl().toString();
+        if (u.startsWith("{keep}") || u.startsWith("file:///android_asset/")) return false;
+        try {{ startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(u))); }} catch (Exception x) {{}}
+        return true;
       }}
     }});
     setContentView(w);
+    if ({imm}) getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY | View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
     if (b != null) w.restoreState(b); else w.loadUrl("{url}");
   }}
   @Override protected void onSaveInstanceState(Bundle o) {{ super.onSaveInstanceState(o); w.saveState(o); }}
   @Override public void onBackPressed() {{ if (w.canGoBack()) w.goBack(); else super.onBackPressed(); }}
 }}
 """)
-    shutil.copy(local, os.path.join(a, "app/src/main/assets/index.html"))
+    shutil.copy(local, os.path.join(a, "app/src/main/assets", asset))
     shutil.copy(icon, os.path.join(a, "app/src/main/res/mipmap-xxxhdpi/ic_launcher.png"))
 
     # ---------- Windows (Electron, установщик NSIS)
     e = os.path.join(root, "electron"); os.makedirs(e)
-    shutil.copy(local, os.path.join(e, "index.html")); shutil.copy(icon, os.path.join(e, "icon.png"))
+    os.makedirs(os.path.join(e, "games")); shutil.copy(local, os.path.join(e, asset)); shutil.copy(icon, os.path.join(e, "icon.png"))
     open(os.path.join(e, "main.js"), "w").write(f"""const {{app, BrowserWindow, Menu, shell}} = require('electron');
 const path = require('path');
+app.userAgentFallback = app.userAgentFallback + ' IIgryApp';
+const KEEP = {json.dumps(url if game else SITE + "/")};
 app.whenReady().then(() => {{
   Menu.setApplicationMenu(null);
   const w = new BrowserWindow({{width: 1100, height: 860, backgroundColor: '#0B0A0E', icon: path.join(__dirname, 'icon.png'), title: {json.dumps(name)}, webPreferences: {{contextIsolation: true, sandbox: true}}}});
-  w.webContents.on('did-fail-load', (ev, code, desc, url, isMain) => {{ if (isMain && !String(url).startsWith('file:')) w.loadFile(path.join(__dirname, 'index.html')); }});
+  w.webContents.on('did-fail-load', (ev, code, desc, url, isMain) => {{ if (isMain && !String(url).startsWith('file:')) w.loadFile(path.join(__dirname, {json.dumps(asset)})); }});
+  w.webContents.on('will-navigate', (ev, url) => {{ if (!url.startsWith(KEEP) && !url.startsWith('file:')) {{ ev.preventDefault(); if (/^https:/.test(url)) shell.openExternal(url); }} }});
   w.webContents.setWindowOpenHandler(({{url}}) => {{ if (/^https:/.test(url)) shell.openExternal(url); return {{action: 'deny'}}; }});
   w.loadURL({json.dumps(url)});
 }});
 app.on('window-all-closed', () => app.quit());
 """)
     json.dump({"name": slug, "productName": name, "version": f"1.0.{build}", "description": name + " — игра «ИИгры онлайн»", "author": "DSAskarov", "main": "main.js",
-               "build": {"appId": pkg, "artifactName": slug + "-setup.${ext}", "files": ["main.js", "index.html", "icon.png"],
+               "build": {"appId": pkg, "artifactName": slug + "-setup.${ext}", "files": ["main.js", "index.html", "games/**", "icon.png"],
                          "win": {"target": "nsis", "icon": "icon.png"},
                          "nsis": {"oneClick": False, "allowToChangeInstallationDirectory": True, "createDesktopShortcut": True, "shortcutName": name, "language": "1049"}}},
               open(os.path.join(e, "package.json"), "w"), ensure_ascii=False, indent=1)

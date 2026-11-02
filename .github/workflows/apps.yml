@@ -8,6 +8,7 @@ on:
     paths: ["games/**", "index.html", "tools/apps/**", ".github/workflows/apps.yml"]
 permissions:
   contents: write
+  id-token: write
 concurrency: { group: apps, cancel-in-progress: true }
 jobs:
   android:
@@ -22,9 +23,25 @@ jobs:
       - uses: gradle/actions/setup-gradle@v3
         with: { gradle-version: "8.7" }
       - run: python3 tools/apps/gen.py ${{ matrix.slug }} ${{ github.run_number }}
-      - run: gradle assembleDebug --no-daemon -q
+      - run: gradle assembleRelease assembleDebug --no-daemon -q
         working-directory: build/${{ matrix.slug }}/android
-      - run: mkdir -p out && cp build/${{ matrix.slug }}/android/app/build/outputs/apk/debug/app-debug.apk out/${{ matrix.slug }}.apk
+      - name: Подпись ключом владельца (ключ выдаёт сервер только этой сборке)
+        env: { SLUG: "${{ matrix.slug }}" }
+        run: |
+          set -e; mkdir -p out; O=build/$SLUG/android/app/build/outputs/apk
+          JWT=$(curl -sS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=iigry-sign" | jq -r .value)
+          echo "::add-mask::$JWT"
+          R=$(curl -sS -X POST -H "Content-Type: application/json" -d "{\"jwt\":\"$JWT\"}" "https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av?a=signkey" || echo '{}')
+          export PW=$(echo "$R" | jq -r '.pw // empty'); echo "::add-mask::$PW"
+          if [ -n "$PW" ]; then
+            echo "$R" | jq -r .p12 | base64 -d > "$RUNNER_TEMP/k.p12"; AL=$(echo "$R" | jq -r '.alias // "iigry"')
+            BT=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -1)
+            $BT/zipalign -f -p 4 $O/release/app-release-unsigned.apk "$RUNNER_TEMP/a.apk"
+            $BT/apksigner sign --ks "$RUNNER_TEMP/k.p12" --ks-type PKCS12 --ks-key-alias "$AL" --ks-pass env:PW --key-pass env:PW --out out/$SLUG.apk "$RUNNER_TEMP/a.apk"
+            $BT/apksigner verify out/$SLUG.apk; rm -f "$RUNNER_TEMP/k.p12"; echo "Подписано ключом владельца"
+          else
+            cp $O/debug/app-debug.apk out/$SLUG.apk; echo "::warning::Ключ подписи не загружен в админ-панель — APK подписан тестовым ключом"
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: apk-${{ matrix.slug }}

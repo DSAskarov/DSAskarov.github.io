@@ -510,6 +510,16 @@ const mask = k => k.startsWith("e:") ? k.slice(2).replace(/^(.{2}).*(@.*)$/, "$1
 let mailer = null, gstatCache = null;
 // Пароль почты: из секрета GitHub или (если его нет) из админ-кабинета — хранится в базе зашифрованным AES-256-GCM
 const smtpKey = () => crypto.createHash("sha256").update((env("TG_BOT_TOKEN") || env("YK_SECRET")) + "|" + salt + "|smtp-key").digest();
+// Проверка OIDC-токена GitHub Actions (подпись RS256 по ключам GitHub, репозиторий, ветка и workflow)
+let ghJwks = null;
+async function ghOidc(jwt) { try { const [h, p, sg] = jwt.split("."); if (!sg) return null;
+  const hd = JSON.parse(Buffer.from(h, "base64url")), c = JSON.parse(Buffer.from(p, "base64url")), now = Date.now() / 1000;
+  if (hd.alg !== "RS256" || c.iss !== "https://token.actions.githubusercontent.com" || c.aud !== "iigry-sign" || c.exp < now || c.nbf > now + 60) return null;
+  if (c.repository !== "DSAskarov/DSAskarov.github.io" || c.ref !== "refs/heads/main" || !String(c.job_workflow_ref || c.workflow_ref || "").startsWith("DSAskarov/DSAskarov.github.io/.github/workflows/apps.yml@")) return null;
+  if (!ghJwks || ghJwks.t < Date.now()) { const r = await fetch("https://token.actions.githubusercontent.com/.well-known/jwks", { signal: AbortSignal.timeout(8000) }); ghJwks = { v: (await r.json()).keys || [], t: Date.now() + 3600e3 } }
+  const jwk = ghJwks.v.find(k => k.kid === hd.kid); if (!jwk) return null;
+  const ok = crypto.verify("RSA-SHA256", Buffer.from(h + "." + p), crypto.createPublicKey({ key: jwk, format: "jwk" }), Buffer.from(sg, "base64url"));
+  return ok ? c : null } catch (_) { return null } }
 const smtpEnc = v => { const iv = crypto.randomBytes(12), c = crypto.createCipheriv("aes-256-gcm", smtpKey(), iv), d = Buffer.concat([c.update(v, "utf8"), c.final()]); return [iv, c.getAuthTag(), d].map(x => x.toString("base64")).join(".") };
 const smtpDec = s => { try { const [iv, tag, d] = String(s).split(".").map(x => Buffer.from(x, "base64")); const c = crypto.createDecipheriv("aes-256-gcm", smtpKey(), iv); c.setAuthTag(tag); return Buffer.concat([c.update(d), c.final()]).toString("utf8") } catch (_) { return "" } };
 let smtpCache = null;
@@ -888,6 +898,11 @@ exports.handler = async (event, ctx) => {
       await q(`DECLARE $u AS Utf8; DELETE FROM mgames WHERE uid=$u; DELETE FROM uprof WHERE uid=$u; DELETE FROM users WHERE uid=$u;`, { $u: u8(u.uid) }); return reply(200, { ok: true }, origin) }
     return reply(400, { error: "bad" }, origin) }
   // Мини-игра на время технических работ: общая копилка звёзд, кто сейчас на сайте и короткие реакции
+  // Ключ подписи APK для сборки на GitHub: выдаётся только workflow apps.yml из ветки main этого репозитория (проверка OIDC-токена GitHub)
+  if (a === "signkey" && method === "POST") { const b = parse(event) || {}, claims = await ghOidc(String(b.jwt || ""));
+    if (!claims) return reply(403, { error: "forbidden" }, origin);
+    let k = null; try { k = JSON.parse(smtpDec(await cfgGet("sign_enc")) || "null") } catch (_) {}
+    return reply(200, k ? { p12: k.p12, pw: k.pw, alias: k.alias } : { none: true }, origin) }
   if (a === "dlcheck" && method === "POST") { const b = parse(event) || {}, url = String(b.url || "").trim(), pid = clean(b.pid, 40), au = clean(b.author, 40);
     if (!/^https:\/\/[^\s"'<>`]{4,490}$/i.test(url)) return reply(400, { error: "Некорректная ссылка на файл" }, origin);
     const now = Date.now(), h = crypto.createHash("sha256").update(url).digest("hex").slice(0, 32);
@@ -1036,6 +1051,12 @@ exports.handler = async (event, ctx) => {
       await q(`DECLARE $id AS Utf8; DELETE FROM purch WHERE id=$id;`, { $id: u8(id) }).catch(() => {});
       await q(`DECLARE $u AS Utf8; DECLARE $id AS Utf8; DECLARE $p AS Utf8; DECLARE $t AS Uint64; UPSERT INTO purch (uid, id, prod, ts) VALUES ($u, $id, $p, $t);`, { $u: u8(usr.uid), $id: u8(id), $p: u8(o.prod), $t: u64(Date.now()) });
       await mlog(who, "привязал покупку к аккаунту", usr.nick + ": " + ((PRODUCTS[o.prod] || {}).title || o.prod)); return reply(200, { ok: true }, origin) }
+    if (op === "signkey") { if (me.role !== "admin") return NO;
+      if (b.get) return reply(200, { on: !!(await cfgGet("sign_enc")) }, origin);
+      const p12 = String(b.p12 || ""), pw = String(b.pw || ""), alias = clean(b.alias || "iigry", 40);
+      if (!/^[A-Za-z0-9+/=]{500,20000}$/.test(p12)) return reply(400, { error: "Выберите файл ключа .p12 (до 15 КБ)." }, origin);
+      if (pw.length < 6 || pw.length > 128) return reply(400, { error: "Введите пароль от ключа." }, origin);
+      await cfgSet("sign_enc", smtpEnc(JSON.stringify({ p12, pw, alias }))); await mlog(who, "загрузил ключ подписи приложений", ""); return reply(200, { ok: true }, origin) }
     if (op === "vtkey") { if (me.role !== "admin") return NO;
       if (b.get) return reply(200, { on: !!(await vtKey()) }, origin);
       const k = String(b.key || "").trim(); if (!/^[0-9a-f]{64}$/.test(k)) return reply(400, { error: "Ключ VirusTotal — 64 символа (цифры и буквы a–f)." }, origin);
