@@ -171,7 +171,7 @@ requestAnimationFrame(frame);
 })();
 </script><script data-game="cat" data-asc="0" data-unit="рыба|рыбы|рыб">/* Таблица лидеров ИИгр: общий ник для всех игр и чата, результаты — на сервере в Yandex Cloud */
 (function(){
-  const me=document.currentScript,G=me.dataset.game,ASC=me.dataset.asc==="1",UNIT=me.dataset.unit||"",
+  const me=document.currentScript;let G=me.dataset.game;const ASC=me.dataset.asc==="1",UNIT=me.dataset.unit||"",
     API="https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av",K="iigry-nick",t0=Date.now();
   // Единица с правильным падежом: «1 рыба, 3 рыбы, 5 рыб»
   const U=v=>{const f=UNIT.split("|"),n=Math.abs(v)%100,d=n%10;return v+" "+(f.length<3?UNIT:n>10&&n<20?f[2]:d===1?f[0]:d>=2&&d<=4?f[1]:f[2])};
@@ -211,6 +211,7 @@ requestAnimationFrame(frame);
   save.onclick=()=>{const n=getNick();if(!pending)return;if(n){const v=pending;pending=null;send(v,n)}else ask(pending,"Результат: "+U(pending)+".")};
   form.addEventListener("submit",e=>{e.preventDefault();const n=S(inp.value,30).trim().replace(/^@/,"");if(!n){say("Впишите ник.");return}setNick(n);if(pending){send(pending,n);pending=null}});
   top();setInterval(()=>{if(!document.hidden)top()},30000);
+  window.IIGRY_LB_GAME=g=>{if(g&&g!==G){G=g;top()}};
 })();
 </script>
 </body></html>
