@@ -120,16 +120,21 @@ function regLine(c,v){const m=C.reg[c.reg.id];if(!m)return"Здравствуй�
  return v.length?"О, мой любимый инспектор! Вы же меня отпустите, как в прошлый раз?":"Здравствуйте, командир! Рад вас видеть."}
 // ---------- необычные личности
 const SPECS=[
- {id:"blog",face:"🤳",name:"Блогер Стас «НаДороге»",type:"suv",col:"#2B2B33",badge:"🔴LIVE",line:"Всем привет, мы в эфире! Командир, на каком основании остановили? Подписчики смотрят!",bias:{phone:.75,speed:.3},
+ {id:"blog",face:"🤳",name:"Блогер Стас «НаДороге»",type:"suv",col:"#2B2B33",badge:"🔴LIVE",line:()=>C.honor>=70?"Всем привет! Подписчики просили найти самого честного гаишника района — это же вы?":C.honor<=30?"Мы в эфире! Сейчас разоблачим самого знаменитого инспектора района…":"Всем привет, мы в эфире! Командир, на каком основании остановили? Подписчики смотрят!",bias:{phone:.75,speed:.3},
   after:(k,r)=>{if(k==="fine"&&r.ok){G.honorD+=6;flash("Ролик набрал миллион просмотров — вас хвалят за честность","#4ADE95")}else if(r.wrong){G.honorD-=12;flash("Видео с вашей ошибкой разлетелось по сети: честь −12","#FF8A8F")}else if(r.v.length&&k!=="fine"){G.honorD-=4;flash("В комментариях смеются: «гаишник испугался камеры»","#F2C45A")}else if(!r.v.length){G.honorD+=4;flash("Блогер: «Вежливый инспектор, лайк!»","#4ADE95")}}},
- {id:"dep",face:"🤵",name:"Депутат Кузькин",type:"suv",col:"#2B2B33",plate:"А001АА 69",badge:"👑",line:"Вы знаете, кто я? Один звонок — и будете регулировать перекрёсток у рынка.",bias:{speed:.7,phone:.3},
-  after:(k,r)=>{if(k==="fine"&&r.ok){grow("law",8);G.honorD+=5;C.trust=clamp(C.trust-8,0,100);flash("Оштрафовали депутата! Водители уважают, начальник нервничает","#E7BD52")}else if(r.v.length&&k!=="fine"){grow("law",-8);G.honorD-=5;C.trust=clamp(C.trust+5,0,100);flash("Отпустили депутата: начальство довольно, совесть — нет","#F2C45A")}}},
+ {id:"dep",face:"🤵",name:"Депутат Кузькин",type:"suv",col:"#2B2B33",plate:"А001АА 69",badge:"👑",line:()=>C.flags.dep?"Опять вы?! Я запомнил ваш жетон… Может, на этот раз договоримся?":"Вы знаете, кто я? Один звонок — и будете регулировать перекрёсток у рынка.",bias:{speed:.7,phone:.3},
+  after:(k,r)=>{if(k==="fine"&&r.ok){C.flags.dep=1;grow("law",8);G.honorD+=5;C.trust=clamp(C.trust-8,0,100);flash("Оштрафовали депутата! Водители уважают, начальник нервничает","#E7BD52")}else if(r.v.length&&k!=="fine"){grow("law",-8);G.honorD-=5;C.trust=clamp(C.trust+5,0,100);flash("Отпустили депутата: начальство довольно, совесть — нет","#F2C45A")}}},
  {id:"wed",face:"👰",name:"Свадебный кортеж",type:"sedan",col:"#E6E6EA",badge:"💍",line:"Командир, у нас свадьба! Ну отпустите, сегодня же такой день!",bias:{speed:.6,belt:.5},
   after:(k,r)=>{if(k==="warn"&&r.v.length){G.honorD+=4;grow("heart",3);flash("Молодые пригласили вас на свадьбу. Человечность растёт","#4ADE95")}else if(k==="fine"&&r.ok){grow("law",3);flash("Невеста плачет, но закон есть закон","#F2C45A")}}},
  {id:"dino",face:"🦖",name:"Аниматор в костюме динозавра",type:"hatch",col:"#2FA866",badge:"🦖",line:"Ррр! Я с детского праздника, не успел переодеться. Права — в лапе!",bias:{belt:.7},
   after:(k,r)=>{if(!r.wrong){G.score+=2;flash("Дети из соседней машины в восторге: +2","#4ADE95")}}},
  {id:"race",face:"😎",name:"Гонщик на суперкаре",type:"sedan",col:"#C9302C",badge:"🔥",line:"Что, командир, впечатлил разгон? Сто за три секунды!",bias:{speed:1},extra:c=>{c.speed=G.P.lim+55+R(30)},
   after:(k,r)=>{if(k==="fine"&&r.ok){G.score+=3;flash("Самый быстрый штраф месяца: +3","#E7BD52")}}},
+ {id:"vera",face:"👩‍💼",name:"Журналистка Вера",type:"hatch",col:"#C9302C",badge:"🎙",line:()=>C.honor>=70?"Добрый день! Хочу взять интервью у самого честного инспектора района.":C.honor<=30?"Я веду расследование о поборах на этом посту. Улыбнитесь, вас снимают.":"Здравствуйте, я из городской газеты. Расскажете, как проходит смена?",bias:{belt:.3},
+  after:(k,r)=>{const fair=!r.wrong&&(k==="fine"?r.ok:!r.v.length||k==="warn");if(fair){G.honorD+=C.honor<=30?6:3;C.xp+=15;flash(C.honor<=30?"Расследование ничего не нашло — репутация восстанавливается":"Интервью вышло в газете: +15 опыта","#4ADE95")}else{G.honorD-=10;flash("Вера написала разгромную статью: честь −10","#FF8A8F")}}},
+ {id:"shady",face:"🕴",name:"«Свой человек»",type:"suv",col:"#2B2B33",badge:"💼",c:()=>C.honor<=30||C.bribes>=2,line:"Есть дело, командир: сегодня одну фуру пропустишь без досмотра — и 20 тысяч твои. Отпусти меня — и договорились.",bias:{},extra:c=>{c.belt=true;c.phone=false;c.speed=Math.min(c.speed,G.P.lim);c.bribe=false},
+  after:(k,r)=>{if(k==="free"){C.prem+=20000;C.bribes++;grow("law",-15);G.honorD-=5;flash("Сделка состоялась: +20 000 ₽… и камень на душе","#F2C45A");if(ch(.35)){setTimeout(()=>{if(G&&!G.over){G.over=true;endShift("Служебная проверка","Фуру взяли с контрабандой, а «свой человек» дал показания на вас.")}},400)}}
+   else if(k==="arrest"){G.score+=23;grow("law",10);grow("auth",6);G.honorD+=6;flash("Вы задержали посредника банды: +20","#E7BD52")}}},
  {id:"philo",face:"🧔",name:"Таксист-философ Аристарх",type:"taxi",col:"#E8B931",badge:"📚",line:"Командир, а что есть скорость? Лишь наше нетерпение перед вечностью…",bias:{speed:.5},
   after:(k,r)=>{if(k==="fine"&&r.ok){grow("heart",1);flash("Аристарх: «Штраф — тоже опыт». Вы почему-то задумались о вечном","#7AB8FF")}else if(k==="warn"){G.score+=1;flash("Аристарх процитировал Сенеку и уехал. Очень медленно","#4ADE95")}}},
  {id:"babka",face:"👵",name:"Бабушка с рассадой",type:"hatch",col:"#2FA866",badge:"🌱",line:"Сынок, только машину не тряси — у меня сорок кустов «Бычьего сердца»!",bias:{belt:.5},
@@ -154,10 +159,33 @@ const SPECS=[
   after:(k,r)=>{if(k!=="fine"){G.score+=2;flash("Тройня так и не проснулась. Вы настоящий профессионал: +2","#4ADE95")}else if(r.ok)flash("Двое проснулись. Мама смотрит на вас очень выразительно","#F2C45A")}},
  {id:"volga",face:"🧓",name:"Владелец «Волги» 1972 года",type:"sedan",col:"#2B2B33",badge:"🚙",line:"Ей пятьдесят четыре года, и она ни разу не превышала. Просто не может.",bias:{lights:.5},extra:c=>{c.speed=Math.min(c.speed,G.P.lim-20)},
   after:(k,r)=>{if(!r.wrong){G.score+=1;flash("Вы сфотографировались с «Волгой» на память: +1","#4ADE95")}}}];
+// ---------- события смены по репутации и доверию
+const EVENTS=[
+ {c:()=>C.honor>=70,t:"Горячая линия",d:"Водители сами сообщают об угонщиках: угнанная машина появится быстрее и будет отмечена ❗",a:()=>{G.tip=true;if(!G.wanted)G.wanted={col:pick(COLORS.slice(0,8)),type:pick(["sedan","hatch","suv"]),plate:plate(),seen:false};G.wantedSpawn=8+R(15)}},
+ {c:()=>C.honor>=70,t:"О вас написали в газете",d:"Статья «Честный инспектор»: +10 опыта и уважение водителей",a:()=>{C.xp+=10}},
+ {c:()=>C.honor<=30,t:"Проверка собственной безопасности",d:"За вами следят: ошибки сегодня стоят вдвое дороже",a:()=>{G.sb=true}},
+ {c:()=>C.honor<=30,t:"Пост объезжают",d:"Водители знают вашу славу и едут в объезд — машин меньше",a:()=>{G.spawnMul=1.5}},
+ {c:()=>C.trust>=70,t:"Доверили важный участок",d:"Премия за эту смену ×1,5",a:()=>{G.payMul=1.5}},
+ {c:()=>C.trust<=35,t:"Опала у начальства",d:"Ночь, дождь, а патрульную машину забрали",a:()=>{G.night=true;G.wx="rain";G.wxN="🌧 дождь";G.noCar=true}},
+ {c:()=>C.trust<=35,t:"Унылое задание",d:"Весь день — проверка документов: приказ дня заменён",a:()=>{G.order=ORDERS.find(o=>o.id==="docs")}}];
+// ---------- концовки карьеры
+const ENDS={legend:["🏆","Легенда трассы","Вас знают и водители, и генералы. Ваш жезл повесят в музее отдела."],boss:["🏛","Начальник управления","Кабинет, кресло, совещания. Иногда вы скучаете по посту и дождю."],people:["💛","Народный инспектор","Водители пишут благодарности, дети машут рукой. Начальство вздыхает, но уважает."],
+ shady:["🕶","Тёмная лошадка","Дослужили тихо. Слишком тихо. В отделе о вас говорят шёпотом."],plain:["🎖","Честный служака","Без громких подвигов и скандалов — просто хорошо делали свою работу."],fired:["📦","Уволен со скандалом","Служебная проверка, сюжет в новостях и коробка с вещами у выхода."]};
+function checkEnd(){if(C.ending)return null;let e=null;
+  if((C.honor<=5&&C.trust<=10)||(C.bribes||0)>=4)e="fired";else if(C.story>=STORY.length||C.shifts>=25)e=C.honor>=70&&C.trust>=70?"legend":C.trust>=70?"boss":C.honor>=70?"people":(C.bribes||0)>=2?"shady":"plain";
+  if(e){C.ending=e;C.ends=C.ends||[];if(!C.ends.includes(e))C.ends.push(e);save()}return e}
+function ending(e){const [i,t,d]=ENDS[e],o=$("office");$("ov").hidden=false;$("ov").classList.add("light");
+  o.innerHTML=`<div class="title"><div style="font-size:64px;line-height:1">${i}</div><div class="t">Финал карьеры: ${t}</div><p class="mu" style="max-width:440px">${d}</p>
+   <div class="res"><div><b>${RANKS[C.rank]}</b>звание</div><div><b>${C.shifts}</b>смен</div><div><b>${(C.earned||0).toLocaleString("ru-RU")} ₽</b>заработано</div><div><b>${C.honor}</b>честь</div><div><b>${C.trust}</b>доверие</div><div><b>${(C.ends||[]).length} / 6</b>концовок открыто</div></div>
+   <div class="menu">${e==="fired"?"":`<button class="btn go" id="eGo">Продолжить службу</button>`}<button class="btn ${e==="fired"?"go":""}" id="eNew" style="grid-column:1/-1">🔄 Новая карьера</button></div></div>`;
+  if($("eGo"))$("eGo").onclick=title;$("eNew").onclick=()=>{const keep={earned:C.earned||0,best:C.best,ends:C.ends||[]};C=Object.assign({xp:0,rank:0,honor:50,trust:50,prem:0,shifts:0,gear:{},a:{eye:5,law:5,heart:5,auth:5},story:0,flags:{},reg:{},post:{},bribes:0,repr:0,awards:0},keep);save();title()}}
+// ---------- быстрые эмодзи: рисуются один раз в картинку
+const EMO={};function emo(t,px){const k=t+"|"+px;let c=EMO[k];if(!c){c=document.createElement("canvas");const w=Math.ceil(px*1.3*Math.max(1,[...t].length))+6,h=Math.ceil(px*1.5);c.width=w;c.height=h;const g=c.getContext("2d");g.font=px+"px system-ui";g.textAlign="center";g.textBaseline="middle";g.fillText(t,w/2,h/2);EMO[k]=c}return c}
+const drawEmo=(t,px,x,y)=>{const c=emo(t,px);ctx.drawImage(c,x-c.width/2,y-c.height/2-px*.35)};
 // ---------- сохранение карьеры
 const KEY="iigry-zhezl3";const store={get:()=>{try{return JSON.parse(localStorage.getItem(KEY)||"null")}catch(_){return null}},set:v=>{try{localStorage.setItem(KEY,JSON.stringify(v))}catch(_){}}};
 let C=store.get()||{earned:0,xp:0,rank:0,honor:50,trust:50,prem:0,shifts:0,gear:{},best:0,a:{eye:5,law:5,heart:5,auth:5},story:0,flags:{}};
-C.reg=C.reg||{};C.post=C.post||{};C.earned=C.earned||0;
+C.reg=C.reg||{};C.bribes=C.bribes||0;C.repr=C.repr||0;C.awards=C.awards||0;C.ends=C.ends||[];C.post=C.post||{};C.earned=C.earned||0;
 const save=()=>store.set(C),perk=(k,lv)=>C.a[k]>=lv,grow=(k,v)=>{const was=PERKS.filter(p=>p[0]===k&&C.a[k]>=p[1]).length;C.a[k]=clamp(C.a[k]+v,0,100);const now=PERKS.filter(p=>p[0]===k&&C.a[k]>=p[1]);if(now.length>was){const p=now[now.length-1];flash("✨ Новая способность: «"+p[2]+"»","#E7BD52")}};
 const GEAR=[["radar","📡 Цифровой радар","Скорость видна раньше",3000],["cam","🎥 Нагрудная камера","Проверка записи быстрее; взятки фиксируются",4000],["alco","🌬 Новый алкотестер","Мгновенный результат",2500],["scale","⚖️ Переносные весы","Проверка перегруза фур",3500],["car","🚓 Патрульная машина","Погони легче",8000]];
 // ---------- сюжет: служебные истории с продолжением
@@ -200,6 +228,7 @@ function newShift(post,night){const ORD=dayOrder(),P=Object.assign({},POSTS[post
   const wanted=C.flags.wanted||ch(.5)?{col:pick(COLORS.slice(0,8)),type:pick(["sedan","hatch","suv"]),plate:plate(),seen:false}:null;
   G={post,P,order:ORD,spDone:{},t:180+(C.post.heater?30:0),score:0,budget:0,compl:0,miss:0,cars:[],peds:[],spawn:1,sel:null,task:pick(tasks),taskN:0,taskDone:false,over:false,night,wx:wx[0],wxN:wx[1],chase:null,drops:[],honorD:0,lvl:C.rank,stats:{fines:0,free:0,bribes:0,chase:0,dtp:0,wanted:0},
     light:{s:"green",t:6},wanted,wantedSpawn:30+R(80),dtp:null,dtpT:50+R(70),forgive:perk("auth",70)?1:0,off:0};
+  const evs=EVENTS.filter(e=>e.c());G.ev=evs.length&&ch(.65)?pick(evs):null;if(G.ev){G.ev.a();flash("⚡ "+G.ev.t+": "+G.ev.d,"#E7BD52")}
   $("ov").hidden=true;insp();hud();last=0;cancelAnimationFrame(raf);raf=requestAnimationFrame(loop)}
 function newCar(forceWanted){const P=G.P,lane=R(3),bad=ch(.42+G.lvl*.03);let type=P.trucks&&ch(.3)?"truck":P.village&&ch(.22)?"tractor":pick(["sedan","sedan","hatch","suv","taxi","van"]);
   const n=pick(NAMES),T=CARTYPES.find(c=>c.t===type);
@@ -211,18 +240,26 @@ function newCar(forceWanted){const P=G.P,lane=R(3),bad=ch(.42+G.lvl*.03);let typ
   c.bribe=!perk("law",20)&&ch(.15+G.lvl*.025);c.flee=!perk("auth",20)?(c.drunk&&ch(.5))||(!c.licence&&ch(.3))||forceWanted:(c.drunk&&ch(.25))||forceWanted&&ch(.6);
   if(!forceWanted){const onRoad=id=>G.cars.some(x=>(x.reg&&x.reg.id===id)||(x.sp&&x.sp.id===id));let pr=null;
     if(ch(.1)){const cand=REGS.filter(r=>(!r.post||r.post===G.post)&&!onRoad(r.id));if(cand.length){pr=pick(cand);c.reg=pr}}
-    else if(ch(.09)){const cand=SPECS.filter(x=>!G.spDone[x.id]&&!onRoad(x.id));if(cand.length){pr=pick(cand);c.sp=pr;G.spDone[pr.id]=1}}
+    else if(ch(.09)){const cand=SPECS.filter(x=>(!x.c||x.c())&&!G.spDone[x.id]&&!onRoad(x.id));if(cand.length){pr=pick(cand);c.sp=pr;G.spDone[pr.id]=1}}
     if(pr){const T=CARTYPES.find(x=>x.t===pr.type);Object.assign(c,{face:pr.face,name:pr.name,type:pr.type,w:T.w,h:T.h,col:pr.col});if(pr.plate!==undefined)c.plate=pr.plate;
       for(const [k,p] of Object.entries(pr.bias||{})){const on=ch(p);if(k==="speed")c.speed=on?lim+22+R(30):Math.min(c.speed,lim+10);else if(k==="belt")c.belt=!on;else if(k==="lights")c.lights=!on;else if(k==="osago")c.osago=!on;else if(k==="licence")c.licence=!on;else if(k==="plates"){c.noplates=on;if(on)c.plate=""}else c[k]=on}
       if(pr.extra)pr.extra(c);c.flee=false;c.badge=pr.badge||(C.reg[pr.id]?"⭐":"");c.vy=0}}
   const td=new Date();c.lic={face:c.face,name:c.name,until:fmt(addD(td,200+R(2800)))};
   if(!c.licence){if(ch(.5))c.lic.until=fmt(addD(td,-(5+R(700))));else{const o=pick(NAMES.filter(n=>n[1]!==c.name));c.lic.face=o[0];c.lic.name=o[1]}}
   c.sts={plate:c.plate||plate(),col:CNAME[c.col]};if(c.stolen){if(ch(.5))c.sts.plate=plate();else c.sts.col=pick(Object.values(CNAME).filter(x=>x!==CNAME[c.col]))}
-  c.marks={};c.vy=-(70+c.speed*1.6);const v=viol(c),k=v.length?pick(v):"none";c.excuse=pick(EXCUSE[k]||EXCUSE.none);c.lie=v.length>0;if(c.reg)c.excuse=regLine(c,v);if(c.sp)c.excuse=c.sp.line;c.ranRed=false;c.noYield=false;return c}
+  c.marks={};c.vy=-(70+c.speed*1.6);const v=viol(c),k=v.length?pick(v):"none";c.excuse=pick(EXCUSE[k]||EXCUSE.none);c.lie=v.length>0;if(c.reg)c.excuse=regLine(c,v);
+  const rep=C.honor>=70?1:C.honor<=30?-1:0;
+  if(!c.reg&&!c.sp&&!forceWanted){if(rep>0&&v.length&&ch(.4)){c.excuse=pick(["Да, командир, виноват — сам знаю. Выписывайте.","Про вас говорят, что вы справедливый. Не буду врать — нарушил.","Это же вы тогда бабушку с рассадой пожалели? Признаю, был неправ."]);c.lie=false}
+    else if(rep<0&&ch(.5)){c.excuse=pick(["Опять этот… ","Ну что, какой сегодня план? ","Снимаю на телефон, если что. "])+c.excuse;c.film=ch(.5)}
+    else if(C.bribes>=2&&ch(.3)){c.excuse="Командир, сколько с меня? Я сразу, без протокола…";c.bribe=v.length>0}
+    else if(rep>0&&ch(.15))c.excuse="Здравствуйте! Про ваш пост говорят: строго, но по-честному. "+c.excuse}
+  if(rep>0)c.flee=c.flee&&ch(.5);else if(rep<0&&!c.flee&&(c.drunk||!c.licence))c.flee=ch(.4);
+  if(c.film)c.badge=(c.badge||"")+"📱";if(forceWanted&&G.tip)c.badge="❗";if(c.sp)c.excuse=typeof c.sp.line==="function"?c.sp.line():c.sp.line;c.ranRed=false;c.noYield=false;return c}
 function viol(c){const v=[],lim=G.P.lim;if(c.speed>lim+20)v.push("speed");if(c.ranRed)v.push("red");if(c.noYield)v.push("zebra");if(!c.belt)v.push("belt");if(c.phone)v.push("phone");if(!c.lights&&(G.night||G.wx!=="clear"))v.push("lights");if(c.tint)v.push("tint");if(!c.osago)v.push("osago");if(!c.licence)v.push("licence");if(c.drunk)v.push("drunk");if(c.noplates)v.push("plates");if(c.overload)v.push("overload");return v}
-function hud(){$("hRank").textContent="🎖 "+RANKS[C.rank];if(!G){$("task").innerHTML="";return}$("hPost").textContent=G.P.ic+" "+G.P.n+" · "+G.P.lim+" км/ч";
-  $("hT").textContent="⏱ "+Math.floor(G.t/60)+":"+String(Math.floor(G.t%60)).padStart(2,"0");$("hS").textContent="⭐ "+G.score;$("hW").textContent=(G.night?"🌙 ночь · ":"")+G.wxN;$("hM").textContent="🚗 упущено "+G.miss;
-  $("task").innerHTML="<span>📜 "+G.order.t+"</span><span>📋 "+G.task[1]+" — "+Math.min(G.taskN,G.task[2])+"/"+G.task[2]+(G.taskDone?" ✅":"")+"</span>"+(G.wanted?"<span>🚨 Ориентировка: "+CNAME[G.wanted.col]+" "+TNAME[G.wanted.type]+", номер "+G.wanted.plate+(G.wanted.done?" ✅":"")+"</span>":"")}
+const setT=(id,v)=>{const e=$(id);if(e._v!==v){e._v=v;e.textContent=v}},setH=(id,v)=>{const e=$(id);if(e._v!==v){e._v=v;e.innerHTML=v}};
+function hud(){setT("hRank","🎖 "+RANKS[C.rank]);if(!G){setH("task","");return}setT("hPost",G.P.ic+" "+G.P.n+" · "+G.P.lim+" км/ч");
+  setT("hT","⏱ "+Math.floor(G.t/60)+":"+String(Math.floor(G.t%60)).padStart(2,"0"));setT("hS","⭐ "+G.score);setT("hW",(G.night?"🌙 ночь · ":"")+G.wxN);setT("hM","🚗 упущено "+G.miss);
+  setH("task",(G.ev?"<span>⚡ "+G.ev.t+"</span>":"")+"<span>📜 "+G.order.t+"</span><span>📋 "+G.task[1]+" — "+Math.min(G.taskN,G.task[2])+"/"+G.task[2]+(G.taskDone?" ✅":"")+"</span>"+(G.wanted?"<span>🚨 Ориентировка: "+CNAME[G.wanted.col]+" "+TNAME[G.wanted.type]+", номер "+G.wanted.plate+(G.wanted.done?" ✅":"")+"</span>":""))}
 // ---------- шаг игры
 function step(dt){if(G.chase)return chaseStep(dt);if(G.sel&&G.sel.state==="stop")return;G.t-=dt;if(G.t<=0){G.t=0;return endShift()}const P=G.P;
   if(P.light){G.light.t-=dt;if(G.light.t<=0){G.light.s=G.light.s==="green"?"yellow":G.light.s==="yellow"?"red":"green";G.light.t=G.light.s==="yellow"?1.6:G.light.s==="red"?5:7}}
@@ -230,7 +267,7 @@ function step(dt){if(G.chase)return chaseStep(dt);if(G.sel&&G.sel.state==="stop"
   for(const p of G.peds){const on=p.x>RX0-4&&p.x<RX1+4;if(!p.walk&&(!P.light||(G.light.s==="red"&&G.light.t>1.5)))p.walk=true;
     if(p.walk){const nx=p.x+p.dir*p.v*dt,blk=G.cars.some(c=>(c.state==="drive"||c.state==="crash")&&Math.abs(c.x-nx)<c.w/2+9&&Math.abs(c.y-p.y)<c.h/2+10);if(!blk||!on&&Math.abs(nx-(p.dir>0?RX0:RX1))>20){p.x=nx;p.ph+=dt*p.v*.17}}}
   G.peds=G.peds.filter(p=>p.dir>0?p.x<RX1+40:p.x>RX0-40);
-  G.spawn-=dt;const busy=G.cars.filter(c=>c.state!=="gone").length;if(G.spawn<=0&&busy<7){G.cars.push(newCar());G.spawn=Math.max(.7,1.9-G.lvl*.12)+Math.random()*.8}
+  G.spawn-=dt;const busy=G.cars.filter(c=>c.state!=="gone").length;if(G.spawn<=0&&busy<7){G.cars.push(newCar());G.spawn=(Math.max(.7,1.9-G.lvl*.12)+Math.random()*.8)*(G.spawnMul||1)}
   if(G.wanted&&!G.wanted.seen){G.wantedSpawn-=dt;if(G.wantedSpawn<=0){G.wanted.seen=true;G.cars.push(newCar(true))}}
   G.dtpT-=dt;if(G.dtpT<=0&&!G.dtp){G.dtpT=999;const a=G.cars.find(c=>c.state==="drive"&&c.y<H*.75&&c.y>H*.35);if(a){a.state="crash";a.dtp=true;G.dtp={car:a};flash("💥 ДТП на дороге! Нажмите на место аварии","#F2C45A")}}
   const slip=G.wx==="snow"||G.wx==="rain";
@@ -257,7 +294,7 @@ function drawWorld(dt){const S=G&&!G.over?G:DEMO,P=S.P,road=P.village?TX.dirt:TX
   if(!P.village){ctx.strokeStyle="rgba(238,238,232,.85)";ctx.lineWidth=4;ctx.setLineDash([34,26]);ctx.lineDashOffset=-off;[250,350].forEach(x=>{ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()});ctx.setLineDash([])}
   // обочина: здания, деревья, дома
   const items=P.side==="city"?["🏢","🏬","🏪"]:P.side==="school"?["🏫","🌳","🛝"]:P.side==="village"?["🏡","🌻","🐄"]:["🌲","🌳","🌲"];
-  for(let i=0;i<7;i++){const y=((i*120+off)%(H+120))-60;ctx.font="38px system-ui";ctx.textAlign="center";ctx.fillStyle="rgba(0,0,0,.25)";ctx.beginPath();ctx.ellipse(70+6,y+18,22,8,0,0,7);ctx.fill();ctx.fillStyle="#fff";ctx.fillText(items[i%3],70,y);ctx.fillText(items[(i+1)%3],W-48,((i*120+off+60)%(H+120))-60)}
+  for(let i=0;i<7;i++){const y=((i*120+off)%(H+120))-60;ctx.font="38px system-ui";ctx.textAlign="center";ctx.fillStyle="rgba(0,0,0,.25)";ctx.beginPath();ctx.ellipse(70+6,y+18,22,8,0,0,7);ctx.fill();drawEmo(items[i%3],38,70,y);drawEmo(items[(i+1)%3],38,W-48,((i*120+off+60)%(H+120))-60)}
   // фонари
   for(let i=0;i<4;i++){const y=((i*200+off)%(H+200))-100;ctx.fillStyle="#555";ctx.fillRect(RX0-14,y,4,4);ctx.fillRect(RX1+10,y+100,4,4)}
   if(P.zebra){for(let x=RX0+8;x<RX1-8;x+=26){ctx.fillStyle="rgba(240,240,240,.88)";ctx.fillRect(x,STOP_Y-58,16,40)}ctx.fillStyle="rgba(255,255,255,.8)";ctx.fillRect(RX0,STOP_Y,RX1-RX0,4)}
@@ -286,7 +323,7 @@ function drawShift(dt){drawWorld(dt);if(!G)return;const night=G.night;
   for(const c of G.cars){const crash=c.state==="crash";drawCar(c,c.x,c.y,crash?.6:0);if(crash){ctx.font="26px system-ui";ctx.fillText(c.dtp?"🚧":"💥",c.x+30,c.y-30)}
     if(c.state==="drive"&&c.y<H-10){const seen=c.y<(C.gear.radar?H-30:POST_Y+330)-((G.night||G.wx==="fog")&&!C.post.lamp?140:0);ctx.font="700 14px Rubik,system-ui";ctx.textAlign="center";ctx.fillStyle="rgba(0,0,0,.72)";rr(c.x-32,c.y-c.h/2-30,64,22,8);ctx.fill();
       ctx.fillStyle=!seen?"#9aa":c.speed>G.P.lim+20?"#FF6B70":c.speed>G.P.lim?"#F2C45A":"#C8F7DA";ctx.fillText(seen?c.speed+" км/ч":"…",c.x,c.y-c.h/2-14);
-      const ic=(c.badge||"")+(c.lights?"":"🔦")+(c.tint?"🕶":"")+(c.noplates?"🚫":"")+((perk("eye",20)||C.post.postcam)?(c.belt?"":"🧷")+(c.phone?"📱":""):"")+(c.ranRed?"🚦":"")+(c.noYield?"🚸":"");if(ic){ctx.font="16px system-ui";ctx.fillText(ic,c.x,c.y-c.h/2-38)}}}
+      const ic=(c.badge||"")+(c.lights?"":"🔦")+(c.tint?"🕶":"")+(c.noplates?"🚫":"")+((perk("eye",20)||C.post.postcam)?(c.belt?"":"🧷")+(c.phone?"📱":""):"")+(c.ranRed?"🚦":"")+(c.noYield?"🚸":"");if(ic)drawEmo(ic,16,c.x,c.y-c.h/2-38)}}
   // ночь: темнота, фонари, фары (аддитивный свет), отражения на мокром асфальте
   if(night){ctx.fillStyle="rgba(5,8,25,.62)";ctx.fillRect(0,0,W,H);ctx.globalCompositeOperation="lighter";
     for(let i=0;i<4;i++){const y=((i*200+G.off)%(H+200))-100;[[RX0-12,y],[RX1+12,y+100]].forEach(([x,yy])=>{const g=ctx.createRadialGradient(x,yy,4,x,yy,110);g.addColorStop(0,"rgba(255,220,150,.35)");g.addColorStop(1,"rgba(0,0,0,0)");ctx.fillStyle=g;ctx.fillRect(x-110,yy-110,220,220)})}
@@ -331,7 +368,7 @@ function insp(){const box=$("insp"),c=G&&G.sel,m=$("modal");$("hint").textConten
     const lines={docs:c.licence?"— Вот, пожалуйста.":"— Вот… всё в порядке, наверное.",base:c.stolen?"— Это… не моя машина, мне друг дал!":c.osago?"— Видите, полис есть.":"— Ой… а мне сказали, что продлили.",cam:c.belt&&!c.phone?"— Я же говорил!":"— Ну да… было дело.",alco:c.drunk?"— Это… квас был!":"— Я же трезвый, видите.",scale:c.overload?"— Да там чуть-чуть лишнего…":"— Всё по накладной."};const sc=box.scrollTop;insp();box.scrollTop=sc;$("say").textContent=lines[t];hud()});
   $("fine").onclick=()=>decide("fine");$("warn").onclick=()=>decide("warn");$("free").onclick=()=>decide("free");$("arrest").onclick=()=>decide("arrest");
   if(c.bribe&&v.length&&!c.offered){c.offered=1;setTimeout(()=>{if(!G||G.sel!==c||!$("say"))return;$("say").textContent="— Командир, давай без протокола? Тут пять тысяч…";const r=document.createElement("div");r.className="row";r.innerHTML='<button class="btn red" id="b1">💵 Взять</button><button class="btn blu" id="b2">🙅 «Это дача взятки»</button>';$("say").after(r);
-    $("b1").onclick=()=>{G.stats.bribes++;grow("law",-15);if(C.gear.cam||ch(.6)){G.over=true;$("modal").hidden=true;C.honor=clamp(C.honor-30,0,100);C.trust=clamp(C.trust-30,0,100);save();endShift("Служебная проверка","Запись камеры всё показала. Смена закончена: честь −30, доверие −30, принципиальность −15.")}else{G.honorD-=15;r.remove();$("say").textContent="— Вот и договорились…";flash("Взятка… Честь −15, принципиальность −15","#FF8A8F")}};
+    $("b1").onclick=()=>{G.stats.bribes++;C.bribes++;grow("law",-15);if(C.gear.cam||ch(.6)){G.over=true;$("modal").hidden=true;C.honor=clamp(C.honor-30,0,100);C.trust=clamp(C.trust-30,0,100);save();endShift("Служебная проверка","Запись камеры всё показала. Смена закончена: честь −30, доверие −30, принципиальность −15.")}else{G.honorD-=15;r.remove();$("say").textContent="— Вот и договорились…";flash("Взятка… Честь −15, принципиальность −15","#FF8A8F")}};
     $("b2").onclick=()=>{G.score+=perk("law",20)?8:5;G.honorD+=5;grow("law",6);r.remove();$("say").textContent="— Понял, понял… Выписывайте.";flash("Отказ от взятки: очки и принципиальность растут","#4ADE95")}},900)}}
 function decide(kind){const s0=G.score,h0=G.honorD,c=G.sel,v=viol(c),marked=Object.keys(c.marks||{}).filter(x=>c.marks[x]),mul=perk("law",70)?1.5:1;
   if(kind==="arrest"){if(c.stolen){G.score+=15;G.stats.wanted++;G.wanted.done=true;grow("auth",6);grow("eye",4);flash("🚔 Угнанная машина задержана: +15","#E7BD52")}else{G.score-=3;flash("Машина не в угоне: −3","#FF8A8F")}}
@@ -354,7 +391,8 @@ function decide(kind){const s0=G.score,h0=G.honorD,c=G.sel,v=viol(c),marked=Obje
      else if(m&&m.last==="warn"&&v.length&&kind==="warn"){G.score-=2;flash("Второе предупреждение подряд — это уже поблажка: −2","#F2C45A")}
      C.reg[c.reg.id]={n:(m?m.n:0)+1,last:kind};save()}
    if(c.sp)c.sp.after(kind,r);
-   if(O==="inspector"){const d=G.score-s0;G.score=s0+(d>0?Math.round(d*1.5):d*2)}}
+   if(c.film&&r.wrong){G.honorD-=6;G.compl++;flash("Водитель снимал — видео с вашей ошибкой уже в сети","#FF8A8F")}
+   if(O==="inspector"||G.sb){const d=G.score-s0;G.score=s0+(d>0?Math.round(d*1.5):d*2)}}
   c.state="leave";G.sel=null;insp();hud()}
 // ---------- ДТП: схема, свидетели, решение
 function openDTP(car){G.dtpOpen=true;const guilty=R(2),cause=pick(["скорость","перестроение","дистанция","красный"]);const A={col:car.col,type:car.type,n:pick(NAMES)},B={col:pick(COLORS),type:pick(["sedan","hatch","suv"]),n:pick(NAMES)};
@@ -377,7 +415,7 @@ function openDTP(car){G.dtpOpen=true;const guilty=R(2),cause=pick(["скорос
   $("ov").hidden=false}
 // ---------- погоня
 function startChase(c){G.chase={target:Object.assign({},c,{y:120,lane:1,x:LANES[1],brake:0}),me:{type:"sedan",col:"#F4F4F6",w:44,h:84,lane:1,x:LANES[1],y:H-120,lights:true,brake:0},dist:440,t:22,obs:[],spawn:.5,tx:0,cool:0};flash("🚨 Водитель не остановился! Погоня!","#FF8A8F");$("pad").classList.add("show")}
-function chaseStep(dt){const P=G.chase,sp=(C.gear.car?1.25:1)*(perk("auth",45)?1.2:1);P.t-=dt;P.spawn-=dt;if(P.spawn<=0){const t=pick(["sedan","hatch","suv","van"]);P.obs.push({type:t,col:pick(COLORS),w:CARTYPES.find(x=>x.t===t).w,h:CARTYPES.find(x=>x.t===t).h,lane:R(3),y:-60,lights:true,brake:0});P.spawn=Math.max(.45,.9-G.lvl*.05)+Math.random()*.4}
+function chaseStep(dt){const P=G.chase,sp=(C.gear.car&&!G.noCar?1.25:1)*(perk("auth",45)?1.2:1);P.t-=dt;P.spawn-=dt;if(P.spawn<=0){const t=pick(["sedan","hatch","suv","van"]);P.obs.push({type:t,col:pick(COLORS),w:CARTYPES.find(x=>x.t===t).w,h:CARTYPES.find(x=>x.t===t).h,lane:R(3),y:-60,lights:true,brake:0});P.spawn=Math.max(.45,.9-G.lvl*.05)+Math.random()*.4}
   for(const o of P.obs)o.y+=(330+G.lvl*20)*dt;P.obs=P.obs.filter(o=>o.y<H+80);P.cool-=dt;
   const want=(K.r?1:0)-(K.l?1:0)||P.tx;if(want&&P.cool<=0){P.me.lane=clamp(P.me.lane+want,0,2);P.cool=.22/sp;P.tx=0}P.me.x+=(LANES[P.me.lane]-P.me.x)*Math.min(1,dt*10*sp);
   if(ch(dt*.8))P.target.lane=clamp(P.target.lane+(ch(.5)?1:-1),0,2);P.target.x+=(LANES[P.target.lane]-P.target.x)*Math.min(1,dt*4);
@@ -392,11 +430,19 @@ addEventListener("keyup",e=>{if(e.code==="ArrowLeft"||e.code==="KeyA")K.l=false;
 $("pL").onpointerdown=()=>{if(G&&G.chase)G.chase.tx=-1};$("pR").onpointerdown=()=>{if(G&&G.chase)G.chase.tx=1};
 // ---------- итоги и отдел
 function endShift(title,text){if(G.chase)endChase();G.over=true;cancelAnimationFrame(raf);const gain=perk("heart",45)?2:1;C.honor=clamp(C.honor+G.honorD*(G.honorD>0?gain:1),0,100);
-  const xp=Math.max(0,G.score)+(G.taskDone?10:0);C.xp+=xp;C.shifts++;const prem=Math.max(0,Math.round(G.budget*.05+(G.taskDone?1500:0)+(C.honor>=70?500:0)+G.stats.wanted*2000));C.prem+=prem;C.earned=(C.earned||0)+prem;
+  const xp=Math.max(0,G.score)+(G.taskDone?10:0);C.xp+=xp;C.shifts++;const caught=!!title,pay={base:800+C.rank*300,fines:Math.round(G.budget*.05),plan:G.taskDone?1500:0,wanted:G.stats.wanted*2000,dept:G.budget>=15000+C.rank*5000?1000:0,ded:G.compl*300};
+  pay.hon=Math.round(pay.base*(C.honor>=70?.3:C.honor<=30?-.2:0));pay.mul=G.payMul||1;
+  const prem=caught?0:Math.max(0,Math.round((pay.base+pay.hon+pay.fines+pay.plan+pay.wanted+pay.dept-pay.ded)*pay.mul));C.prem+=prem;C.earned=(C.earned||0)+prem;
   C.trust=clamp(C.trust+(G.taskDone?8:-3)+(G.compl?-4*G.compl:2)+(G.miss>2?-5:0)+G.stats.wanted*5,0,100);let up="";while(C.rank<RANKS.length-1&&C.xp>=XP_NEED[C.rank+1]&&C.trust>=30){C.rank++;up="🎖 Повышение: теперь вы — "+RANKS[C.rank]+"!"}
-  if(G.score>C.best)C.best=G.score;save();if(window.IIGRY_SCORE&&G.score>0&&!G.stats.bribes)window.IIGRY_SCORE(G.score,C.rank>=RANKS.length-1?{full:true}:undefined);
-  office(title||"Смена окончена",text||"",{prem,up,sum:{score:G.score,budget:G.budget,prem,compl:G.compl,miss:G.miss,chase:G.stats.chase,dtp:G.stats.dtp+G.stats.wanted}});sendExtra()}
+  const note=[];if(caught){C.repr++;const half=Math.floor(C.prem/2);C.prem-=half;const g=Object.keys(C.gear).filter(k=>C.gear[k]);if(g.length){const x=pick(g);delete C.gear[x];note.push("🚫 Конфисковано: "+GEAR.find(y=>y[0]===x)[1])}note.push("💸 Изъято "+half.toLocaleString("ru-RU")+" ₽ премий");note.push("📄 Выговор ("+C.repr+"/3)")}
+  else if(G.compl>=2&&C.trust<35){C.repr++;note.push("📄 Выговор за жалобы ("+C.repr+"/3)")}
+  if(C.repr>=3&&C.rank>0){C.rank--;C.xp=XP_NEED[C.rank];C.repr=0;note.push("⬇ Разжалованы до звания «"+RANKS[C.rank]+"»")}
+  if(!caught&&C.trust>=80&&C.shifts%5===0){C.prem+=5000;C.earned=(C.earned||0)+5000;C.awards++;note.push("🏅 Квартальная премия 5 000 ₽ и грамота")}
+  if(G.score>C.best)C.best=G.score;save();const fin=checkEnd();if(window.IIGRY_SCORE&&G.score>0&&!G.stats.bribes)window.IIGRY_SCORE(G.score,C.rank>=RANKS.length-1?{full:true}:undefined);
+  sendExtra();if(fin){ending(fin);return}office(title||"Смена окончена",text||"",{prem,up,pay,note,sum:{score:G.score,budget:G.budget,prem,compl:G.compl,miss:G.miss,chase:G.stats.chase,dtp:G.stats.dtp+G.stats.wanted}})}
 // ---------- главное меню, рекорды, правила
+function payBox(p,total){const L=[["Оклад («"+RANKS[C.rank]+"»)",p.base],["Надбавка за честь",p.hon],["5% от штрафов",p.fines],["План начальника",p.plan],["За угонщиков",p.wanted],["Премия отделу за план",p.dept],["Удержания за жалобы",-p.ded]].filter(x=>x[1]);
+  return`<details class="how"><summary style="cursor:pointer;text-align:center;color:#E7BD52">💰 Расчётный листок: +${total.toLocaleString("ru-RU")} ₽${p.mul!==1?" (×"+p.mul+")":""}</summary>${L.map(x=>`<div style="display:flex;justify-content:space-between"><span>${x[0]}</span><b style="color:${x[1]<0?"#FF8A8F":"#C8F7DA"}">${x[1]>0?"+":""}${x[1].toLocaleString("ru-RU")} ₽</b></div>`).join("")}</details>`}
 function resGrid(r){return`<div style="text-align:center;font-size:44px;line-height:1">${r.score>=60?"🥇":r.score>=30?"🥈":r.score>0?"🥉":"📋"}</div><div class="res"><div><b>${r.score}</b>очков</div><div><b>${r.budget.toLocaleString("ru-RU")} ₽</b>штрафов</div><div><b>+${r.prem.toLocaleString("ru-RU")} ₽</b>премия</div><div><b>${r.compl}</b>жалоб</div><div><b>${r.miss}</b>упущено</div><div><b>${r.chase} · ${r.dtp}</b>погонь · ДТП и угонов</div></div>`}
 let demoRaf=0,demoL=0;
 function attract(ts){if(G&&!G.over){demoRaf=0;return}const dt=demoL?Math.min(.05,(ts-demoL)/1000):0;demoL=ts;DEMO.off+=dt*230;DEMO.t-=dt;
@@ -407,7 +453,7 @@ function startAttract(){if(!demoRaf){demoL=0;demoRaf=requestAnimationFrame(attra
 const esc=x=>String(x==null?"":x).slice(0,30).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
 function title(){const o=$("office");$("ov").hidden=false;$("ov").classList.add("light");$("modal").hidden=true;
   o.innerHTML=`<div class="title"><div class="big" style="font-size:52px;line-height:1">🚓</div><div class="logo">ЖЕЗЛ</div><p class="mu tsub" style="max-width:420px">Смена инспектора ДПС: штрафы, погони, ДТП и угонщики. Каждое решение меняет вашу карьеру и характер.</p>
-   <div class="hud" style="justify-content:center"><span>🎖 ${RANKS[C.rank]}</span><span>💰 ${C.prem.toLocaleString("ru-RU")} ₽</span><span>⚖️ честь ${C.honor}</span><span>🏁 смен: ${C.shifts}</span></div>
+   <div class="hud" style="justify-content:center"><span>🎖 ${RANKS[C.rank]}</span><span>💰 ${C.prem.toLocaleString("ru-RU")} ₽</span><span>⚖️ честь ${C.honor}</span><span>🏁 смен: ${C.shifts}</span>${C.ending?`<span>${ENDS[C.ending][0]} ${ENDS[C.ending][1]}</span>`:""}</div>
    <div class="menu"><button class="btn go" id="mGo">🚓 Заступить на смену</button><button class="btn" id="mCar"><span><i>🧠</i>Карьера</span></button><button class="btn" id="mRec"><span><i>🏆</i>Рекорды</span></button><button class="btn" id="mHow"><span><i>❓</i>Как играть</span></button></div></div>`;
   $("mGo").onclick=()=>{tab="posts";office("Отдел ДПС","")};$("mCar").onclick=()=>{tab="me";office("Отдел ДПС","",{noStory:true})};$("mRec").onclick=()=>records("gai");$("mHow").onclick=how;hud();startAttract()}
 const BOARDS=[["gai","⭐ Лучшая смена","очк."],["gaim","💰 Заработано","₽"],["gaix","🎖 Опыт","XP"]];let recN=0;
@@ -432,18 +478,19 @@ function office(title,text,res){const o=$("office");$("ov").classList.remove("li
     o.innerHTML=`<div class="t">📖 ${st.t}</div><div class="boss"><div class="face">${st.p}</div><div><p class="mu" style="margin:0;color:#F4F4F6">${tx}</p></div></div><div class="row" style="justify-content:center">${st.ch.map((c,i)=>`<button class="btn ${i?"":"go"}" data-s="${i}">${c[0]}</button>`).join("")}</div>`;
     o.querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{st.ch[+b.dataset.s][1]();C.story++;save();office(title,text,Object.assign({},res,{noStory:true}))});$("ov").hidden=false;return}
   const boss=C.trust<30?"Опять жалобы? Ещё одна такая смена — и пойдёшь регулировать перекрёсток у рынка.":C.honor>=80?"Горжусь тобой. Водители пишут благодарности — редкость!":C.shifts===0?"Заступай на смену. Выбирай пост, штрафуй по делу, взяток не бери.":C.flags.end==="career"?"Областное управление ждёт отчётов. Но и на земле тебя помнят.":"Работаем. План сам себя не выполнит.";
+  const status=`<p class="mu" style="font-size:.84rem;text-align:center">📄 Выговоры: ${C.repr}/3 · 🏅 Грамоты: ${C.awards} · 💼 Взяток: ${C.bribes} · 🎬 Концовки: ${C.ends.length}/6${C.ends.length?" ("+C.ends.map(e=>ENDS[e][0]).join(" ")+")":""}</p><p class="mu" style="font-size:.8rem;text-align:center">Оклад растёт со званием. Честь от 70 — надбавка +30%, до 30 — минус 20%. Жалобы удерживают из премии, три выговора — понижение в звании.</p>`;
   const attrs=Object.entries(ATTR).map(([k,[i,n]])=>`<div>${i} ${n}: <b>${Math.round(C.a[k])}</b><div class="meter"><b style="width:${C.a[k]}%;background:${{eye:"#7AB8FF",law:"#E7BD52",heart:"#FF8AB0",auth:"#4ADE95"}[k]}"></b></div></div>`).join("");
   const posts=Object.entries(POSTS).map(([k,p])=>{const ok=!p.need||C.rank>=p.need;return`<button class="btn" data-p="${k}" ${ok?"":"disabled"}><b>${p.ic} ${p.n} · ${p.lim} км/ч</b><small>${ok?p.d:"Откроется со звания «"+RANKS[p.need]+"»"}</small></button>`}).join("");
   const perks=PERKS.map(([k,lv,n,d])=>`<div class="perk ${perk(k,lv)?"on":"off"}">${perk(k,lv)?"✨":"🔒"} <b>${ATTR[k][0]} ${n}</b> <span>— ${d} ${perk(k,lv)?"":"("+ATTR[k][1].toLowerCase()+" "+lv+")"}</span></div>`).join("");
   const pst=POSTUP.map(([k,n,d,p])=>`<button class="btn" data-u="${k}" ${C.post[k]||C.prem<p?"disabled":""} style="display:flex;justify-content:space-between;align-items:center;gap:8px;text-align:left;min-height:48px"><span><b>${n}</b><br><small class="mu">${d}</small></span><span>${C.post[k]?"✓":p.toLocaleString("ru-RU")+" ₽"}</span></button>`).join("");
   const gear=GEAR.map(([k,n,d,p])=>`<button class="btn" data-g="${k}" ${C.gear[k]||C.prem<p?"disabled":""} style="display:flex;justify-content:space-between;align-items:center;gap:8px;text-align:left;min-height:48px"><span><b>${n}</b><br><small class="mu">${d}</small></span><span>${C.gear[k]?"✓":p.toLocaleString("ru-RU")+" ₽"}</span></button>`).join("");
-  o.innerHTML=`<div class="t">${title||"Отдел ДПС"}</div>${text?`<p class="mu" style="text-align:center">${text}</p>`:""}${res&&res.sum?resGrid(res.sum):""}${res&&res.up?`<p style="text-align:center;font-weight:800;color:#E7BD52">${res.up}</p>`:""}
+  o.innerHTML=`<div class="t">${title||"Отдел ДПС"}</div>${text?`<p class="mu" style="text-align:center">${text}</p>`:""}${res&&res.sum?resGrid(res.sum):""}${res&&res.pay?payBox(res.pay,res.prem):""}${res&&res.note&&res.note.length?`<p style="text-align:center;font-weight:700;color:#FFE6A8;margin:0">${res.note.join(" · ")}</p>`:""}${res&&res.up?`<p style="text-align:center;font-weight:800;color:#E7BD52">${res.up}</p>`:""}
    <div class="boss"><div class="face">👨‍✈️</div><div><b>Начальник отдела</b><p class="mu" style="margin:4px 0 0">${boss}</p></div></div>
    <div class="stats"><div><b>${RANKS[C.rank]}</b>звание</div><div><b>${C.xp}${C.rank<RANKS.length-1?" / "+XP_NEED[C.rank+1]:""}</b>опыт</div><div><b>${C.prem.toLocaleString("ru-RU")} ₽</b>премии${res&&res.prem?" (+"+res.prem+")":""}</div></div>
    <div class="attr"><div>⚖️ Честь у водителей: <b>${C.honor}</b><div class="meter"><b style="width:${C.honor}%;background:#4ADE95"></b></div></div><div>🤝 Доверие начальства: <b>${C.trust}</b><div class="meter"><b style="width:${C.trust}%;background:#7AB8FF"></b></div></div></div>
    <div class="tabs"><button data-tab="posts" aria-pressed="${tab==="posts"}">🚓 На смену</button><button data-tab="me" aria-pressed="${tab==="me"}">🧠 Навыки</button><button data-tab="gear" aria-pressed="${tab==="gear"}">🛒 Магазин</button></div>
    ${tab==="posts"?`<div class="boss"><div class="face">📜</div><div><b>Приказ на ${TODAY}: ${dayOrder().t}</b><p class="mu" style="margin:4px 0 0">${dayOrder().d}</p></div></div><div class="posts">${posts}</div><label class="mu" style="display:flex;gap:8px;align-items:center;justify-content:center"><input type="checkbox" id="night" ${C.rank<1?"disabled":""}> 🌙 Ночная смена ${C.rank<1?"(со звания «Старший сержант»)":"— больше нетрезвых и беглецов, но и очков"}</label>`:
-     tab==="me"?`<div class="attr">${attrs}</div><p class="mu" style="font-size:.82rem">Навыки растут от ваших решений: верные штрафы — принципиальность, мягкость к мелочам и помощь — человечность, проверки и ДТП — внимательность, погони и задержания — авторитет. Взятки и ошибки отнимают очки навыков.</p>${perks}`:
+     tab==="me"?`${status}<div class="attr">${attrs}</div><p class="mu" style="font-size:.82rem">Навыки растут от ваших решений: верные штрафы — принципиальность, мягкость к мелочам и помощь — человечность, проверки и ДТП — внимательность, погони и задержания — авторитет. Взятки и ошибки отнимают очки навыков.</p>${perks}`:
      `<div style="display:grid;gap:6px"><b>🎒 Снаряжение</b>${gear}<b style="margin-top:6px">🏠 Пост</b>${pst}</div>`}<button class="btn" id="toTitle">← Главное меню</button>`;
   o.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{tab=b.dataset.tab;office(title,text,Object.assign({},res,{noStory:true}))});
   o.querySelectorAll("[data-g]").forEach(b=>b.onclick=()=>{const g=GEAR.find(x=>x[0]===b.dataset.g);if(C.prem>=g[3]){C.prem-=g[3];C.gear[g[0]]=1;save();office(title,text,Object.assign({},res,{noStory:true}))}});
