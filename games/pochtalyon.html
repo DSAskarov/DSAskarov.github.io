@@ -107,7 +107,11 @@ requestAnimationFrame(frame);
     const b=document.createElement("button");b.type="button";b.className="pbuy";b.textContent="Купить полную версию — "+price+" ₽";b.onclick=()=>buy(b);
     const s=document.createElement("p");s.className="pnote";s.append("Оплата картой или СБП через ЮKassa. Нажимая кнопку, вы принимаете ");
     const a=document.createElement("a");a.href="../#t-money";a.target="_blank";a.rel="noopener";a.textContent="условия покупки";s.append(a,". Полная версия откроется в этом браузере.");
-    box.append(b,s)}
+    const d=document.createElement("details");d.className="prest";const sm=document.createElement("summary");sm.textContent="Уже купили? Восстановить покупку";
+    const t=document.createElement("p");t.className="pnote";t.textContent="Войдите в кабинет тем же аккаунтом, с которым покупали, — полная версия откроется сама. Или впишите номер заказа (24 знака, есть в ссылке после оплаты и у администратора):";
+    const f=document.createElement("form");const i=document.createElement("input");i.maxLength=40;i.placeholder="Номер заказа";i.setAttribute("aria-label","Номер заказа");const ok=document.createElement("button");ok.type="submit";ok.textContent="Открыть";f.append(i,ok);
+    f.onsubmit=e=>{e.preventDefault();const id=i.value.trim().toLowerCase().replace(/^.*order=/,"").replace(/[^0-9a-f]/g,"");if(!/^[0-9a-f]{24}$/.test(id)){say("Номер заказа — 24 символа: цифры и буквы a–f.","#E8333F");return}back(id)};
+    d.append(sm,t,f);box.append(b,s,d)}
   async function buy(b){b.disabled=true;b.textContent="Открываем оплату…";
     try{const r=await fetch(API+"?a=buy",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prod,token:(()=>{try{return localStorage.getItem("iigry-sess")||""}catch(_){return ""}})()})}),j=await r.json();
       if(j.url&&OK.test(j.url)){location.href=j.url;return}say(j.error||"Не получилось открыть оплату.","#E8333F")}
@@ -116,6 +120,7 @@ requestAnimationFrame(frame);
   async function back(id){say("Проверяем оплату…");
     for(let i=0;i<40;i++){try{const r=await fetch(API+"?a=order&id="+id),j=await r.json();
         if(j.st==="succeeded"&&j.lic&&j.prod===prod){put(prod,{id,lic:j.lic,ts:Date.now()});history.replaceState(null,"",location.pathname);draw();say("Оплата прошла! Полная версия открыта — начните игру заново.","#4ADE95");if(j.receipt&&/^https:\/\/lknpd\.nalog\.ru\//.test(j.receipt)){const r=document.createElement("a");r.href=j.receipt;r.target="_blank";r.rel="noopener";r.textContent="Ваш чек";r.style.color="#E7BD52";const m=box.querySelector(".pmsg");m.append(" ",r)}return}
+        if(j.st==="succeeded"&&j.prod&&j.prod!==prod){draw();say("Этот заказ оплачен за другую игру — откройте его на странице той игры.","#E8333F");return}
         if(j.st==="canceled"){history.replaceState(null,"",location.pathname);draw();say("Платёж отменён — деньги не списаны. Можно попробовать ещё раз.","#E8333F");return}
         if(r.status===400||r.status===404){draw();say(j.error||"Заказ не найден.","#E8333F");return}}catch(_){}
       await new Promise(r=>setTimeout(r,3000))}
@@ -123,7 +128,7 @@ requestAnimationFrame(frame);
   async function verify(){const l=get(prod);if(!l||!l.lic||Date.now()-(l.chk||0)<864e5)return;
     try{const r=await fetch(API+"?a=lic",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:l.id,prod,lic:l.lic})}),j=await r.json();
       if(j.ok===false){put(prod,null);draw()}else{l.chk=Date.now();put(prod,l)}}catch(_){}}
-  const st=document.createElement("style");st.textContent="#buyBox .pbuy{border:0;border-radius:10px;padding:12px 18px;font:700 1rem Golos Text,system-ui,sans-serif;background:linear-gradient(135deg,#F6DE8D,#C9952A);color:#1A1306;cursor:pointer}#buyBox .pbuy:disabled{opacity:.6}#buyBox .pbuy:focus-visible{outline:2px solid #fff;outline-offset:2px}#buyBox .pnote,#buyBox .pmsg{font-size:.8rem;color:#B9B6C2;margin:6px 0 0}#buyBox .pnote a{color:#E7BD52}#buyBox .pok{color:#4ADE95;font-weight:600;margin:0}";document.head.append(st);
+  const st=document.createElement("style");st.textContent="#buyBox .pbuy{border:0;border-radius:10px;padding:12px 18px;font:700 1rem Golos Text,system-ui,sans-serif;background:linear-gradient(135deg,#F6DE8D,#C9952A);color:#1A1306;cursor:pointer}#buyBox .pbuy:disabled{opacity:.6}#buyBox .pbuy:focus-visible{outline:2px solid #fff;outline-offset:2px}#buyBox .pnote,#buyBox .pmsg{font-size:.8rem;color:#B9B6C2;margin:6px 0 0}#buyBox .pnote a{color:#E7BD52}#buyBox .pok{color:#4ADE95;font-weight:600;margin:0}#buyBox .prest{margin-top:8px;font-size:.85rem}#buyBox .prest summary{cursor:pointer;color:#E7BD52}#buyBox .prest form{display:flex;gap:6px;margin-top:6px}#buyBox .prest input{flex:1;min-width:0;padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.18);background:#0F0E13;color:#fff;font:inherit}#buyBox .prest button{border:0;border-radius:10px;padding:0 14px;background:#2a2733;color:#fff;font:700 .9rem Golos Text,system-ui,sans-serif;cursor:pointer}";document.head.append(st);
   draw();const id=new URLSearchParams(location.search).get("order");if(id&&/^[0-9a-f]{24}$/.test(id))back(id);else verify();
   // Покупки, привязанные к аккаунту: открываем полную версию на любом устройстве после входа
   (async()=>{let t="";try{t=localStorage.getItem("iigry-sess")||""}catch(_){}if(!/^[A-Za-z0-9_-]{43}$/.test(t))return;

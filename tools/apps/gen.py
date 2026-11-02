@@ -60,6 +60,7 @@ android {{
 """)
     keep = url if game else SITE + "/"
     imm = "true" if game else "false"
+    site = "false" if game else "true"
     open(os.path.join(j, "MainActivity.java"), "w").write(f"""package {pkg};
 import android.app.Activity;
 import android.os.Bundle;
@@ -80,6 +81,7 @@ public class MainActivity extends Activity {{
     s.setUserAgentString(s.getUserAgentString() + " IIgryApp");
     s.setTextZoom(100); s.setSupportZoom(false); s.setBuiltInZoomControls(false);
     w.setBackgroundColor(0xFF0D0C11); w.setOverScrollMode(View.OVER_SCROLL_NEVER);
+    CookieManager.getInstance().setAcceptCookie(true); CookieManager.getInstance().setAcceptThirdPartyCookies(w, true);
     w.setHapticFeedbackEnabled(true); w.setLongClickable(false); w.setOnLongClickListener(x -> true);
     w.setWebChromeClient(new WebChromeClient());
     w.setWebViewClient(new WebViewClient() {{
@@ -89,7 +91,10 @@ public class MainActivity extends Activity {{
       @Override public boolean shouldOverrideUrlLoading(WebView v, WebResourceRequest r) {{
         String u = r.getUrl().toString();
         if (u.startsWith("{keep}") || u.startsWith("file:///android_asset/")) return false;
-        try {{ startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(u))); }} catch (Exception x) {{}}
+        // оплата (ЮKassa, страницы банка для 3-D Secure) остаётся внутри приложения — после оплаты покупка откроется здесь же
+        if (u.matches("^https://([\\\\w-]+\\\\.)*(yoomoney|yookassa)\\\\.ru(/.*)?$")) return false;
+        if ({site} && u.startsWith("https://") && !u.matches("^https://(t\\\\.me|telegram\\\\.me|vk\\\\.com|boosty\\\\.to|github\\\\.com|max\\\\.ru)(/.*)?$") && !u.matches(".*\\\\.(apk|exe)([?#].*)?$")) return false;
+        try {{ startActivity(u.startsWith("intent:") ? Intent.parseUri(u, Intent.URI_INTENT_SCHEME) : new Intent(Intent.ACTION_VIEW, Uri.parse(u))); }} catch (Exception x) {{}}
         return true;
       }}
     }});
@@ -124,7 +129,8 @@ app.whenReady().then(() => {{
   Menu.setApplicationMenu(null);
   const w = new BrowserWindow({{width: 1100, height: 860, backgroundColor: '#0B0A0E', icon: path.join(__dirname, 'icon.png'), title: {json.dumps(name)}, webPreferences: {{contextIsolation: true, sandbox: true}}}});
   w.webContents.on('did-fail-load', (ev, code, desc, url, isMain) => {{ if (isMain && !String(url).startsWith('file:')) w.loadFile(path.join(__dirname, {json.dumps(asset)})); }});
-  w.webContents.on('will-navigate', (ev, url) => {{ if (!url.startsWith(KEEP) && !url.startsWith('file:')) {{ ev.preventDefault(); if (/^https:/.test(url)) shell.openExternal(url); }} }});
+  const PAY = /^https:\/\/([\w-]+\.)*(yoomoney|yookassa)\.ru(\/|$)/, EXT = /^https:\/\/(t\.me|telegram\.me|vk\.com|boosty\.to|github\.com|max\.ru)(\/|$)|\.(apk|exe)([?#]|$)/;
+  w.webContents.on('will-navigate', (ev, url) => {{ if (PAY.test(url) || ({json.dumps(not game)} && /^https:/.test(url) && !EXT.test(url))) return; if (!url.startsWith(KEEP) && !url.startsWith('file:')) {{ ev.preventDefault(); if (/^https:/.test(url)) shell.openExternal(url); }} }});
   w.webContents.setWindowOpenHandler(({{url}}) => {{ if (/^https:/.test(url)) shell.openExternal(url); return {{action: 'deny'}}; }});
   w.loadURL({json.dumps(url)});
 }});

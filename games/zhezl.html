@@ -95,9 +95,45 @@ const PERKS=[["eye",20,"Намётанный глаз","Над машинами 
  ["law",20,"Неподкупный","Взятки больше не предлагают тем, кто знает вашу репутацию; за отказ +8"],["law",45,"Гроза лихачей","Лихачи реже уезжают незамеченными"],["law",70,"Буква закона","+50% к очкам за верные штрафы"],
  ["heart",20,"Свой парень","Предупреждения дают больше очков"],["heart",45,"Народная любовь","Честь растёт вдвое быстрее"],["heart",70,"Ангел-хранитель","Помощь на ДТП и заносах — +6 очков"],
  ["auth",20,"Командный голос","Реже пытаются удрать"],["auth",45,"Ас погонь","Погони заметно легче"],["auth",70,"Легенда отдела","Начальник прощает одну ошибку за смену"]];
+// ---------- приказ дня (один на всех, меняется в полночь)
+const ORDERS=[
+ {id:"alco",t:"Операция «Трезвый водитель»",d:"Каждый тест алкотестером +1. Отпущенный нетрезвый — −6."},
+ {id:"docs",t:"Операция «Документы»",d:"Проверяйте документы у каждого: отпуск без проверки −2, найденная подделка +4."},
+ {id:"tint",t:"Рейд «Тонировка»",d:"Штраф за тонировку даёт втрое больше очков."},
+ {id:"polite",t:"Неделя вежливости",d:"Предупреждение по мелочи +3 и честь; штрафы за мелочи очков не дают."},
+ {id:"inspector",t:"Приехал проверяющий из области",d:"Очки ×1,5, но ошибки стоят вдвое дороже."},
+ {id:"slow",t:"Ремонт дороги",d:"Ограничение скорости на посту снижено на 10 км/ч."},
+ {id:"trucks",t:"Весовой контроль",d:"Весы выданы на смену. Найденный перегруз +6."}];
+const dayOrder=()=>ORDERS[Math.floor((Date.now()+3*36e5)/864e5)%ORDERS.length];
+// ---------- прокачка поста
+const POSTUP=[["barrier","🚧 Шлагбаум","Беглецы удирают вдвое реже",6000],["postcam","📹 Камера над постом","Ремень и телефон видны над каждой машиной",7000],["trainee","👨‍🎓 Напарник","Документы проверяет напарник — без затрат времени",5000],["lamp","💡 Прожектор","Ночью и в тумане радар видит так же далеко, как днём",4000],["heater","☕ Тёплая будка","Смена длиннее на 30 секунд",3000]];
+// ---------- постоянные водители: помнят ваши решения
+const REGS=[
+ {id:"valya",face:"👵",name:"Тётя Валя",type:"hatch",col:"#2FA866",plate:"В777АЛ 69",bias:{belt:.6,lights:.3}},
+ {id:"ashot",face:"🧔",name:"Таксист Ашот",type:"taxi",col:"#E8B931",plate:"Т001АК 77",bias:{speed:.5,phone:.4}},
+ {id:"mikh",face:"👨‍🦳",name:"Дальнобойщик Михалыч",type:"truck",col:"#2E6BD6",plate:"М505ХА 50",bias:{overload:.5,belt:.3},post:"highway"},
+ {id:"gosha",face:"🧑‍🎓",name:"Студент Гоша",type:"hatch",col:"#8E6BD8",plate:"Х123ОР 69",bias:{osago:.5,lights:.4}},
+ {id:"fedor",face:"👨‍🌾",name:"Фермер Фёдор",type:"tractor",col:"#E36F2A",plate:"",bias:{licence:.4,plates:.6},post:"village"}];
+function regLine(c,v){const m=C.reg[c.reg.id];if(!m)return"Здравствуйте! Я тут каждый день езжу — будем знакомы.";
+ if(m.last==="fine")return v.length?"Опять вы… В прошлый раз оштрафовали — я всё оплатил, честно!":"Опять вы! После вашего штрафа езжу строго по правилам.";
+ if(m.last==="warn")return v.length?"Ой… опять вы. Помню, обещал исправиться…":"Здравствуйте! Помню ваше предупреждение — теперь всё по правилам.";
+ return v.length?"О, мой любимый инспектор! Вы же меня отпустите, как в прошлый раз?":"Здравствуйте, командир! Рад вас видеть."}
+// ---------- необычные личности
+const SPECS=[
+ {id:"blog",face:"🤳",name:"Блогер Стас «НаДороге»",type:"suv",col:"#2B2B33",badge:"🔴LIVE",line:"Всем привет, мы в эфире! Командир, на каком основании остановили? Подписчики смотрят!",bias:{phone:.75,speed:.3},
+  after:(k,r)=>{if(k==="fine"&&r.ok){G.honorD+=6;flash("Ролик набрал миллион просмотров — вас хвалят за честность","#4ADE95")}else if(r.wrong){G.honorD-=12;flash("Видео с вашей ошибкой разлетелось по сети: честь −12","#FF8A8F")}else if(r.v.length&&k!=="fine"){G.honorD-=4;flash("В комментариях смеются: «гаишник испугался камеры»","#F2C45A")}else if(!r.v.length){G.honorD+=4;flash("Блогер: «Вежливый инспектор, лайк!»","#4ADE95")}}},
+ {id:"dep",face:"🤵",name:"Депутат Кузькин",type:"suv",col:"#2B2B33",plate:"А001АА 69",badge:"👑",line:"Вы знаете, кто я? Один звонок — и будете регулировать перекрёсток у рынка.",bias:{speed:.7,phone:.3},
+  after:(k,r)=>{if(k==="fine"&&r.ok){grow("law",8);G.honorD+=5;C.trust=clamp(C.trust-8,0,100);flash("Оштрафовали депутата! Водители уважают, начальник нервничает","#E7BD52")}else if(r.v.length&&k!=="fine"){grow("law",-8);G.honorD-=5;C.trust=clamp(C.trust+5,0,100);flash("Отпустили депутата: начальство довольно, совесть — нет","#F2C45A")}}},
+ {id:"wed",face:"👰",name:"Свадебный кортеж",type:"sedan",col:"#E6E6EA",badge:"💍",line:"Командир, у нас свадьба! Ну отпустите, сегодня же такой день!",bias:{speed:.6,belt:.5},
+  after:(k,r)=>{if(k==="warn"&&r.v.length){G.honorD+=4;grow("heart",3);flash("Молодые пригласили вас на свадьбу. Человечность растёт","#4ADE95")}else if(k==="fine"&&r.ok){grow("law",3);flash("Невеста плачет, но закон есть закон","#F2C45A")}}},
+ {id:"dino",face:"🦖",name:"Аниматор в костюме динозавра",type:"hatch",col:"#2FA866",badge:"🦖",line:"Ррр! Я с детского праздника, не успел переодеться. Права — в лапе!",bias:{belt:.7},
+  after:(k,r)=>{if(!r.wrong){G.score+=2;flash("Дети из соседней машины в восторге: +2","#4ADE95")}}},
+ {id:"race",face:"😎",name:"Гонщик на суперкаре",type:"sedan",col:"#C9302C",badge:"🔥",line:"Что, командир, впечатлил разгон? Сто за три секунды!",bias:{speed:1},extra:c=>{c.speed=G.P.lim+55+R(30)},
+  after:(k,r)=>{if(k==="fine"&&r.ok){G.score+=3;flash("Самый быстрый штраф месяца: +3","#E7BD52")}}}];
 // ---------- сохранение карьеры
 const KEY="iigry-zhezl3";const store={get:()=>{try{return JSON.parse(localStorage.getItem(KEY)||"null")}catch(_){return null}},set:v=>{try{localStorage.setItem(KEY,JSON.stringify(v))}catch(_){}}};
 let C=store.get()||{earned:0,xp:0,rank:0,honor:50,trust:50,prem:0,shifts:0,gear:{},best:0,a:{eye:5,law:5,heart:5,auth:5},story:0,flags:{}};
+C.reg=C.reg||{};C.post=C.post||{};C.earned=C.earned||0;
 const save=()=>store.set(C),perk=(k,lv)=>C.a[k]>=lv,grow=(k,v)=>{const was=PERKS.filter(p=>p[0]===k&&C.a[k]>=p[1]).length;C.a[k]=clamp(C.a[k]+v,0,100);const now=PERKS.filter(p=>p[0]===k&&C.a[k]>=p[1]);if(now.length>was){const p=now[now.length-1];flash("✨ Новая способность: «"+p[2]+"»","#E7BD52")}};
 const GEAR=[["radar","📡 Цифровой радар","Скорость видна раньше",3000],["cam","🎥 Нагрудная камера","Проверка записи быстрее; взятки фиксируются",4000],["alco","🌬 Новый алкотестер","Мгновенный результат",2500],["scale","⚖️ Переносные весы","Проверка перегруза фур",3500],["car","🚓 Патрульная машина","Погони легче",8000]];
 // ---------- сюжет: служебные истории с продолжением
@@ -135,10 +171,10 @@ const DEMO={P:POSTS.city,off:0,light:{s:"green",t:6},cars:[],t:0};
 let G=null,raf=0,last=0,paused=false,fl=[];
 const WEATHERS=[["clear","☀️ ясно"],["rain","🌧 дождь"],["fog","🌫 туман"],["snow","❄️ снег"]];
 const flash=(t,c)=>{const o=fl.find(f=>f.t===t);if(o){o.a=2.2;return}fl.push({t,c,a:2.2})};
-function newShift(post,night){const P=POSTS[post],wx=pick(WEATHERS.slice(0,night?3:4)),tasks=[["belt","Рейд «Ремень»: 3 без ремня",3],["speed","План по скорости: 4 лихача",4],["osago","Проверка страховок: 2 без ОСАГО",2],["phone","Рейд «Не отвлекайся»: 3 с телефоном",3]];
+function newShift(post,night){const ORD=dayOrder(),P=Object.assign({},POSTS[post],ORD.id==="slow"?{lim:POSTS[post].lim-10}:{}),wx=pick(WEATHERS.slice(0,night?3:4)),tasks=[["belt","Рейд «Ремень»: 3 без ремня",3],["speed","План по скорости: 4 лихача",4],["osago","Проверка страховок: 2 без ОСАГО",2],["phone","Рейд «Не отвлекайся»: 3 с телефоном",3]];
   if(P.light)tasks.push(["red","Рейд «Светофор»: 3 проезда на красный",3]);if(P.zebra)tasks.push(["zebra","Рейд «Пешеход»: 2 не пропустивших",2]);if(P.trucks)tasks.push(["overload","Весовой контроль: 1 перегруз",1]);if(P.village)tasks.push(["plates","Без номеров: 2 машины",2]);
   const wanted=C.flags.wanted||ch(.5)?{col:pick(COLORS.slice(0,8)),type:pick(["sedan","hatch","suv"]),plate:plate(),seen:false}:null;
-  G={post,P,t:180,score:0,budget:0,compl:0,miss:0,cars:[],peds:[],spawn:1,sel:null,task:pick(tasks),taskN:0,taskDone:false,over:false,night,wx:wx[0],wxN:wx[1],chase:null,drops:[],honorD:0,lvl:C.rank,stats:{fines:0,free:0,bribes:0,chase:0,dtp:0,wanted:0},
+  G={post,P,order:ORD,spDone:{},t:180+(C.post.heater?30:0),score:0,budget:0,compl:0,miss:0,cars:[],peds:[],spawn:1,sel:null,task:pick(tasks),taskN:0,taskDone:false,over:false,night,wx:wx[0],wxN:wx[1],chase:null,drops:[],honorD:0,lvl:C.rank,stats:{fines:0,free:0,bribes:0,chase:0,dtp:0,wanted:0},
     light:{s:"green",t:6},wanted,wantedSpawn:30+R(80),dtp:null,dtpT:50+R(70),forgive:perk("auth",70)?1:0,off:0};
   $("ov").hidden=true;insp();hud();last=0;cancelAnimationFrame(raf);raf=requestAnimationFrame(loop)}
 function newCar(forceWanted){const P=G.P,lane=R(3),bad=ch(.42+G.lvl*.03);let type=P.trucks&&ch(.3)?"truck":P.village&&ch(.22)?"tractor":pick(["sedan","sedan","hatch","suv","taxi","van"]);
@@ -149,14 +185,20 @@ function newCar(forceWanted){const P=G.P,lane=R(3),bad=ch(.42+G.lvl*.03);let typ
   c.belt=!(bad&&ch(.35));c.phone=bad&&ch(.25);c.lights=!(bad&&ch(.25));c.tint=bad&&ch(.18);c.osago=!(bad&&ch(.25));c.licence=!(bad&&ch(type==="tractor"?.4:.12));c.drunk=bad&&ch(G.night||P.village?.25:.1);
   c.noplates=(P.village&&bad&&ch(.35))||forceWanted&&ch(.3);if(c.noplates)c.plate="";c.overload=type==="truck"&&bad&&ch(.5);
   c.bribe=!perk("law",20)&&ch(.15+G.lvl*.025);c.flee=!perk("auth",20)?(c.drunk&&ch(.5))||(!c.licence&&ch(.3))||forceWanted:(c.drunk&&ch(.25))||forceWanted&&ch(.6);
+  if(!forceWanted){const onRoad=id=>G.cars.some(x=>(x.reg&&x.reg.id===id)||(x.sp&&x.sp.id===id));let pr=null;
+    if(ch(.1)){const cand=REGS.filter(r=>(!r.post||r.post===G.post)&&!onRoad(r.id));if(cand.length){pr=pick(cand);c.reg=pr}}
+    else if(ch(.07)){const cand=SPECS.filter(x=>!G.spDone[x.id]&&!onRoad(x.id));if(cand.length){pr=pick(cand);c.sp=pr;G.spDone[pr.id]=1}}
+    if(pr){const T=CARTYPES.find(x=>x.t===pr.type);Object.assign(c,{face:pr.face,name:pr.name,type:pr.type,w:T.w,h:T.h,col:pr.col});if(pr.plate!==undefined)c.plate=pr.plate;
+      for(const [k,p] of Object.entries(pr.bias||{})){const on=ch(p);if(k==="speed")c.speed=on?lim+22+R(30):Math.min(c.speed,lim+10);else if(k==="belt")c.belt=!on;else if(k==="lights")c.lights=!on;else if(k==="osago")c.osago=!on;else if(k==="licence")c.licence=!on;else if(k==="plates"){c.noplates=on;if(on)c.plate=""}else c[k]=on}
+      if(pr.extra)pr.extra(c);c.flee=false;c.badge=pr.badge||(C.reg[pr.id]?"⭐":"");c.vy=0}}
   const td=new Date();c.lic={face:c.face,name:c.name,until:fmt(addD(td,200+R(2800)))};
   if(!c.licence){if(ch(.5))c.lic.until=fmt(addD(td,-(5+R(700))));else{const o=pick(NAMES.filter(n=>n[1]!==c.name));c.lic.face=o[0];c.lic.name=o[1]}}
   c.sts={plate:c.plate||plate(),col:CNAME[c.col]};if(c.stolen){if(ch(.5))c.sts.plate=plate();else c.sts.col=pick(Object.values(CNAME).filter(x=>x!==CNAME[c.col]))}
-  c.marks={};c.vy=-(70+c.speed*1.6);const v=viol(c),k=v.length?pick(v):"none";c.excuse=pick(EXCUSE[k]||EXCUSE.none);c.lie=v.length>0;c.ranRed=false;c.noYield=false;return c}
+  c.marks={};c.vy=-(70+c.speed*1.6);const v=viol(c),k=v.length?pick(v):"none";c.excuse=pick(EXCUSE[k]||EXCUSE.none);c.lie=v.length>0;if(c.reg)c.excuse=regLine(c,v);if(c.sp)c.excuse=c.sp.line;c.ranRed=false;c.noYield=false;return c}
 function viol(c){const v=[],lim=G.P.lim;if(c.speed>lim+20)v.push("speed");if(c.ranRed)v.push("red");if(c.noYield)v.push("zebra");if(!c.belt)v.push("belt");if(c.phone)v.push("phone");if(!c.lights&&(G.night||G.wx!=="clear"))v.push("lights");if(c.tint)v.push("tint");if(!c.osago)v.push("osago");if(!c.licence)v.push("licence");if(c.drunk)v.push("drunk");if(c.noplates)v.push("plates");if(c.overload)v.push("overload");return v}
 function hud(){$("hRank").textContent="🎖 "+RANKS[C.rank];if(!G){$("task").innerHTML="";return}$("hPost").textContent=G.P.ic+" "+G.P.n+" · "+G.P.lim+" км/ч";
   $("hT").textContent="⏱ "+Math.floor(G.t/60)+":"+String(Math.floor(G.t%60)).padStart(2,"0");$("hS").textContent="⭐ "+G.score;$("hW").textContent=(G.night?"🌙 ночь · ":"")+G.wxN;$("hM").textContent="🚗 упущено "+G.miss;
-  $("task").innerHTML="<span>📋 "+G.task[1]+" — "+Math.min(G.taskN,G.task[2])+"/"+G.task[2]+(G.taskDone?" ✅":"")+"</span>"+(G.wanted?"<span>🚨 Ориентировка: "+CNAME[G.wanted.col]+" "+TNAME[G.wanted.type]+", номер "+G.wanted.plate+(G.wanted.done?" ✅":"")+"</span>":"")}
+  $("task").innerHTML="<span>📜 "+G.order.t+"</span><span>📋 "+G.task[1]+" — "+Math.min(G.taskN,G.task[2])+"/"+G.task[2]+(G.taskDone?" ✅":"")+"</span>"+(G.wanted?"<span>🚨 Ориентировка: "+CNAME[G.wanted.col]+" "+TNAME[G.wanted.type]+", номер "+G.wanted.plate+(G.wanted.done?" ✅":"")+"</span>":"")}
 // ---------- шаг игры
 function step(dt){if(G.chase)return chaseStep(dt);if(G.sel&&G.sel.state==="stop")return;G.t-=dt;if(G.t<=0){G.t=0;return endShift()}const P=G.P;
   if(P.light){G.light.t-=dt;if(G.light.t<=0){G.light.s=G.light.s==="green"?"yellow":G.light.s==="yellow"?"red":"green";G.light.t=G.light.s==="yellow"?1.6:G.light.s==="red"?5:7}}
@@ -197,7 +239,7 @@ function drawWorld(dt){const S=G&&!G.over?G:DEMO,P=S.P,road=P.village?TX.dirt:TX
   if(P.zebra){for(let x=RX0+8;x<RX1-8;x+=26){ctx.fillStyle="rgba(240,240,240,.88)";ctx.fillRect(x,STOP_Y-58,16,40)}ctx.fillStyle="rgba(255,255,255,.8)";ctx.fillRect(RX0,STOP_Y,RX1-RX0,4)}
   if(P.light){ctx.fillStyle="#222";ctx.fillRect(RX1+14,STOP_Y-90,22,58);[["red",STOP_Y-80],["yellow",STOP_Y-62],["green",STOP_Y-44]].forEach(([c,y])=>{const on=S.light.s===c;ctx.fillStyle=on?{red:"#ff3b3b",yellow:"#ffd23b",green:"#3bff7a"}[c]:"#333";ctx.beginPath();ctx.arc(RX1+25,y,7,0,7);ctx.fill();if(on){ctx.globalCompositeOperation="lighter";const g=ctx.createRadialGradient(RX1+25,y,2,RX1+25,y,30);g.addColorStop(0,ctx.fillStyle);g.addColorStop(1,"rgba(0,0,0,0)");ctx.fillStyle=g;ctx.fillRect(RX1-5,y-30,60,60);ctx.globalCompositeOperation="source-over"}});if(!P.zebra){ctx.fillStyle="rgba(255,255,255,.8)";ctx.fillRect(RX0,STOP_Y,RX1-RX0,4)}}
   // пост ДПС
-  ctx.fillStyle="rgba(0,0,0,.3)";ctx.fillRect(482,POST_Y-72,96,64);ctx.fillStyle="#dfe3e8";rr(474,POST_Y-80,96,64,8);ctx.fill();ctx.fillStyle="#2f5aa8";ctx.fillRect(474,POST_Y-80,96,16);ctx.fillStyle="#fff";ctx.font="800 12px Rubik,system-ui";ctx.textAlign="center";ctx.fillText("ДПС",522,POST_Y-68);ctx.font="34px system-ui";ctx.fillText("👮",522,POST_Y-30);
+  ctx.fillStyle="rgba(0,0,0,.3)";ctx.fillRect(482,POST_Y-72,96,64);ctx.fillStyle="#dfe3e8";rr(474,POST_Y-80,96,64,8);ctx.fill();ctx.fillStyle="#2f5aa8";ctx.fillRect(474,POST_Y-80,96,16);ctx.fillStyle="#fff";ctx.font="800 12px Rubik,system-ui";ctx.textAlign="center";ctx.fillText("ДПС",522,POST_Y-68);ctx.font="34px system-ui";ctx.fillText("👮",522,POST_Y-30);ctx.font="22px system-ui";if(C.post.trainee)ctx.fillText("👨‍🎓",560,POST_Y+2);if(C.post.postcam)ctx.fillText("📹",484,POST_Y-86);if(C.post.lamp)ctx.fillText("💡",560,POST_Y-86);if(C.post.heater)ctx.fillText("☕",488,POST_Y+2);if(C.post.barrier){ctx.save();ctx.translate(RX1+4,POST_Y+40);for(let i=0;i<6;i++){ctx.fillStyle=i%2?"#fff":"#E8333F";ctx.fillRect(i*9,0,9,6)}ctx.restore()}
   ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(64,POST_Y-70,24,0,7);ctx.fill();ctx.strokeStyle="#E8333F";ctx.lineWidth=6;ctx.stroke();ctx.fillStyle="#111";ctx.font="800 20px Rubik,system-ui";ctx.fillText(String(P.lim),64,POST_Y-63)}
 function rr(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath()}
 function drawCar(c,x,y,rot,police){const s=carSprite(c.type,c.col);ctx.save();ctx.translate(x,y);if(rot)ctx.rotate(rot);ctx.fillStyle="rgba(0,0,0,.35)";rr(-c.w/2+5,-c.h/2+7,c.w,c.h,10);ctx.fill();
@@ -218,9 +260,9 @@ function drawPed(p){const k=p.kid?.95:1.3,sw=Math.sin(p.ph)*(p.walk?6:0),d=p.dir
 function drawShift(dt){drawWorld(dt);if(!G)return;const night=G.night;
   for(const p of G.peds)drawPed(p);
   for(const c of G.cars){const crash=c.state==="crash";drawCar(c,c.x,c.y,crash?.6:0);if(crash){ctx.font="26px system-ui";ctx.fillText(c.dtp?"🚧":"💥",c.x+30,c.y-30)}
-    if(c.state==="drive"&&c.y<H-10){const seen=C.gear.radar?c.y<H-30:c.y<POST_Y+330;ctx.font="700 14px Rubik,system-ui";ctx.textAlign="center";ctx.fillStyle="rgba(0,0,0,.72)";rr(c.x-32,c.y-c.h/2-30,64,22,8);ctx.fill();
+    if(c.state==="drive"&&c.y<H-10){const seen=c.y<(C.gear.radar?H-30:POST_Y+330)-((G.night||G.wx==="fog")&&!C.post.lamp?140:0);ctx.font="700 14px Rubik,system-ui";ctx.textAlign="center";ctx.fillStyle="rgba(0,0,0,.72)";rr(c.x-32,c.y-c.h/2-30,64,22,8);ctx.fill();
       ctx.fillStyle=!seen?"#9aa":c.speed>G.P.lim+20?"#FF6B70":c.speed>G.P.lim?"#F2C45A":"#C8F7DA";ctx.fillText(seen?c.speed+" км/ч":"…",c.x,c.y-c.h/2-14);
-      const ic=(c.lights?"":"🔦")+(c.tint?"🕶":"")+(c.noplates?"🚫":"")+(perk("eye",20)?(c.belt?"":"🧷")+(c.phone?"📱":""):"")+(c.ranRed?"🚦":"")+(c.noYield?"🚸":"");if(ic){ctx.font="16px system-ui";ctx.fillText(ic,c.x,c.y-c.h/2-38)}}}
+      const ic=(c.badge||"")+(c.lights?"":"🔦")+(c.tint?"🕶":"")+(c.noplates?"🚫":"")+((perk("eye",20)||C.post.postcam)?(c.belt?"":"🧷")+(c.phone?"📱":""):"")+(c.ranRed?"🚦":"")+(c.noYield?"🚸":"");if(ic){ctx.font="16px system-ui";ctx.fillText(ic,c.x,c.y-c.h/2-38)}}}
   // ночь: темнота, фонари, фары (аддитивный свет), отражения на мокром асфальте
   if(night){ctx.fillStyle="rgba(5,8,25,.62)";ctx.fillRect(0,0,W,H);ctx.globalCompositeOperation="lighter";
     for(let i=0;i<4;i++){const y=((i*200+G.off)%(H+200))-100;[[RX0-12,y],[RX1+12,y+100]].forEach(([x,yy])=>{const g=ctx.createRadialGradient(x,yy,4,x,yy,110);g.addColorStop(0,"rgba(255,220,150,.35)");g.addColorStop(1,"rgba(0,0,0,0)");ctx.fillStyle=g;ctx.fillRect(x-110,yy-110,220,220)})}
@@ -244,7 +286,7 @@ cv.addEventListener("pointerdown",e=>{if(!G||G.over||G.dtpOpen)return;const r=cv
   if(cr){if(cr.dtp){openDTP(cr);return}cr.state="leave";const b=perk("heart",70)?6:3;G.score+=b;G.honorD+=3;grow("heart",2);G.t-=6;flash("Помогли водителю после заноса: +"+b,"#4ADE95");return}
   if(G.sel){flash("Сначала закончите с текущим водителем","#F2C45A");return}
   const c=G.cars.find(c=>c.state==="drive"&&Math.abs(c.x-x)<c.w/2+14&&Math.abs(c.y-y)<c.h/2+14);if(!c)return;
-  if(c.flee&&ch(.7)){c.state="gone";startChase(c);return}c.state="pull";G.sel=c;insp()});
+  if(c.flee&&ch(C.post.barrier?.35:.7)){c.state="gone";startChase(c);return}c.state="pull";G.sel=c;insp()});
 // ---------- карточка водителя
 function fact(l,v,cls){return`<div><span>${l}</span><b class="${cls}">${v}</b></div>`}
 const HINT="Нажмите на машину, чтобы остановить: перед вами откроется карточка водителя. Над машинами — скорость с радара и замеченные нарушения (🔦 без фар, 🕶 тонировка, 🚫 без номеров, 🚦 красный, 🚸 пешеход). Документы сверяйте сами: имя, фото, срок действия, номер и цвет машины. 🚧 — ДТП, 💥 — занос: нажмите, чтобы помочь.";
@@ -256,18 +298,18 @@ function insp(){const box=$("insp"),c=G&&G.sel,m=$("modal");$("hint").textConten
    <div class="facts">${fact("Скорость",c.speed+" км/ч (лимит "+G.P.lim+")",c.speed>G.P.lim+20?"bad":"ok")}${c.ranRed||c.noYield?fact("Камера перекрёстка",(c.ranRed?"проезд на красный ":"")+(c.noYield?"не пропустил пешехода":""),"bad"):""}
    ${fact("Права",k.docs?(sharp?(c.licence?"в порядке":"подделка или просрочка"):"сверьте сами ↑"):"не проверено",k.docs&&sharp?(c.licence?"ok":"bad"):"unk")}${fact("ОСАГО",k.base?(c.osago?"действует":"нет полиса"):"не проверено",k.base?(c.osago?"ok":"bad"):"unk")}
    ${fact("Ремень · телефон",k.cam?(c.belt?"пристёгнут":"без ремня")+" · "+(c.phone?"с телефоном":"без"):"не проверено",k.cam?(c.belt&&!c.phone?"ok":"bad"):"unk")}${fact("Алкотестер",k.alco?(c.drunk?"0,62 мг/л":"0,00 мг/л"):"не проверено",k.alco?(c.drunk?"bad":"ok"):"unk")}
-   ${c.type==="truck"?fact("Весы",k.scale?(c.overload?"перегруз 4 т":"норма"):C.gear.scale?"не проверено":"нужны весы",k.scale?(c.overload?"bad":"ok"):"unk"):""}${fact("По базе угонов",k.base?(c.stolen?"В УГОНЕ!":"чисто"):"не проверено",k.base?(c.stolen?"bad":"ok"):"unk")}</div>
-   <div class="tools"><button class="btn" data-t="docs" ${k.docs?"disabled":""}>🪪 Документы</button><button class="btn" data-t="base" ${k.base?"disabled":""}>📋 По базе</button><button class="btn" data-t="cam" ${k.cam?"disabled":""}>🎥 Запись камеры</button><button class="btn" data-t="alco" ${k.alco?"disabled":""}>🌬 Алкотестер</button>${c.type==="truck"&&C.gear.scale?`<button class="btn" data-t="scale" ${k.scale?"disabled":""}>⚖️ Весы</button>`:""}</div>
+   ${c.type==="truck"?fact("Весы",k.scale?(c.overload?"перегруз 4 т":"норма"):(C.gear.scale||G.order.id==="trucks")?"не проверено":"нужны весы",k.scale?(c.overload?"bad":"ok"):"unk"):""}${fact("По базе угонов",k.base?(c.stolen?"В УГОНЕ!":"чисто"):"не проверено",k.base?(c.stolen?"bad":"ok"):"unk")}</div>
+   <div class="tools"><button class="btn" data-t="docs" ${k.docs?"disabled":""}>🪪 Документы</button><button class="btn" data-t="base" ${k.base?"disabled":""}>📋 По базе</button><button class="btn" data-t="cam" ${k.cam?"disabled":""}>🎥 Запись камеры</button><button class="btn" data-t="alco" ${k.alco?"disabled":""}>🌬 Алкотестер</button>${c.type==="truck"&&(C.gear.scale||G.order.id==="trucks")?`<button class="btn" data-t="scale" ${k.scale?"disabled":""}>⚖️ Весы</button>`:""}</div>
    <div class="vio">${Object.keys(VN).filter(x=>(x!=="red"||G.P.light)&&(x!=="zebra"||G.P.zebra)&&(x!=="overload"||c.type==="truck")).map(x=>`<label><input type="checkbox" value="${x}" ${c.marks[x]?"checked":""}> ${VN[x]} — ${FINE[x].toLocaleString("ru-RU")} ₽</label>`).join("")}</div>
    <div class="row"><button class="btn go" id="fine">📝 Штраф</button><button class="btn" id="warn">🗣 Предупредить</button><button class="btn" id="free">👋 Отпустить</button><button class="btn red" id="arrest">🚔 Задержать</button></div>`;
   box.querySelectorAll(".vio input").forEach(i=>i.onchange=()=>{c.marks[i.value]=i.checked});
-  box.querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>{const t=b.dataset.t,cost=fast?1:{docs:3,base:5,cam:C.gear.cam?3:6,alco:C.gear.alco?1:4,scale:6}[t];G.t=Math.max(0,G.t-cost);c.checked[t]=1;grow("eye",.5);
+  box.querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>{const t=b.dataset.t,cost=fast?1:{docs:C.post.trainee?0:3,base:5,cam:C.gear.cam?3:6,alco:C.gear.alco?1:4,scale:6}[t];G.t=Math.max(0,G.t-cost);c.checked[t]=1;grow("eye",.5);
     const lines={docs:c.licence?"— Вот, пожалуйста.":"— Вот… всё в порядке, наверное.",base:c.stolen?"— Это… не моя машина, мне друг дал!":c.osago?"— Видите, полис есть.":"— Ой… а мне сказали, что продлили.",cam:c.belt&&!c.phone?"— Я же говорил!":"— Ну да… было дело.",alco:c.drunk?"— Это… квас был!":"— Я же трезвый, видите.",scale:c.overload?"— Да там чуть-чуть лишнего…":"— Всё по накладной."};const sc=box.scrollTop;insp();box.scrollTop=sc;$("say").textContent=lines[t];hud()});
   $("fine").onclick=()=>decide("fine");$("warn").onclick=()=>decide("warn");$("free").onclick=()=>decide("free");$("arrest").onclick=()=>decide("arrest");
   if(c.bribe&&v.length&&!c.offered){c.offered=1;setTimeout(()=>{if(!G||G.sel!==c||!$("say"))return;$("say").textContent="— Командир, давай без протокола? Тут пять тысяч…";const r=document.createElement("div");r.className="row";r.innerHTML='<button class="btn red" id="b1">💵 Взять</button><button class="btn blu" id="b2">🙅 «Это дача взятки»</button>';$("say").after(r);
     $("b1").onclick=()=>{G.stats.bribes++;grow("law",-15);if(C.gear.cam||ch(.6)){G.over=true;$("modal").hidden=true;C.honor=clamp(C.honor-30,0,100);C.trust=clamp(C.trust-30,0,100);save();endShift("Служебная проверка","Запись камеры всё показала. Смена закончена: честь −30, доверие −30, принципиальность −15.")}else{G.honorD-=15;r.remove();$("say").textContent="— Вот и договорились…";flash("Взятка… Честь −15, принципиальность −15","#FF8A8F")}};
     $("b2").onclick=()=>{G.score+=perk("law",20)?8:5;G.honorD+=5;grow("law",6);r.remove();$("say").textContent="— Понял, понял… Выписывайте.";flash("Отказ от взятки: очки и принципиальность растут","#4ADE95")}},900)}}
-function decide(kind){const c=G.sel,v=viol(c),marked=Object.keys(c.marks||{}).filter(x=>c.marks[x]),mul=perk("law",70)?1.5:1;
+function decide(kind){const s0=G.score,h0=G.honorD,c=G.sel,v=viol(c),marked=Object.keys(c.marks||{}).filter(x=>c.marks[x]),mul=perk("law",70)?1.5:1;
   if(kind==="arrest"){if(c.stolen){G.score+=15;G.stats.wanted++;G.wanted.done=true;grow("auth",6);grow("eye",4);flash("🚔 Угнанная машина задержана: +15","#E7BD52")}else{G.score-=3;flash("Машина не в угоне: −3","#FF8A8F")}}
   else if(kind==="fine"){if(!marked.length){flash("Отметьте, за что штраф","#F2C45A");return}const right=marked.filter(m=>v.includes(m)),wrong=marked.filter(m=>!v.includes(m));
     if(right.length){const pts=Math.round(3*right.length*mul);G.score+=pts;G.stats.fines++;const sum=right.reduce((a,m)=>a+FINE[m],0);G.budget+=sum;grow("law",1.5*right.length);flash("Штраф "+sum.toLocaleString("ru-RU")+" ₽: +"+pts,"#4ADE95");right.forEach(m=>{if(G.task[0]===m)G.taskN++})}
@@ -278,6 +320,17 @@ function decide(kind){const c=G.sel,v=viol(c),marked=Object.keys(c.marks||{}).fi
   else if(kind==="warn"){const minor=v.length&&v.every(m=>["lights","belt","tint"].includes(m));if(minor){const b=perk("heart",20)?3:1;G.score+=b;G.honorD+=(perk("heart",45)?4:2);grow("heart",2);flash("Предупреждение по мелочи: +"+b+", водитель благодарен","#4ADE95")}else if(!v.length)flash("Нарушений не было — зря задержали","#F2C45A");else{G.score-=2;grow("law",-1);flash("Серьёзное нарушение без штрафа: −2","#FF8A8F")}}
   else{if(!v.length){G.score+=1;G.stats.free++;grow("heart",.5);flash("Честный водитель: +1","#4ADE95")}else{G.score-=1;flash("Отпустили нарушителя: −1","#FF8A8F")}}
   if(G.taskN>=G.task[2]&&!G.taskDone){G.taskDone=true;G.score+=10;flash("Задание начальника выполнено: +10","#E7BD52")}
+  {const O=G.order.id,mk=marked.filter(x=>v.includes(x)),minorOnly=mk.length&&mk.every(x=>["lights","belt","tint"].includes(x));
+   if(O==="docs"){if(!c.checked.docs){G.score-=2;flash("Приказ дня: отпустили без проверки документов −2","#FF8A8F")}else if(kind==="fine"&&mk.includes("licence"))G.score+=4}
+   if(O==="alco"&&c.drunk&&!(kind==="fine"&&mk.includes("drunk"))&&kind!=="arrest"){G.score-=6;flash("Приказ дня: упустили нетрезвого −6","#FF8A8F")}
+   if(O==="tint"&&kind==="fine"&&mk.includes("tint"))G.score+=6;if(O==="trucks"&&kind==="fine"&&mk.includes("overload"))G.score+=6;
+   if(O==="polite"){if(kind==="warn"&&v.length&&v.every(x=>["lights","belt","tint"].includes(x))){G.score+=2;G.honorD+=2}if(kind==="fine"&&minorOnly)G.score=Math.min(G.score,s0)}
+   const r={v,ok:kind==="fine"&&mk.length&&marked.length===mk.length,wrong:kind==="fine"&&marked.some(x=>!v.includes(x))};
+   if(c.reg){const m=C.reg[c.reg.id];if(m&&m.last==="warn"&&!v.length){G.score+=3;G.honorD+=2;flash(c.reg.name+" исправился после вашего предупреждения: +3","#4ADE95")}
+     else if(m&&m.last==="warn"&&v.length&&kind==="warn"){G.score-=2;flash("Второе предупреждение подряд — это уже поблажка: −2","#F2C45A")}
+     C.reg[c.reg.id]={n:(m?m.n:0)+1,last:kind};save()}
+   if(c.sp)c.sp.after(kind,r);
+   if(O==="inspector"){const d=G.score-s0;G.score=s0+(d>0?Math.round(d*1.5):d*2)}}
   c.state="leave";G.sel=null;insp();hud()}
 // ---------- ДТП: схема, свидетели, решение
 function openDTP(car){G.dtpOpen=true;const guilty=R(2),cause=pick(["скорость","перестроение","дистанция","красный"]);const A={col:car.col,type:car.type,n:pick(NAMES)},B={col:pick(COLORS),type:pick(["sedan","hatch","suv"]),n:pick(NAMES)};
@@ -358,18 +411,19 @@ function office(title,text,res){const o=$("office");$("ov").classList.remove("li
   const attrs=Object.entries(ATTR).map(([k,[i,n]])=>`<div>${i} ${n}: <b>${Math.round(C.a[k])}</b><div class="meter"><b style="width:${C.a[k]}%;background:${{eye:"#7AB8FF",law:"#E7BD52",heart:"#FF8AB0",auth:"#4ADE95"}[k]}"></b></div></div>`).join("");
   const posts=Object.entries(POSTS).map(([k,p])=>{const ok=!p.need||C.rank>=p.need;return`<button class="btn" data-p="${k}" ${ok?"":"disabled"}><b>${p.ic} ${p.n} · ${p.lim} км/ч</b><small>${ok?p.d:"Откроется со звания «"+RANKS[p.need]+"»"}</small></button>`}).join("");
   const perks=PERKS.map(([k,lv,n,d])=>`<div class="perk ${perk(k,lv)?"on":"off"}">${perk(k,lv)?"✨":"🔒"} <b>${ATTR[k][0]} ${n}</b> <span>— ${d} ${perk(k,lv)?"":"("+ATTR[k][1].toLowerCase()+" "+lv+")"}</span></div>`).join("");
+  const pst=POSTUP.map(([k,n,d,p])=>`<button class="btn" data-u="${k}" ${C.post[k]||C.prem<p?"disabled":""} style="display:flex;justify-content:space-between;align-items:center;gap:8px;text-align:left;min-height:48px"><span><b>${n}</b><br><small class="mu">${d}</small></span><span>${C.post[k]?"✓":p.toLocaleString("ru-RU")+" ₽"}</span></button>`).join("");
   const gear=GEAR.map(([k,n,d,p])=>`<button class="btn" data-g="${k}" ${C.gear[k]||C.prem<p?"disabled":""} style="display:flex;justify-content:space-between;align-items:center;gap:8px;text-align:left;min-height:48px"><span><b>${n}</b><br><small class="mu">${d}</small></span><span>${C.gear[k]?"✓":p.toLocaleString("ru-RU")+" ₽"}</span></button>`).join("");
   o.innerHTML=`<div class="t">${title||"Отдел ДПС"}</div>${text?`<p class="mu" style="text-align:center">${text}</p>`:""}${res&&res.sum?resGrid(res.sum):""}${res&&res.up?`<p style="text-align:center;font-weight:800;color:#E7BD52">${res.up}</p>`:""}
    <div class="boss"><div class="face">👨‍✈️</div><div><b>Начальник отдела</b><p class="mu" style="margin:4px 0 0">${boss}</p></div></div>
    <div class="stats"><div><b>${RANKS[C.rank]}</b>звание</div><div><b>${C.xp}${C.rank<RANKS.length-1?" / "+XP_NEED[C.rank+1]:""}</b>опыт</div><div><b>${C.prem.toLocaleString("ru-RU")} ₽</b>премии${res&&res.prem?" (+"+res.prem+")":""}</div></div>
    <div class="attr"><div>⚖️ Честь у водителей: <b>${C.honor}</b><div class="meter"><b style="width:${C.honor}%;background:#4ADE95"></b></div></div><div>🤝 Доверие начальства: <b>${C.trust}</b><div class="meter"><b style="width:${C.trust}%;background:#7AB8FF"></b></div></div></div>
-   <div class="tabs"><button data-tab="posts" aria-pressed="${tab==="posts"}">🚓 На смену</button><button data-tab="me" aria-pressed="${tab==="me"}">🧠 Навыки</button><button data-tab="gear" aria-pressed="${tab==="gear"}">🛒 Снаряжение</button></div>
-   ${tab==="posts"?`<div class="posts">${posts}</div><label class="mu" style="display:flex;gap:8px;align-items:center;justify-content:center"><input type="checkbox" id="night" ${C.rank<1?"disabled":""}> 🌙 Ночная смена ${C.rank<1?"(со звания «Старший сержант»)":"— больше нетрезвых и беглецов, но и очков"}</label>`:
+   <div class="tabs"><button data-tab="posts" aria-pressed="${tab==="posts"}">🚓 На смену</button><button data-tab="me" aria-pressed="${tab==="me"}">🧠 Навыки</button><button data-tab="gear" aria-pressed="${tab==="gear"}">🛒 Магазин</button></div>
+   ${tab==="posts"?`<div class="boss"><div class="face">📜</div><div><b>Приказ на ${TODAY}: ${dayOrder().t}</b><p class="mu" style="margin:4px 0 0">${dayOrder().d}</p></div></div><div class="posts">${posts}</div><label class="mu" style="display:flex;gap:8px;align-items:center;justify-content:center"><input type="checkbox" id="night" ${C.rank<1?"disabled":""}> 🌙 Ночная смена ${C.rank<1?"(со звания «Старший сержант»)":"— больше нетрезвых и беглецов, но и очков"}</label>`:
      tab==="me"?`<div class="attr">${attrs}</div><p class="mu" style="font-size:.82rem">Навыки растут от ваших решений: верные штрафы — принципиальность, мягкость к мелочам и помощь — человечность, проверки и ДТП — внимательность, погони и задержания — авторитет. Взятки и ошибки отнимают очки навыков.</p>${perks}`:
-     `<div style="display:grid;gap:6px">${gear}</div>`}<button class="btn" id="toTitle">← Главное меню</button>`;
+     `<div style="display:grid;gap:6px"><b>🎒 Снаряжение</b>${gear}<b style="margin-top:6px">🏠 Пост</b>${pst}</div>`}<button class="btn" id="toTitle">← Главное меню</button>`;
   o.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{tab=b.dataset.tab;office(title,text,Object.assign({},res,{noStory:true}))});
   o.querySelectorAll("[data-g]").forEach(b=>b.onclick=()=>{const g=GEAR.find(x=>x[0]===b.dataset.g);if(C.prem>=g[3]){C.prem-=g[3];C.gear[g[0]]=1;save();office(title,text,Object.assign({},res,{noStory:true}))}});
-  $("toTitle").onclick=title;o.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>newShift(b.dataset.p,!!($("night")&&$("night").checked)));$("ov").hidden=false;hud();if(!G)drawWorld(0)}
+  $("toTitle").onclick=title;o.querySelectorAll("[data-u]").forEach(b=>b.onclick=()=>{const g=POSTUP.find(x=>x[0]===b.dataset.u);if(C.prem>=g[3]&&!C.post[g[0]]){C.prem-=g[3];C.post[g[0]]=1;save();office(title,text,Object.assign({},res,{noStory:true}))}});o.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>newShift(b.dataset.p,!!($("night")&&$("night").checked)));$("ov").hidden=false;hud();if(!G)drawWorld(0)}
 document.addEventListener("visibilitychange",()=>{paused=document.hidden;last=0});
 window.IIGRY_TO_MENU=()=>{if(G&&G.chase)endChase();if(G&&!G.over){G.over=true;cancelAnimationFrame(raf)}if(G){G.dtpOpen=false}$("modal").hidden=true;title()};
 insp();hud();title();
