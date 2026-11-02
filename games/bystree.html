@@ -339,13 +339,18 @@ html.iigry-app button:active:not(:disabled),html.iigry-app .btn:active:not(:disa
  const CK="iigry-tr-"+lang;let mem={};try{mem=JSON.parse(G(CK)||"{}")||{}}catch(_){mem={}}
  let saveT=0;const persist=()=>{clearTimeout(saveT);saveT=setTimeout(()=>{const k=Object.keys(mem);if(k.length>4000)k.slice(0,k.length-4000).forEach(x=>delete mem[x]);S(CK,JSON.stringify(mem))},800)};
  // числа заменяем метками, чтобы «Рекорд: 12» и «Рекорд: 13» переводились один раз
- const tpl=s=>{const n=[];const t=s.replace(/\d+(?:[.,:]\d+)*/g,m=>{n.push(m);return"{"+(n.length-1)+"}"});return[t,n]};
+ // имена собственные не переводим: бренд и названия игр подставляются латиницей
+ const GL=[[/ИИгр[а-яё]*(\s+онлайн)?/g,m=>/онлайн/.test(m)?"IIgry Online":"IIgry"],[/Жезл[а-яё]*/g,()=>"Zhezl"],[/Пульсар[а-яё]*/g,()=>"Pulsar"]];
+ const tpl=s=>{const n=[];let t=s.replace(/ПрИИлож/g,"Прилож").replace(/\d+(?:[.,:]\d+)*/g,m=>{n.push(m);return"{"+(n.length-1)+"}"});GL.forEach(([re,f])=>{t=t.replace(re,m=>{n.push(f(m));return"{"+(n.length-1)+"}"})});return[t,n]};
  const fill=(t,n)=>{let ok=true;const r=t.replace(/\{(\d+)\}/g,(m,i)=>{if(n[+i]==null){ok=false;return m}return n[+i]});return ok&&!/\{\d+\}/.test(r)?r:null};
  const SKIP="SCRIPT,STYLE,NOSCRIPT,TEXTAREA,CODE,PRE,KBD,SVG,CANVAS,OPTION".split(",");
  const ATTR=["placeholder","title","aria-label","alt"];
  const nodes=new Map(),queue=new Set(),done=new WeakMap();let busy=false,tm=0;
- function want(t){const[k,n]=tpl(t.trim());if(!CY.test(k))return null;return{k,n}}
- function scan(root){if(!root)return;const w=D.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:n=>{const p=n.parentElement;if(!p||SKIP.includes(p.tagName)||p.closest('[translate="no"],.notranslate,#iigry-lang'))return 2;return CY.test(n.nodeValue)?1:2}});
+ function want(t){const[k,n]=tpl(t.trim());if(!CY.test(k)){if(n.some(x=>/^[A-Z]/.test(x))){mem[k]=k;return{k,n}}return null}return{k,n}}
+ // «ИИ» выделено отдельным тегом внутри слова («ИИгры», «ПрИИложения») — склеиваем слово, чтобы переводчик видел его целиком
+ function glue(root){root.querySelectorAll&&root.querySelectorAll("i.ii").forEach(i=>{const a=i.previousSibling,b=i.nextSibling,at=a&&a.nodeType===3,bt=b&&b.nodeType===3;if(!(bt&&/^[а-яё]/.test(b.nodeValue))&&!(at&&/[а-яё]$/i.test(a.nodeValue)))return;
+   const txt=(at?a.nodeValue:"")+i.textContent+(bt?b.nodeValue:"");if(at){a.nodeValue=txt;if(bt)b.remove()}else if(bt)b.nodeValue=txt;i.remove()})}
+ function scan(root){if(!root)return;glue(root);const w=D.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:n=>{const p=n.parentElement;if(!p||SKIP.includes(p.tagName)||p.closest('[translate="no"],.notranslate,#iigry-lang'))return 2;return CY.test(n.nodeValue)?1:2}});
   let n;while((n=w.nextNode())){if(done.get(n)===n.nodeValue)continue;const x=want(n.nodeValue);if(!x)continue;nodes.set(n,x);if(mem[x.k]==null)queue.add(x.k)}
   const els=root.querySelectorAll?root.querySelectorAll(ATTR.map(a=>"["+a+"]").join(",")+',input[type=button],input[type=submit]'):[];
   els.forEach(el=>{if(el.closest('[translate="no"],#iigry-lang'))return;[...ATTR,"value"].forEach(a=>{if(a==="value"&&!(el.tagName==="INPUT"&&/^(button|submit)$/.test(el.type)))return;const v=el.getAttribute(a);if(!v||!CY.test(v))return;const key=el.__trA||(el.__trA={});if(key[a]===v)return;const x=want(v);if(!x)return;nodes.set({el,a},x);if(mem[x.k]==null)queue.add(x.k)})});
