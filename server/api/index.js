@@ -618,6 +618,9 @@ exports.handler = async (event, ctx) => {
     if (!(e > Date.now()) || e > Date.now() + 16 * 60e3 || t.length !== 32 || !same(t, expTok(e))) return { statusCode: 403, headers: { "Content-Type": "text/plain; charset=utf-8" }, body: "Ссылка устарела — запросите новую в боте командой /stats" };
     return { statusCode: 200, headers: { "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": "attachment; filename=\"iigry-stat-" + new Date().toISOString().slice(0, 10) + ".csv\"", "Cache-Control": "no-store" }, body: await exportCsv() };
   }
+  // Подтверждённые разрешения правообладателей (публично: компания, домен и дата — без адреса почты)
+  if (a === "rights" && method === "GET") { let m = {}; try { m = JSON.parse(await cfgGet("rights") || "{}") } catch (_) {}
+    const out = {}; for (const [k, v] of Object.entries(m)) out[k] = { c: v.c, d: v.d, ts: v.ts }; return reply(200, { items: out }, origin) }
   // Ночная резервная копия базы на Яндекс Диск (вызывает GitHub Actions по ключу; токен Диска хранится зашифрованным)
   if (a === "backup" && method === "POST") {
     const got = String(hd["X-Cron-Key"] || hd["x-cron-key"] || "");
@@ -1066,6 +1069,14 @@ exports.handler = async (event, ctx) => {
       await q(`DECLARE $id AS Utf8; DELETE FROM purch WHERE id=$id;`, { $id: u8(id) }).catch(() => {});
       await q(`DECLARE $u AS Utf8; DECLARE $id AS Utf8; DECLARE $p AS Utf8; DECLARE $t AS Uint64; UPSERT INTO purch (uid, id, prod, ts) VALUES ($u, $id, $p, $t);`, { $u: u8(usr.uid), $id: u8(id), $p: u8(o.prod), $t: u64(Date.now()) });
       await mlog(who, "привязал покупку к аккаунту", usr.nick + ": " + ((PRODUCTS[o.prod] || {}).title || o.prod)); return reply(200, { ok: true }, origin) }
+    if (op === "rights") { if (me.role !== "admin") return NO; let m = {}; try { m = JSON.parse(await cfgGet("rights") || "{}") } catch (_) {}
+      if (b.get) return reply(200, { items: m }, origin);
+      const pid = String(b.pid || "").trim(); if (!/^[a-z0-9:_-]{1,40}$/i.test(pid)) return reply(400, { error: "ID проекта: латиница, цифры, - и _ (например p13)." }, origin);
+      if (b.del) { delete m[pid]; await cfgSet("rights", JSON.stringify(m)); await mlog(who, "снял отметку о разрешении правообладателя", pid); return reply(200, { ok: true }, origin) }
+      const c = clean(b.company, 80), em = String(b.email || "").trim().toLowerCase(), note = clean(b.note, 300);
+      const mm = /^[^\s@<>"]{1,64}@([a-z0-9.-]+\.[a-z]{2,})$/.exec(em); if (!c || !mm) return reply(400, { error: "Впишите компанию и адрес официальной почты, с которой пришло письмо." }, origin);
+      if (/^(gmail\.com|googlemail\.com|mail\.ru|bk\.ru|list\.ru|inbox\.ru|internet\.ru|yandex\.(ru|com|by|kz)|ya\.ru|rambler\.ru|outlook\.com|hotmail\.com|live\.com|icloud\.com|me\.com|proton(mail)?\.(me|com)|gmx\.(com|net|de)|yahoo\.com)$/.test(mm[1])) return reply(400, { error: "Это бесплатная почта, а не официальный домен компании. Разрешение должно прийти с адреса на домене компании." }, origin);
+      m[pid] = { c, d: mm[1], email: em, note, by: who, ts: Date.now() }; await cfgSet("rights", JSON.stringify(m)); await mlog(who, "подтвердил разрешение правообладателя", pid + ": " + c + " <" + em + ">"); return reply(200, { ok: true }, origin) }
     if (op === "ydisk") { if (me.role !== "admin") return NO;
       if (b.get) { let l = null; try { l = JSON.parse(await cfgGet("backup_last") || "null") } catch (_) {} return reply(200, { on: !!(await cfgGet("ydisk_enc")), last: l }, origin) }
       const k = String(b.token || "").trim(); if (!/^[A-Za-z0-9_.-]{20,200}$/.test(k)) return reply(400, { error: "Вставьте токен Яндекс Диска целиком." }, origin);

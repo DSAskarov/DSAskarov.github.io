@@ -1167,7 +1167,9 @@ async function buyNow(btn){const t=btn.textContent;btn.disabled=true;btn.textCon
   try{const r=await fetch("https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av?a=buy",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prod:btn.dataset.prod,token:(()=>{try{return localStorage.getItem("iigry-sess")||""}catch(_){return ""}})()})}),j=await r.json().catch(()=>({}));
     if(j.url&&/^https:\/\/[\w.-]*(yoomoney|yookassa)\.ru\//.test(j.url)){location.href=j.url;return}toast(j.error||"Не получилось открыть оплату. Попробуйте через минуту.")}catch(_){toast("Нет связи с сервером. Попробуйте ещё раз.")}
   btn.disabled=false;btn.textContent=t}
-let MYP=new Set();
+let MYP=new Set(),RIGHTS={};
+async function loadRights(){try{const j=await(await fetch("https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av?a=rights")).json();if(j&&typeof j.items==="object"){RIGHTS=j.items;render()}}catch(_){}}
+const rightsOf=g=>RIGHTS[g.id]||null;
 async function loadMyP(){let t="";try{t=localStorage.getItem("iigry-sess")||""}catch(_){}if(!/^[A-Za-z0-9_-]{43}$/.test(t))return;
   try{const r=await fetch("https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av?a=u",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({op:"purch",token:t,claim:[]})});const j=await r.json();
     (j.items||[]).forEach(x=>{MYP.add(x.game);try{localStorage.setItem("iigry-lic-"+x.prod,JSON.stringify({id:x.id,lic:x.lic,ts:Date.now()}))}catch(_){}});if(MYP.size){const l=$("myOnly");if(l)l.closest("label").hidden=false;render()}}catch(_){}}
@@ -1189,7 +1191,7 @@ async function loadGS(){try{const r=await fetch("https://functions.yandexcloud.n
 function cardHtml(g){const par=byId[g.par],co=coOf(g);return `<button class="card" data-id="${esc(g.id)}">
   <div class="cover cv${Number(g.cv)||0}">${COV[g.id]?`<img class="cimg" src="${COV[g.id]}" alt="" loading="lazy">`:`<span>${esc(String(g.t||"?")[0])}</span>`}</div>
   <div class="info"><h3>${esc(g.t)}</h3><div class="author">@${esc(g.a)}${co.length?" и ещё "+co.length:""}</div>
-  ${MYP.has(gslug(g))?'<div class="tags"><span class="tag mine">✓ куплено</span></div>':""}${g.soon||g.dl||g.ex?`<div class="tags">${g.ex?'<span class="tag soon">пример</span>':''}${g.soon?'<span class="tag soon">скоро</span>':''}${g.dl?'<span class="tag dl">можно скачать</span>':''}</div>`:''}
+  ${MYP.has(gslug(g))?'<div class="tags"><span class="tag mine">✓ куплено</span></div>':""}${rightsOf(g)?`<div class="tags"><span class="tag mine" title="Разрешение правообладателя подтверждено">✅ с разрешения ${esc(rightsOf(g).c)}</span></div>`:""}${g.soon||g.dl||g.ex?`<div class="tags">${g.ex?'<span class="tag soon">пример</span>':''}${g.soon?'<span class="tag soon">скоро</span>':''}${g.dl?'<span class="tag dl">можно скачать</span>':''}</div>`:''}
   ${par?`<div class="lineage">↳ доработка «${esc(par.t)}»</div>`:''}${descCount(g.id)?`<div class="lineage">Доработок: ${descCount(g.id)}</div>`:''}
   ${statLine(g.id)}<div class="row"><span class="price ${g.soon?'soon':g.p?'':'free'}">${priceLabel(g)}</span><span class="genre">${hl(ONE[g.c]||"")} · ${gl(g)}</span></div></div></button>`}
 function setData(list){G=list.filter(g=>g&&g.id).map(g=>Object.assign({},g,{p:NUM(g.p),cv:Math.floor(NUM(g.cv))%24,order:Number(g.order)||0})).sort((a,b)=>(a.order??0)-(b.order??0));byId=Object.fromEntries(G.map(g=>[g.id,g]));render();if(typeof renderMe==="function")renderMe();if($("admin").open)renderAdmin()}
@@ -1273,13 +1275,13 @@ function openGame(id){window.__gid=id;
   ${co.length?`<div class="links"><span class="hint">Соавторы:</span>${co.map(n=>`<span>@${esc(n)}</span>${msgBtn(n)}`).join("")}</div>`:''}
   ${treeHtml(g)}
   ${g.demo&&!g.soon?qualityHtml():''}
-  <div class="actions">${g.demo?demoBtn(g):''}<button class="btn ghost" data-fav="${esc(g.id)}">${(ME.fav||[]).includes(g.id)?'★ В избранном':'☆ В избранное'}</button>${g.p&&!g.soon&&owned(g)?'<span class="btn ghost" style="cursor:default">✓ Куплено</span>':g.p&&!g.soon?(safe(g.buyUrl)?`<a class="btn gold" data-a="buy" href="${esc(safe(g.buyUrl))}" target="_blank" rel="noopener noreferrer">Купить за ${rub(g.p)}</a>`:`<button class="btn gold" data-a="buy"${prodOf(g)?` data-prod="${prodOf(g)}"`:""}>Купить за ${rub(g.p)}</button>`):''}${!g.p&&g.dl?dlBtn(g):''}${g.soon?'':'<button class="btn ghost" data-a="remix">Доработать</button>'}<button class="btn ghost" data-a="close">Закрыть</button><button class="btn ghost sm" data-rep="project|${esc(g.id)}">⚑ Пожаловаться</button></div>
+  ${rightsOf(g)?`<p class="hint">✅ Разрешение правообладателя подтверждено: ${esc(rightsOf(g).c)} (${esc(rightsOf(g).d)}), ${new Date(rightsOf(g).ts).toLocaleDateString("ru-RU")}</p>`:""}<div class="actions">${g.demo?demoBtn(g):''}<button class="btn ghost" data-fav="${esc(g.id)}">${(ME.fav||[]).includes(g.id)?'★ В избранном':'☆ В избранное'}</button>${g.p&&!g.soon&&owned(g)?'<span class="btn ghost" style="cursor:default">✓ Куплено</span>':g.p&&!g.soon?(safe(g.buyUrl)?`<a class="btn gold" data-a="buy" href="${esc(safe(g.buyUrl))}" target="_blank" rel="noopener noreferrer">Купить за ${rub(g.p)}</a>`:`<button class="btn gold" data-a="buy"${prodOf(g)?` data-prod="${prodOf(g)}"`:""}>Купить за ${rub(g.p)}</button>`):''}${!g.p&&g.dl?dlBtn(g):''}${g.soon?'':'<button class="btn ghost" data-a="remix">Доработать</button>'}<button class="btn ghost" data-a="close">Закрыть</button><button class="btn ghost sm" data-rep="project|${esc(g.id)}">⚑ Пожаловаться</button></div>
   ${g.p&&!g.soon&&owned(g)?'<span class="btn ghost" style="cursor:default">✓ Куплено</span>':g.p&&!g.soon?(safe(g.buyUrl)?'<p class="hint">Оплата — на защищённой странице платёжного сервиса. Чек придёт на почту, ссылка на полную версию откроется сразу после оплаты. Сначала попробуйте демо.</p>':'<p class="hint">Сначала попробуйте демо — оно для этого и сделано.</p>'):''}`;
   if(!dlg.open)dlg.showModal();
   track("ev","open");
 }
 if($("homeNews")){$("homeNews").addEventListener("click",e=>{const a=e.target.closest(".nhome");if(a)goNews(a.dataset.nid)});$("homeNews").addEventListener("keydown",e=>{const a=e.target.closest(".nhome");if(a&&(e.key==="Enter"||e.key===" ")){e.preventDefault();goNews(a.dataset.nid)}})}
-$("myOnly").onchange=e=>{st.my=e.target.checked;render()};loadMyP();
+$("myOnly").onchange=e=>{st.my=e.target.checked;render()};loadMyP();loadRights();
 $("sortSel").onchange=e=>{st.sort=e.target.value;render()};
 body.addEventListener("click",async e=>{const b=e.target.closest("[data-star]");if(!b)return;const box=b.closest("[data-rid]"),id=box.dataset.rid,s=+b.dataset.star,d=didOf();if(!d)return;
   box.querySelectorAll(".star").forEach(x=>x.classList.toggle("on",+x.dataset.star<=s));const info=box.querySelector(".rinfo");info.textContent="Сохраняем…";
