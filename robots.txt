@@ -1,2 +1,9 @@
 User-agent: *
 Allow: /
+Disallow: /mod.html
+Disallow: /otvet.html
+Disallow: /kabinet.html
+Disallow: /server/
+Disallow: /tools/
+
+Sitemap: https://dsaskarov.github.io/sitemap.xml
