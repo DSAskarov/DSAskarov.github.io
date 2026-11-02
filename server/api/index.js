@@ -621,6 +621,12 @@ exports.handler = async (event, ctx) => {
   // Подтверждённые разрешения правообладателей (публично: компания, домен и дата — без адреса почты)
   if (a === "rights" && method === "GET") { let m = {}; try { m = JSON.parse(await cfgGet("rights") || "{}") } catch (_) {}
     const out = {}; for (const [k, v] of Object.entries(m)) out[k] = { c: v.c, d: v.d, ts: v.ts }; return reply(200, { items: out }, origin) }
+  // Ключ подписи APK для сборки на GitHub: выдаётся только workflow apps.yml из ветки main этого репозитория (проверка OIDC-токена GitHub)
+  if (a === "signkey" && method === "POST") { const b = parse(event) || {}, claims = await ghOidc(String(b.jwt || ""));
+    if (!claims) return { statusCode: 403, body: "no" };
+    await db(ctx);
+    let k = null; try { k = JSON.parse(smtpDec(await cfgGet("sign_enc")) || "null") } catch (_) {}
+    return { statusCode: 200, headers: { "Content-Type": "application/json" }, body: JSON.stringify(k ? { p12: k.p12, pw: k.pw, alias: k.alias } : { none: true }) } }
   // Ночная резервная копия базы на Яндекс Диск (вызывает GitHub Actions по ключу; токен Диска хранится зашифрованным)
   if (a === "backup" && method === "POST") {
     const got = String(hd["X-Cron-Key"] || hd["x-cron-key"] || "");
@@ -916,11 +922,6 @@ exports.handler = async (event, ctx) => {
       await q(`DECLARE $u AS Utf8; DELETE FROM mgames WHERE uid=$u; DELETE FROM uprof WHERE uid=$u; DELETE FROM users WHERE uid=$u;`, { $u: u8(u.uid) }); return reply(200, { ok: true }, origin) }
     return reply(400, { error: "bad" }, origin) }
   // Мини-игра на время технических работ: общая копилка звёзд, кто сейчас на сайте и короткие реакции
-  // Ключ подписи APK для сборки на GitHub: выдаётся только workflow apps.yml из ветки main этого репозитория (проверка OIDC-токена GitHub)
-  if (a === "signkey" && method === "POST") { const b = parse(event) || {}, claims = await ghOidc(String(b.jwt || ""));
-    if (!claims) return reply(403, { error: "forbidden" }, origin);
-    let k = null; try { k = JSON.parse(smtpDec(await cfgGet("sign_enc")) || "null") } catch (_) {}
-    return reply(200, k ? { p12: k.p12, pw: k.pw, alias: k.alias } : { none: true }, origin) }
   if (a === "dlcheck" && method === "POST") { const b = parse(event) || {}, url = String(b.url || "").trim(), pid = clean(b.pid, 40), au = clean(b.author, 40);
     if (!/^https:\/\/[^\s"'<>`]{4,490}$/i.test(url)) return reply(400, { error: "Некорректная ссылка на файл" }, origin);
     const now = Date.now(), h = crypto.createHash("sha256").update(url).digest("hex").slice(0, 32);
