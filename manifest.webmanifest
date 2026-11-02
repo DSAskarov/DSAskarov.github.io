@@ -1,0 +1,51 @@
+{
+ "name": "ИИгры онлайн",
+ "short_name": "ИИгры",
+ "description": "Игры и приложения, сделанные с нейросетями: играйте, создавайте, публикуйте.",
+ "start_url": "/?app=1",
+ "scope": "/",
+ "display": "standalone",
+ "orientation": "any",
+ "background_color": "#0B0A0E",
+ "theme_color": "#0B0A0E",
+ "lang": "ru",
+ "id": "/?app=1",
+ "icons": [
+  {
+   "src": "/icon-192.png",
+   "sizes": "192x192",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "/icon-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "/icon-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "maskable"
+  }
+ ],
+ "shortcuts": [
+  {
+   "name": "Пульсар",
+   "url": "/games/pulsar.html"
+  },
+  {
+   "name": "Жезл",
+   "url": "/games/zhezl.html"
+  },
+  {
+   "name": "Жизнь с нуля",
+   "url": "/games/s-nulya.html"
+  }
+ ],
+ "categories": [
+  "games",
+  "entertainment"
+ ]
+}

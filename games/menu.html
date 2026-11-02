@@ -2,7 +2,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; font-src https://fonts.gstatic.com; img-src 'self' data: https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; connect-src https://functions.yandexcloud.net https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; frame-src https://smartcaptcha.cloud.yandex.ru https://smartcaptcha.yandexcloud.net; object-src 'none'; base-uri 'none'; form-action 'none'"><meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="description" content="Пример приложения на площадке «ИИгры онлайн»"><meta property="og:title" content="Меню за минуту — ИИгры онлайн"><meta property="og:description" content="Пример приложения на площадке «ИИгры онлайн»"><meta name="theme-color" content="#0B0A0E">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23B3141F'/%3E%3Ctext x='32' y='44' font-size='30' font-family='Arial' font-weight='700' text-anchor='middle' fill='%23F6DE8D'%3EИИ%3C/text%3E%3C/svg%3E">
-<style>*{box-sizing:border-box}html,body{margin:0}[hidden]{display:none!important}</style></head><body>
+<style>*{box-sizing:border-box}html,body{margin:0}[hidden]{display:none!important}</style><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/icon-192.png"></head><body>
 <title>Меню за минуту</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@700;800;900&family=Golos+Text:wght@400;600&family=Lora:ital,wght@0,500;0,700;1,500&display=swap">
 <style>
@@ -149,5 +149,11 @@ render();
 /* Ник аккаунта — один на чат и таблицы лидеров: подтягиваем его после входа, чтобы не сбивался */
 (function(){try{const t=localStorage.getItem("iigry-sess");if(!/^[A-Za-z0-9_-]{43}$/.test(t||""))return;const last=+localStorage.getItem("iigry-nick-ts")||0;if(Date.now()-last<36e5&&localStorage.getItem("iigry-nick"))return;
  fetch("https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av?a=u",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({op:"whoami",token:t})}).then(r=>r.ok?r.json():null).then(j=>{if(j&&j.named&&j.nick){localStorage.setItem("iigry-nick",j.nick);localStorage.setItem("iigry-nick-ts",String(Date.now()))}}).catch(()=>{})}catch(_){}})();
+/* Приложение: офлайн-режим и кнопка «Установить» (Android, Chrome, Яндекс Браузер) */
+(function(){try{if("serviceWorker" in navigator)navigator.serviceWorker.register("/sw.js").catch(()=>{})}catch(_){}
+ addEventListener("beforeinstallprompt",e=>{e.preventDefault();try{if(localStorage.getItem("iigry-pwa-no"))return}catch(_){}const b=document.createElement("div");b.id="iigry-pwa";
+  b.style.cssText="position:fixed;left:12px;bottom:12px;z-index:2147482000;display:flex;gap:6px;align-items:center;background:#16141B;border:1px solid #E7BD52;border-radius:999px;padding:6px 6px 6px 14px;color:#F4F4F6;font:600 13px 'Golos Text',system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.4)";
+  b.innerHTML='<span>📲 ИИгры как приложение</span><button type="button" style="border:0;border-radius:999px;background:#E7BD52;color:#1A1306;font:700 13px inherit;padding:8px 12px;cursor:pointer">Установить</button><button type="button" aria-label="Скрыть" style="border:0;background:transparent;color:#B9B6C2;font-size:16px;cursor:pointer;padding:4px 8px">✕</button>';
+  b.children[1].onclick=async()=>{b.remove();e.prompt();try{await e.userChoice}catch(_){}};b.children[2].onclick=()=>{b.remove();try{localStorage.setItem("iigry-pwa-no","1")}catch(_){}};document.body.append(b)})})();
 </script>
 </body></html>
