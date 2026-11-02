@@ -1,0 +1,37 @@
+# Ночная резервная копия: база (без сессий и кодов входа) и сайт — в папку приложения на Яндекс Диске. Хранятся 14 последних копий.
+name: Резервная копия
+on:
+  schedule: [{ cron: "37 0 * * *" }]   # 03:37 по Москве
+  workflow_dispatch:
+permissions: { contents: read }
+concurrency: { group: backup, cancel-in-progress: false }
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Копия базы и сайта
+        env: { TG: "${{ secrets.TG_BOT_TOKEN }}" }
+        run: |
+          set -e
+          API="https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av"
+          S=$(printf '%s' "$TG|iigry-tg" | sha256sum | cut -c1-48); echo "::add-mask::$S"
+          curl -sS -m 120 -X POST -H "X-Cron-Key: $S" -H "Content-Type: application/json" "$API?a=backup" -d '{}' > r.json
+          T=$(jq -r '.token // empty' r.json); echo "::add-mask::$T"
+          if [ -z "$T" ]; then echo "::warning::Яндекс Диск не подключён в админ-панели — копия не сохранена"; rm -f r.json; exit 0; fi
+          jq -r .gz r.json | base64 -d > db.json.gz; rm -f r.json
+          git archive --format=zip -o site.zip HEAD
+          D=$(TZ=Europe/Moscow date +%Y-%m-%d); Y="https://cloud-api.yandex.net/v1/disk/resources"; H="Authorization: OAuth $T"
+          curl -sS -X PUT -H "$H" "$Y?path=app:/iigry" >/dev/null || true
+          curl -sS -X PUT -H "$H" "$Y?path=app:/iigry/$D" >/dev/null || true
+          OK=true
+          for F in db.json.gz site.zip; do
+            U=$(curl -sS -H "$H" "$Y/upload?path=app:/iigry/$D/$F&overwrite=true" | jq -r '.href // empty')
+            if [ -n "$U" ] && curl -sS -f -T "$F" "$U" >/dev/null; then echo "$F загружен"; else OK=false; echo "::error::$F не загружен"; fi
+          done
+          # оставляем 14 последних копий (старые уходят в корзину Диска)
+          curl -sS -H "$H" "$Y?path=app:/iigry&limit=200&sort=name" | jq -r '._embedded.items[].name' | sort | head -n -14 | while read -r O; do curl -sS -X DELETE -H "$H" "$Y?path=app:/iigry/$O" >/dev/null || true; done
+          SZ=$(( $(stat -c%s db.json.gz) + $(stat -c%s site.zip) ))
+          curl -sS -m 20 -X POST -H "X-Cron-Key: $S" -H "Content-Type: application/json" "$API?a=backup" -d "{\"done\":true,\"ok\":$OK,\"size\":$SZ}" >/dev/null || true
+          rm -f db.json.gz site.zip; $OK

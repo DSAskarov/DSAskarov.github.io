@@ -2,7 +2,7 @@
 // Данные — в Yandex Database (Россия). Секретов в коде нет: доступ к базе даёт роль робота функции.
 "use strict";
 const { Driver, TokenAuthService, TypedValues, TypedData, TableDescription, Column, Types } = require("ydb-sdk");
-const crypto = require("crypto");
+const crypto = require("crypto"), zlib = require("zlib");
 const dns = require("dns").promises, net = require("net");
 
 const ORIGINS = (process.env.ALLOW_ORIGIN || "https://dsaskarov.github.io").split(",");
@@ -618,6 +618,19 @@ exports.handler = async (event, ctx) => {
     if (!(e > Date.now()) || e > Date.now() + 16 * 60e3 || t.length !== 32 || !same(t, expTok(e))) return { statusCode: 403, headers: { "Content-Type": "text/plain; charset=utf-8" }, body: "Ссылка устарела — запросите новую в боте командой /stats" };
     return { statusCode: 200, headers: { "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": "attachment; filename=\"iigry-stat-" + new Date().toISOString().slice(0, 10) + ".csv\"", "Cache-Control": "no-store" }, body: await exportCsv() };
   }
+  // Ночная резервная копия базы на Яндекс Диск (вызывает GitHub Actions по ключу; токен Диска хранится зашифрованным)
+  if (a === "backup" && method === "POST") {
+    const got = String(hd["X-Cron-Key"] || hd["x-cron-key"] || "");
+    if (!TG_SECRET || !same(got.padEnd(48).slice(0, 48), TG_SECRET)) return { statusCode: 403, body: "no" };
+    await db(ctx); const b = parse(event) || {};
+    if (b.done) { await cfgSet("backup_last", JSON.stringify({ ts: Date.now(), ok: !!b.ok, size: Number(b.size) || 0 })); return { statusCode: 200, body: "{}" } }
+    const SKIP = new Set(["usess", "msess", "ucode", "rl", "checks", "hits"]), out = {}, cut = [];
+    for (const t of ["users", "uauth", "uprof", "ulogin", "team", "teamacc", "own", "orders", "purch", "receipts", "scores", "rate", "inbox", "msgs", "replies", "mgames", "tg", "tglink", "tgout", "statsub", "bans", "prio", "devs", "dlscan", "modlog", "mgon", "pv", "hstat", "cfg"]) {
+      if (SKIP.has(t)) continue; try { const r = await q(`SELECT * FROM ${t};`); out[t] = r; if (r.length >= 1000) cut.push(t) } catch (_) {} }
+    const json = JSON.stringify({ v: 1, ts: Date.now(), cut, tables: out }, (k, v) => v && typeof v === "object" && "low" in v && "high" in v ? String(v) : v);
+    let tok = ""; try { tok = smtpDec(await cfgGet("ydisk_enc")) } catch (_) {}
+    return { statusCode: 200, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token: tok, gz: zlib.gzipSync(json).toString("base64"), cut }) };
+  }
   // Режим технических работ: включается автоматически перед обновлением сайта и выключается после
   if (a === "maint" && method === "POST") {
     const got = String(hd["X-Cron-Key"] || hd["x-cron-key"] || "");
@@ -1053,6 +1066,11 @@ exports.handler = async (event, ctx) => {
       await q(`DECLARE $id AS Utf8; DELETE FROM purch WHERE id=$id;`, { $id: u8(id) }).catch(() => {});
       await q(`DECLARE $u AS Utf8; DECLARE $id AS Utf8; DECLARE $p AS Utf8; DECLARE $t AS Uint64; UPSERT INTO purch (uid, id, prod, ts) VALUES ($u, $id, $p, $t);`, { $u: u8(usr.uid), $id: u8(id), $p: u8(o.prod), $t: u64(Date.now()) });
       await mlog(who, "привязал покупку к аккаунту", usr.nick + ": " + ((PRODUCTS[o.prod] || {}).title || o.prod)); return reply(200, { ok: true }, origin) }
+    if (op === "ydisk") { if (me.role !== "admin") return NO;
+      if (b.get) { let l = null; try { l = JSON.parse(await cfgGet("backup_last") || "null") } catch (_) {} return reply(200, { on: !!(await cfgGet("ydisk_enc")), last: l }, origin) }
+      const k = String(b.token || "").trim(); if (!/^[A-Za-z0-9_.-]{20,200}$/.test(k)) return reply(400, { error: "Вставьте токен Яндекс Диска целиком." }, origin);
+      try { const r = await fetch("https://cloud-api.yandex.net/v1/disk/", { headers: { Authorization: "OAuth " + k }, signal: AbortSignal.timeout(8000) }); if (!r.ok) return reply(400, { error: "Яндекс Диск не принял токен." }, origin) } catch (_) { return reply(400, { error: "Не удалось проверить токен — попробуйте ещё раз." }, origin) }
+      await cfgSet("ydisk_enc", smtpEnc(k)); await mlog(who, "подключил Яндекс Диск для резервных копий", ""); return reply(200, { ok: true }, origin) }
     if (op === "signkey") { if (me.role !== "admin") return NO;
       if (b.get) return reply(200, { on: !!(await cfgGet("sign_enc")) }, origin);
       const p12 = String(b.p12 || ""), pw = String(b.pw || ""), alias = clean(b.alias || "iigry", 40);
