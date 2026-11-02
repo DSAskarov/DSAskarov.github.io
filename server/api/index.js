@@ -1085,7 +1085,7 @@ exports.handler = async (event, ctx) => {
       await cfgSet("ydisk_enc", smtpEnc(k)); await mlog(who, "подключил Яндекс Диск для резервных копий", ""); return reply(200, { ok: true }, origin) }
     if (op === "signkey") { if (me.role !== "admin") return NO;
       if (b.get) return reply(200, { on: !!(await cfgGet("sign_enc")) }, origin);
-      const p12 = String(b.p12 || ""), pw = String(b.pw || ""), alias = clean(b.alias || "iigry", 40);
+      const p12 = String(b.p12 || ""), pw = String(b.pw || "").trim(), alias = clean(b.alias || "iigry", 40);
       if (!/^[A-Za-z0-9+/=]{500,20000}$/.test(p12)) return reply(400, { error: "Выберите файл ключа .p12 (до 15 КБ)." }, origin);
       if (pw.length < 6 || pw.length > 128) return reply(400, { error: "Введите пароль от ключа." }, origin);
       await cfgSet("sign_enc", smtpEnc(JSON.stringify({ p12, pw, alias }))); await mlog(who, "загрузил ключ подписи приложений", ""); return reply(200, { ok: true }, origin) }

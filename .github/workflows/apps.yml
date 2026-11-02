@@ -32,7 +32,7 @@ jobs:
           JWT=$(curl -sS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=iigry-sign" | jq -r .value)
           echo "::add-mask::$JWT"
           R=$(curl -sS -X POST -H "Content-Type: application/json" -d "{\"jwt\":\"$JWT\"}" "https://functions.yandexcloud.net/d4enbk0c6huhltqsm5av?a=signkey" || echo '{}')
-          export PW=$(echo "$R" | jq -r '.pw // empty'); echo "::add-mask::$PW"
+          export PW=$(echo "$R" | jq -r '.pw // empty' | tr -d '\r\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'); echo "::add-mask::$PW"
           if [ -n "$PW" ]; then
             echo "$R" | jq -r .p12 | base64 -d > "$RUNNER_TEMP/k.p12"; AL=$(echo "$R" | jq -r '.alias // "iigry"')
             BT=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -1)
