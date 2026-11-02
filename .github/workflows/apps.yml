@@ -1,0 +1,62 @@
+# Сборка приложений «ИИгр»: APK для Android и установщики для Windows.
+# Готовые файлы выкладываются в релиз «apps» — ссылки на сайте всегда ведут на последнюю версию.
+name: Приложения (APK и установщики)
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["games/**", "index.html", "tools/apps/**", ".github/workflows/apps.yml"]
+permissions:
+  contents: write
+concurrency: { group: apps, cancel-in-progress: true }
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: { slug: [iigry, pulsar, zhezl, s-nulya, kontinenty, lovi-bagi, kot-na-orbite, ferma-slov, origami] }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: "17" }
+      - uses: gradle/actions/setup-gradle@v3
+        with: { gradle-version: "8.7" }
+      - run: python3 tools/apps/gen.py ${{ matrix.slug }} ${{ github.run_number }}
+      - run: gradle assembleDebug --no-daemon -q
+        working-directory: build/${{ matrix.slug }}/android
+      - run: mkdir -p out && cp build/${{ matrix.slug }}/android/app/build/outputs/apk/debug/app-debug.apk out/${{ matrix.slug }}.apk
+      - uses: actions/upload-artifact@v4
+        with: { name: apk-${{ matrix.slug }}, path: out/*.apk }
+  windows:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix: { slug: [iigry, pulsar, zhezl, s-nulya, kontinenty, lovi-bagi, kot-na-orbite, ferma-slov, origami] }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - run: python tools/apps/gen.py ${{ matrix.slug }} ${{ github.run_number }}
+      - run: npm install --no-save --no-audit --no-fund electron@31.7.7 electron-builder@24.13.3
+        working-directory: build/${{ matrix.slug }}/electron
+      - run: npx electron-builder --win nsis --x64 --publish never
+        working-directory: build/${{ matrix.slug }}/electron
+        env: { CSC_IDENTITY_AUTO_DISCOVERY: "false" }
+      - run: mkdir out; copy build\${{ matrix.slug }}\electron\dist\${{ matrix.slug }}-setup.exe out\
+        shell: cmd
+      - uses: actions/upload-artifact@v4
+        with: { name: win-${{ matrix.slug }}, path: out/*.exe }
+  release:
+    needs: [android, windows]
+    if: always() && (needs.android.result == 'success' || needs.windows.result == 'success')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { path: out, merge-multiple: true }
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apps
+          name: Приложения «ИИгры онлайн»
+          body: "APK для Android и установщики для Windows. Обновляются автоматически при каждом обновлении игр. Сборка №${{ github.run_number }}."
+          files: out/*
+          make_latest: true
