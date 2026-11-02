@@ -8,119 +8,173 @@
 <title>Жизнь с нуля — ИИгры онлайн</title>
 <style>
 :root{--bg:#0D0C11;--card:#17151D;--line:rgba(255,255,255,.1);--fg:#F4F4F6;--mu:#B9B6C2;--gold:#E7BD52;--red:#E8333F;--grn:#4ADE95;--f-b:"Golos Text",system-ui,sans-serif;--f-d:"Rubik",system-ui,sans-serif}
-html,body{min-height:100%}html{background:#0D0C11}body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-b);padding:12px}
-.w{max-width:760px;margin:0 auto;display:grid;gap:12px}
-h1{margin:0;font:900 clamp(1.5rem,5vw,2.2rem) var(--f-d)}h1 b{color:var(--gold)}
-.mu{color:var(--mu);margin:0;font-size:.93rem}
-.top{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px}
-.ava{font-size:54px;width:72px;height:72px;display:grid;place-items:center;background:#0F0E13;border-radius:50%}
-.rank{font:800 1.1rem var(--f-d)}.money{font:800 1.4rem var(--f-d);color:var(--gold)}
-.bars{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
-.bar{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 10px;display:grid;gap:6px;font-size:.88rem}
-.bar i{display:block;height:8px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden}.bar i b{display:block;height:100%;transition:width .3s}
-.tabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}
-.tab{flex:none;min-height:42px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--fg);font:700 14px var(--f-b);cursor:pointer}.tab[aria-selected=true]{border-color:var(--gold);color:var(--gold)}
-.acts{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
-.act{display:grid;gap:4px;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;color:var(--fg);cursor:pointer;font:inherit;min-height:84px}
-.act:hover:not(:disabled){border-color:var(--gold)}.act:disabled{opacity:.42;cursor:default}.act b{font-size:1rem}.act small{color:var(--mu);font-size:.8rem}.act .fx{font-size:.78rem;color:#C9C6D2}
-.log{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 12px;max-height:180px;overflow:auto;font-size:.9rem;display:grid;gap:4px}
-.log p{margin:0}.log .g{color:var(--grn)}.log .r{color:#FF8A8F}.log .y{color:var(--gold)}
-.modal{position:fixed;inset:0;background:rgba(5,4,9,.75);display:grid;place-items:center;padding:16px;z-index:50}.modal[hidden]{display:none}
-.modal .c{max-width:420px;background:var(--card);border:1px solid var(--gold);border-radius:16px;padding:18px;display:grid;gap:10px;text-align:center}
-.btn{min-height:46px;padding:0 16px;border-radius:12px;border:1px solid var(--line);background:#221F2A;color:#fff;font:700 15px var(--f-b);cursor:pointer}.btn.go{background:linear-gradient(135deg,#F2C45A,#C98E2B);color:#1A1306;border:0}
-.goal{background:rgba(231,189,82,.08);border:1px solid rgba(231,189,82,.35);border-radius:12px;padding:8px 12px;font-size:.9rem}
-.row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+html,body{min-height:100%}html{background:#0D0C11}body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-b);padding:10px}
+.w{max-width:820px;margin:0 auto;display:grid;gap:10px}
+h1{margin:0;font:900 clamp(1.4rem,5vw,2rem) var(--f-d)}h1 b{color:var(--gold)}
+.hud{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px 12px}
+.hud .who{display:flex;gap:8px;align-items:center}.hud .ava{font-size:34px}.hud b{font:800 1rem var(--f-d)}.hud small{display:block;color:var(--mu);font-size:.78rem}
+.bars{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.bar{font-size:.72rem;color:var(--mu)}.bar i{display:block;height:7px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:3px}.bar i b{display:block;height:100%;transition:width .4s}
+.money{font:900 1.2rem var(--f-d);color:var(--gold);text-align:right;white-space:nowrap}
+@media(max-width:560px){.hud{grid-template-columns:1fr auto}.bars{grid-column:1/-1;order:3}}
+.scene{position:relative;aspect-ratio:16/10;border-radius:16px;overflow:hidden;border:1px solid var(--line);user-select:none;-webkit-user-select:none}
+.sky{position:absolute;inset:0;transition:background 1.2s}.ground{position:absolute;left:0;right:0;bottom:0;height:34%;transition:background 1.2s}
+.deco{position:absolute;font-size:clamp(28px,7vw,64px);pointer-events:none;filter:drop-shadow(0 6px 6px rgba(0,0,0,.35))}
+.loc-name{position:absolute;left:12px;top:10px;background:rgba(0,0,0,.45);padding:5px 12px;border-radius:999px;font:800 .95rem var(--f-d)}
+.clock{position:absolute;right:12px;top:10px;background:rgba(0,0,0,.45);padding:5px 12px;border-radius:999px;font-weight:700;font-size:.9rem}
+.hs{position:absolute;transform:translate(-50%,-50%);display:grid;justify-items:center;gap:2px;border:0;background:transparent;color:#fff;cursor:pointer;padding:4px;font:inherit}
+.hs .e{font-size:clamp(30px,7.5vw,62px);line-height:1;filter:drop-shadow(0 6px 6px rgba(0,0,0,.4));transition:transform .15s}
+.hs:hover .e,.hs:focus-visible .e{transform:scale(1.12) translateY(-3px)}
+.hs .l{background:rgba(0,0,0,.6);border-radius:999px;padding:2px 9px;font-size:clamp(10px,1.8vw,13px);font-weight:700;white-space:nowrap}
+.hs.off{opacity:.45;filter:grayscale(.7)}.hs:focus-visible{outline:2px solid var(--gold);border-radius:12px}
+.hero{position:absolute;bottom:14%;transform:translateX(-50%);font-size:clamp(40px,9vw,80px);transition:left .5s ease;pointer-events:none;filter:drop-shadow(0 8px 6px rgba(0,0,0,.45))}
+.bubble{position:absolute;bottom:42%;transform:translateX(-50%);max-width:60%;background:#fff;color:#111;border-radius:14px;padding:6px 10px;font-size:clamp(11px,2vw,14px);font-weight:600;pointer-events:none;transition:opacity .3s;text-align:center}
+.bubble::after{content:"";position:absolute;left:50%;bottom:-8px;border:8px solid transparent;border-top-color:#fff;border-bottom:0;transform:translateX(-50%)}
+.night{position:absolute;inset:0;pointer-events:none;transition:background 1.2s}
+.dlg{position:absolute;left:10px;right:10px;bottom:10px;background:rgba(15,14,19,.94);border:1px solid var(--gold);border-radius:14px;padding:10px 12px;display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start}
+.dlg[hidden]{display:none}.dlg .p{font-size:46px;line-height:1}.dlg .n{font:800 .95rem var(--f-d);color:var(--gold)}.dlg .tx{font-size:.93rem;margin:2px 0 8px}
+.dlg .ch{display:flex;gap:6px;flex-wrap:wrap}.dlg .ch button{min-height:38px;padding:0 12px;border-radius:10px;border:1px solid var(--line);background:#26232f;color:#fff;font:700 13px var(--f-b);cursor:pointer}.dlg .ch button:first-child{background:linear-gradient(135deg,#F2C45A,#C98E2B);color:#1A1306;border:0}
+.bar2{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.btn{min-height:44px;padding:0 14px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:#fff;font:700 14px var(--f-b);cursor:pointer}.btn.go{background:linear-gradient(135deg,#F2C45A,#C98E2B);color:#1A1306;border:0}
+.goal{font-size:.88rem;color:#FFE6A8;background:rgba(231,189,82,.08);border:1px solid rgba(231,189,82,.3);border-radius:12px;padding:7px 12px}
+.map{position:absolute;inset:0;background:radial-gradient(circle at 30% 30%,#2d4a3a,#14241c);display:grid;place-items:center}.map[hidden]{display:none}
+.map .pin{position:absolute;transform:translate(-50%,-50%);border:0;background:rgba(0,0,0,.55);color:#fff;border-radius:14px;padding:6px 10px;font:700 clamp(11px,1.8vw,14px) var(--f-b);cursor:pointer;display:grid;justify-items:center;gap:2px}
+.map .pin span{font-size:clamp(22px,4.5vw,36px)}.map .pin.here{outline:2px solid var(--gold)}.map .pin:disabled{opacity:.4}
+.map svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.log{font-size:.85rem;color:var(--mu);display:grid;gap:3px;max-height:110px;overflow:auto}.log p{margin:0}.log .g{color:var(--grn)}.log .r{color:#FF8A8F}.log .y{color:var(--gold)}
+@media(max-width:600px){.scene{aspect-ratio:3/4}.hs .l{font-size:10px;padding:1px 6px;max-width:30vw;white-space:normal;text-align:center;line-height:1.15}.map .pin{max-width:30%;font-size:10px}}
+.map .pin{max-width:24%;text-align:center;line-height:1.15}
+.inv{display:flex;gap:6px;flex-wrap:wrap;font-size:1.4rem}
 </style></head><body>
 <div class="w">
   <h1>Жизнь <b>с нуля</b></h1>
-  <p class="mu">Вы проснулись на лавке в парке: ни денег, ни документов, ни планов. Соберите жизнь заново — от бутылок до собственного дела.</p>
-  <div class="top"><div class="ava" id="ava">🧔</div><div><div class="rank" id="rank"></div><div class="money" id="money"></div><div class="mu" id="day"></div></div></div>
-  <div class="bars" id="bars"></div>
+  <div class="hud"><div class="who"><span class="ava" id="ava">🧔</span><div><b id="rank"></b><small id="where"></small></div></div><div class="bars" id="bars"></div><div class="money" id="money"></div></div>
+  <div class="scene" id="scene">
+    <div class="sky" id="sky"></div><div class="ground" id="ground"></div><div id="decos"></div><div id="spots"></div>
+    <div class="hero" id="hero">🧔</div><div class="bubble" id="bubble" style="opacity:0"></div><div class="night" id="night"></div>
+    <div class="loc-name" id="locName"></div><div class="clock" id="clock"></div>
+    <div class="map" id="map" hidden><svg viewBox="0 0 100 62" preserveAspectRatio="none" aria-hidden="true"><path d="M8 50 Q30 30 50 32 T92 18" stroke="#3d6a52" stroke-width="3" fill="none"/><path d="M20 10 Q40 40 60 50 T90 55" stroke="#3d6a52" stroke-width="3" fill="none"/></svg><div id="pins"></div></div>
+    <div class="dlg" id="dlg" hidden><div class="p" id="dP"></div><div><div class="n" id="dN"></div><p class="tx" id="dT"></p><div class="ch" id="dC"></div></div></div>
+  </div>
   <div class="goal" id="goal"></div>
-  <div class="tabs" role="tablist" id="tabs"></div>
-  <div class="acts" id="acts"></div>
+  <div class="bar2"><div class="row" style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn go" id="mapBtn" type="button">🗺 Карта города</button><button class="btn" id="restart" type="button">↻ Заново</button></div><div class="inv" id="inv" title="Ваши вещи"></div></div>
   <div class="log" id="log" aria-live="polite"></div>
-  <div class="row"><button class="btn" id="restart" type="button">↻ Начать заново</button></div>
 </div>
-<div class="modal" id="modal" hidden><div class="c"><b id="mT" style="font:800 1.3rem Rubik,system-ui,sans-serif"></b><p class="mu" id="mP"></p><div class="row" id="mB"></div></div></div>
 <script>
 (function(){
-const $=id=>document.getElementById(id),R=n=>Math.floor(Math.random()*n),chance=p=>Math.random()<p,clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-const RANKS=[["🧔","Бездомный",0],["🧥","Обитатель ночлежки",1],["👷","Работяга",2],["🏠","Съёмщик комнаты",3],["👔","Офисный работник",4],["🏢","Владелец квартиры",5],["💼","Предприниматель",6]];
-const KEY="iigry-snulya";let S;
-function fresh(){return{day:1,hour:8,money:0,hp:70,food:50,mood:50,clean:30,rank:0,items:{},rep:0,job:null,home:null,biz:0,dead:false,won:false,log:[],best:0}}
-function load(){try{const s=JSON.parse(localStorage.getItem(KEY)||"null");if(s&&s.day)return s}catch(_){}return fresh()}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(_){}}
-const has=k=>!!S.items[k];
-function say(t,c){S.log.unshift([t,c||""]);S.log=S.log.slice(0,40)}
-// время идёт: каждое действие тратит часы, ночь — сон
-function pass(h){for(let i=0;i<h;i++){S.hour++;S.food-=has("room")||S.home?2.2:2.8;S.clean-=1;if(S.hour>=24){S.hour=0;newDay()}}
-  if(S.food<=0){S.hp+=S.food*.8;S.food=0}if(S.clean<=0)S.clean=0;if(S.clean<15)S.mood-=1;if(S.hp<30)S.mood-=1}
-function newDay(){S.day++;if(S.home==="room")S.money-=150,say("🏠 Аренда комнаты: −150 ₽","r");if(S.home==="flat"){}
-  if(S.biz)S.money+=S.biz,say("💼 Доход дела: +"+S.biz+" ₽","g");
-  if(S.money<0&&S.home==="room"){S.home=null;S.items.room=false;S.money=0;say("😿 Не хватило на аренду — снова на улице.","r")}
-  if(!S.home&&S.day%3===0&&chance(.3)){S.hp-=8;say("🌧 Ночь выдалась холодной: −8 здоровья.","r")}}
-// действия: [вкладка, ключ, название, описание, часы, условие, эффект]
-const A=[
- ["work","bottles","Собирать бутылки","Пакет тары в пункт приёма",3,()=>true,()=>{const m=(has("cart")?90:40)+R(30);S.money+=m;S.food-=4;S.clean-=3;say("♻️ Сдали тару: +"+m+" ₽","g")}],
- ["work","beg","Просить у метро","Как повезёт — и как одеты",2,()=>!S.job,()=>{const m=R(has("guitar")?160:70)+(S.clean>50?20:0);S.money+=m;S.mood-=m<20?6:1;say(m?"🥺 Прохожие подали "+m+" ₽":"🥺 Сегодня никто не подал…",m?"g":"r");if(chance(.08)){S.money=Math.max(0,S.money-60);say("👮 Попросили «пройти» — штраф 60 ₽","r")}}],
- ["work","guitarplay","Играть на гитаре","Нужна гитара. Поднимает настроение",3,()=>has("guitar"),()=>{const m=60+R(180);S.money+=m;S.mood+=10;say("🎸 Отыграли сет: +"+m+" ₽","g")}],
- ["work","loader","Подработка грузчиком","Нужно здоровье от 40",5,()=>S.hp>=40,()=>{const m=450+R(150);S.money+=m;S.hp-=10;S.food-=10;S.clean-=10;say("📦 Разгрузили фуру: +"+m+" ₽","g")}],
- ["work","courier","Курьер на смену","Нужны телефон и чистая одежда",6,()=>has("phone")&&has("clothes")&&S.clean>=30,()=>{const m=1100+R(400);S.money+=m;S.hp-=6;S.food-=10;say("🛵 Смена курьером: +"+m+" ₽","g");S.rep+=1}],
- ["work","office","Рабочий день в офисе","Нужны документы, костюм и телефон",8,()=>S.job==="office",()=>{const m=2600+R(400);S.money+=m;S.mood-=4;S.food-=8;say("💻 Зарплата за день: +"+m+" ₽","g");S.rep+=2}],
- ["work","getjob","Устроиться в офис","Документы + костюм + репутация 15",2,()=>S.job!=="office"&&has("docs")&&has("suit")&&S.rep>=15,()=>{S.job="office";say("🎉 Вас взяли в офис! Теперь доступны рабочие дни.","y")}],
- ["food","trash","Порыться в мусорке","Бесплатно, но рискованно",1,()=>true,()=>{S.food+=18;S.clean-=6;if(chance(.25)){S.hp-=12;say("🤢 Что-то было несвежим: −12 здоровья","r")}else say("🍞 Нашли полбатона: +сытость","g")}],
- ["food","shawarma","Шаурма","120 ₽",1,()=>S.money>=120,()=>{S.money-=120;S.food+=40;S.mood+=4;say("🌯 Шаурма: +сытость")}],
- ["food","canteen","Обед в столовой","250 ₽ — сытно и полезно",1,()=>S.money>=250,()=>{S.money-=250;S.food+=60;S.hp+=6;say("🍲 Обед в столовой: +сытость, +здоровье")}],
- ["food","free","Бесплатная еда у фонда","Раз в день, нужно постоять в очереди",3,()=>S.freeDay!==S.day,()=>{S.freeDay=S.day;S.food+=45;S.mood+=3;say("🥣 Волонтёры накормили. Спасибо им!","g")}],
- ["life","sleepbench","Спать на лавке","Бесплатно, холодно",8,()=>!S.home,()=>{S.hp+=chance(.3)?-6:6;S.mood-=4;say("🌙 Ночь на лавке.")}],
- ["life","shelter","Ночлежка","200 ₽ — тепло и душ",8,()=>S.money>=200&&!S.home,()=>{S.money-=200;S.hp+=15;S.clean=Math.max(S.clean,70);S.mood+=5;if(S.rank<1)S.rank=1;say("🛏 Ночь в ночлежке: тепло и душ","g")}],
- ["life","sleephome","Спать дома","Своя кровать",8,()=>!!S.home,()=>{S.hp+=22;S.mood+=8;S.clean=Math.max(S.clean,90);say("😴 Выспались дома","g")}],
- ["life","bath","Помыться в бане","300 ₽",2,()=>S.money>=300,()=>{S.money-=300;S.clean=100;S.mood+=8;say("🧼 Баня: чистота 100%","g")}],
- ["life","doctor","Сходить к врачу","500 ₽, +30 здоровья",2,()=>S.money>=500,()=>{S.money-=500;S.hp+=30;say("🩺 Врач подлечил: +30 здоровья","g")}],
- ["life","park","Погулять по парку","Бесплатно, +настроение",2,()=>true,()=>{S.mood+=10;if(chance(.12)){const m=200+R(800);S.money+=m;say("👛 Нашли кошелёк с "+m+" ₽! (А документы отнесли в полицию.)","y");S.rep+=1}else say("🌳 Погуляли — стало легче")}],
- ["shop","cart","Тележка","300 ₽ — бутылок в два раза больше",0,()=>!has("cart")&&S.money>=300,()=>{S.money-=300;S.items.cart=1;say("🛒 Купили тележку","y")}],
- ["shop","guitar","Б/у гитара","900 ₽ — играть на улице",0,()=>!has("guitar")&&S.money>=900,()=>{S.money-=900;S.items.guitar=1;say("🎸 Купили гитару","y")}],
- ["shop","clothes","Чистая одежда","1 500 ₽ — для работы",0,()=>!has("clothes")&&S.money>=1500,()=>{S.money-=1500;S.items.clothes=1;S.clean=Math.max(S.clean,60);say("👕 Купили нормальную одежду","y")}],
- ["shop","phone","Простой телефон","2 500 ₽ — для подработок",0,()=>!has("phone")&&S.money>=2500,()=>{S.money-=2500;S.items.phone=1;say("📱 Купили телефон","y")}],
- ["shop","docs","Восстановить документы","4 000 ₽ и полдня",5,()=>!has("docs")&&S.money>=4000,()=>{S.money-=4000;S.items.docs=1;if(S.rank<2)S.rank=2;say("🪪 Документы восстановлены! Вы — Работяга.","y")}],
- ["shop","suit","Костюм","8 000 ₽ — для офиса",0,()=>!has("suit")&&S.money>=8000,()=>{S.money-=8000;S.items.suit=1;say("👔 Купили костюм","y")}],
- ["shop","room","Снять комнату","5 000 ₽ залог, потом 150 ₽ в день",1,()=>!S.home&&has("docs")&&S.money>=5000,()=>{S.money-=5000;S.home="room";S.items.room=1;if(S.rank<3)S.rank=3;say("🏠 Сняли комнату! Теперь есть дом.","y")}],
- ["shop","flat","Купить квартиру","300 000 ₽ — своё жильё навсегда",2,()=>S.home!=="flat"&&S.money>=300000,()=>{S.money-=300000;S.home="flat";if(S.rank<5)S.rank=5;if(S.biz)S.rank=6;say("🔑 Своя квартира! Аренда больше не нужна.","y")}],
- ["shop","biz","Открыть кофейню","150 000 ₽ — доход каждый день",3,()=>S.job==="office"&&S.money>=150000,()=>{S.money-=150000;S.biz+=3500;say("☕ Открыли кофейню: +3 500 ₽ в день","y");if(S.home==="flat"){S.rank=6}}]
-];
-const TABS=[["work","💰 Заработок"],["food","🍽 Еда"],["life","❤️ Жизнь"],["shop","🛍 Покупки"]];let tab="work";
-// случайные события
+const $=id=>document.getElementById(id),R=n=>Math.floor(Math.random()*n),ch=p=>Math.random()<p,clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),fmt=n=>Math.round(n).toLocaleString("ru-RU");
+const RANKS=[["🧔","Бездомный"],["🧥","Обитатель ночлежки"],["👷","Работяга"],["🏠","Съёмщик комнаты"],["👔","Офисный работник"],["🏢","Владелец квартиры"],["💼","Предприниматель"]];
+const KEY="iigry-snulya2";let S;
+function fresh(){return{day:1,hour:8,money:0,hp:70,food:50,mood:50,clean:30,rank:0,items:{},rep:0,job:null,home:null,biz:0,loc:"park",won:false,dead:false,log:[],best:0,evCd:6,met:{},freeDay:0,flags:{}}}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(_){}};
+const has=k=>!!S.items[k],say=(t,c)=>{S.log.unshift([t,c||""]);S.log=S.log.slice(0,30)};
+// ---------- локации: фон, декор, интерактивные объекты [x%,y%,эмодзи,подпись,часы,условие,действие]
+const LOC={
+ park:{n:"Городской парк",pin:[20,64],sky:["#7EC8F2","#CDEBFA"],gr:"#6BAE52",deco:[["🌳",8,48],["🌳",88,44],["🌲",72,40],["☁️",30,12],["🕊",60,20]],
+  spots:[[22,62,"🪑","Лавка: поспать",8,()=>!S.home,()=>{S.hp+=ch(.3)?-6:6;S.mood-=4;return["Ночь на лавке. Жёстко, но бесплатно.",""]}],
+   [44,66,"🗑","Урна: поискать еду",1,()=>true,()=>{S.food+=18;S.clean-=6;if(ch(.25)){S.hp-=12;return["Что-то было несвежим… −12 здоровья","r"]}return["Нашли полбатона. Повезло!","g"]}],
+   [66,70,"🍾","Собрать бутылки",3,()=>true,()=>{const m=(has("cart")?90:40)+R(30);S.money+=m;S.food-=4;S.clean-=3;return["Сдали тару: +"+m+" ₽","g"]}],
+   [84,58,"🚶","Попросить у прохожих",2,()=>!S.job,()=>{const m=R(has("guitar")?160:70)+(S.clean>50?20:0);S.money+=m;S.mood-=m<20?6:1;return[m?"Прохожие подали "+m+" ₽":"Никто не подал…",m?"g":"r"]}],
+   [55,40,"🧓","Степаныч",0,()=>true,()=>{npc("stepanych");return null}]]},
+ station:{n:"Вокзал",pin:[50,30],sky:["#9AA7B8","#D7DEE6"],gr:"#6E6A66",deco:[["🚉",50,30],["🚆",85,45],["🕰",15,20]],
+  spots:[[20,66,"🎸","Играть на гитаре",3,()=>has("guitar"),()=>{const m=60+R(180);S.money+=m;S.mood+=10;return["Отыграли сет: +"+m+" ₽","g"]}],
+   [45,70,"📦","Разгрузить вагон",5,()=>S.hp>=40,()=>{const m=450+R(150);S.money+=m;S.hp-=10;S.food-=10;S.clean-=10;return["Разгрузили вагон: +"+m+" ₽","g"]}],
+   [70,64,"👷","Бригадир Михалыч",0,()=>true,()=>{npc("mikhalych");return null}],
+   [88,70,"🥺","Просить у касс",2,()=>!S.job,()=>{const m=R(90);S.money+=m;if(ch(.1)){S.money=Math.max(0,S.money-60);return["Полиция попросила уйти. Штраф 60 ₽","r"]}return[m?"Подали "+m+" ₽":"Пусто…",m?"g":"r"]}]]},
+ market:{n:"Рынок",pin:[36,48],sky:["#F7C48A","#FCE6C2"],gr:"#B98A5A",deco:[["⛺",15,38],["⛺",85,40],["🍉",50,26]],
+  spots:[[18,66,"🌯","Шаурма — 120 ₽",1,()=>S.money>=120,()=>{S.money-=120;S.food+=40;S.mood+=4;return["Вкусная шаурма!",""]}],
+   [38,70,"🍲","Столовая — 250 ₽",1,()=>S.money>=250,()=>{S.money-=250;S.food+=60;S.hp+=6;return["Сытный обед",""]}],
+   [60,66,"🛒","Тележка — 300 ₽",0,()=>!has("cart")&&S.money>=300,()=>{S.money-=300;S.items.cart=1;return["Купили тележку: бутылок вдвое больше","y"]}],
+   [74,72,"🎸","Б/у гитара — 900 ₽",0,()=>!has("guitar")&&S.money>=900,()=>{S.money-=900;S.items.guitar=1;return["Купили гитару","y"]}],
+   [88,64,"👕","Одежда — 1 500 ₽",0,()=>!has("clothes")&&S.money>=1500,()=>{S.money-=1500;S.items.clothes=1;S.clean=Math.max(S.clean,60);return["Нормальная одежда!","y"]}],
+   [50,48,"📱","Телефон — 2 500 ₽",0,()=>!has("phone")&&S.money>=2500,()=>{S.money-=2500;S.items.phone=1;return["Теперь есть телефон","y"]}]]},
+ fund:{n:"Благотворительный фонд",pin:[66,62],sky:["#B8E0C8","#E6F5EC"],gr:"#9CC7A8",deco:[["🏥",50,26],["💚",20,22],["💚",80,22]],
+  spots:[[25,66,"🥣","Бесплатный обед",3,()=>S.freeDay!==S.day,()=>{S.freeDay=S.day;S.food+=45;S.mood+=3;return["Волонтёры накормили. Спасибо им!","g"]}],
+   [48,70,"🛏","Ночлежка — 200 ₽",8,()=>S.money>=200&&!S.home,()=>{S.money-=200;S.hp+=15;S.clean=Math.max(S.clean,70);S.mood+=5;if(S.rank<1)S.rank=1;return["Тёплая ночь и душ","g"]}],
+   [72,64,"👩","Волонтёр Аня",0,()=>true,()=>{npc("anya");return null}],
+   [88,70,"🩺","Врач — 500 ₽",2,()=>S.money>=500,()=>{S.money-=500;S.hp+=30;return["Врач подлечил: +30 здоровья","g"]}]]},
+ mfc:{n:"МФЦ и баня",pin:[78,36],sky:["#C9D6F2","#EEF2FB"],gr:"#9AA4BA",deco:[["🏛",30,28],["♨️",78,28]],
+  spots:[[30,66,"🪪","Документы — 4 000 ₽",5,()=>!has("docs")&&S.money>=4000,()=>{S.money-=4000;S.items.docs=1;if(S.rank<2)S.rank=2;return["Документы восстановлены! Вы — Работяга.","y"]}],
+   [55,70,"🧼","Баня — 300 ₽",2,()=>S.money>=300,()=>{S.money-=300;S.clean=100;S.mood+=8;return["Чистота 100%!","g"]}],
+   [80,66,"🛵","Курьерская смена",6,()=>has("phone")&&has("clothes")&&S.clean>=30,()=>{const m=1100+R(400);S.money+=m;S.hp-=6;S.food-=10;S.rep+=1;return["Смена курьером: +"+m+" ₽","g"]}]]},
+ city:{n:"Деловой центр",pin:[84,16],sky:["#5E7FA8","#B8CBE3"],gr:"#56606E",deco:[["🏢",20,26],["🏙",60,24],["🏢",88,30]],
+  spots:[[20,66,"👔","Костюм — 8 000 ₽",0,()=>!has("suit")&&S.money>=8000,()=>{S.money-=8000;S.items.suit=1;return["Новый костюм!","y"]}],
+   [42,70,"🧑‍💼","HR-менеджер Лена",0,()=>true,()=>{npc("lena");return null}],
+   [62,66,"💻","Рабочий день",8,()=>S.job==="office",()=>{const m=2600+R(400);S.money+=m;S.mood-=4;S.food-=8;S.rep+=2;return["Зарплата за день: +"+m+" ₽","g"]}],
+   [82,70,"☕","Открыть кофейню — 150 000 ₽",3,()=>S.job==="office"&&S.money>=150000&&!S.biz,()=>{S.money-=150000;S.biz=3500;if(S.home==="flat")S.rank=6;return["Своя кофейня! +3 500 ₽ в день","y"]}]]},
+ home:{n:"Жильё",pin:[16,20],sky:["#E8D7C3","#F6EEE4"],gr:"#A88B6E",deco:[["🪟",30,26],["🖼",70,24],["🪴",88,58]],
+  spots:[[25,66,"🛌","Спать дома",8,()=>!!S.home,()=>{S.hp+=22;S.mood+=8;S.clean=Math.max(S.clean,90);return["Выспались дома","g"]}],
+   [50,70,"🔑","Снять комнату — 5 000 ₽",1,()=>!S.home&&has("docs")&&S.money>=5000,()=>{S.money-=5000;S.home="room";if(S.rank<3)S.rank=3;return["Сняли комнату! Аренда 150 ₽ в день.","y"]}],
+   [76,66,"🏡","Купить квартиру — 300 000 ₽",2,()=>S.home!=="flat"&&S.money>=300000,()=>{S.money-=300000;S.home="flat";if(S.rank<5)S.rank=5;if(S.biz)S.rank=6;return["Своя квартира!","y"]}]]}};
+// ---------- персонажи и диалоги (новелла)
+const NPC={
+ stepanych:{p:"🧓",n:"Степаныч, сосед по лавке",lines:()=>!S.met.stepanych?["Новенький? Держись меня. Бутылки сдавай на вокзале — там больше платят. И у фонда бесплатно кормят.",[["Спасибо, Степаныч!",()=>{S.met.stepanych=1;S.mood+=5}],["Сам разберусь",()=>{S.met.stepanych=1}]]]
+   :S.rank>=3?["Ого, комнату снял! Не забывай старика — заглядывай.",[["Угостить шаурмой (120 ₽)",()=>{if(S.money>=120){S.money-=120;S.rep+=3;S.mood+=8;say("Степаныч растроган. Репутация +3","g")}}],["Пока, Степаныч!",()=>{}]]]
+   :["Говорят, Михалыч на вокзале грузчиков ищет. Здоровье только береги.",[["Понял, спасибо",()=>{}]]]},
+ mikhalych:{p:"👷",n:"Бригадир Михалыч",lines:()=>S.hp<40?["Ты на ногах еле стоишь. Иди поешь и выспись, тогда приходи.",[["Ладно…",()=>{}]]]
+   :!S.flags.brigade?["Вагон на подходе. Выйдешь на ночную смену? 1 200 ₽, но тяжко.",[["Выйду!",()=>{S.flags.brigade=1;pass(6);S.money+=1200;S.hp-=15;S.food-=12;say("Ночная смена: +1 200 ₽","g")}],["Не сегодня",()=>{}]]]
+   :["Ты мужик надёжный. Будут документы — порекомендую в нормальную контору.",[["Договорились",()=>{S.rep+=2}]]]},
+ anya:{p:"👩",n:"Волонтёр Аня",lines:()=>!has("docs")?["Без документов никуда. В МФЦ восстановят — копите 4 000 ₽. Могу помочь с вещами: возьмите тёплую куртку!",[["Спасибо огромное!",()=>{if(!S.flags.coat){S.flags.coat=1;S.hp+=8;S.mood+=10;say("Аня подарила куртку: +здоровье, +настроение","g")}}]]]
+   :["Вы молодец, правда! Хотите помочь нам на раздаче? Это хорошая строчка в резюме.",[["Помочь (3 ч)",()=>{pass(3);S.rep+=4;S.mood+=10;say("Помогли фонду. Репутация +4","g")}],["Позже",()=>{}]]]},
+ lena:{p:"🧑‍💼",n:"HR-менеджер Лена",lines:()=>S.job==="office"?["Вы у нас на хорошем счету. Подумайте о своём деле — кофейня внизу как раз продаётся.",[["Интересно!",()=>{}]]]
+   :has("docs")&&has("suit")&&S.rep>=15?["Документы, костюм, рекомендации… Вы нам подходите! Выходите с понедельника.",[["Согласен!",()=>{S.job="office";if(S.rank<4)S.rank=4;say("Вас взяли в офис!","y")}]]]
+   :["Нужны документы, деловой костюм и репутация от 15 (у вас "+S.rep+"). Возвращайтесь!",[["Понял",()=>{}]]]}};
+// ---------- случайные события (не чаще раза в 6 игровых часов)
 const EV=[
- [()=>chance(.05),"🐕 Бездомный пёс увязался за вами. Взять его к себе?",[["Взять",()=>{S.items.dog=1;S.mood+=15;say("🐕 Теперь у вас есть друг!","y")}],["Пройти мимо",()=>{}]]],
- [()=>chance(.04)&&S.money>300,"🎰 Мутный тип предлагает «удвоить» деньги в напёрстки.",[["Сыграть (300 ₽)",()=>{S.money-=300;say("🎲 Конечно, проиграли. Напёрстки не обыграть.","r")}],["Отказаться",()=>{S.mood+=2;say("👍 Правильно — это лохотрон.","g")}]]],
- [()=>chance(.04),"🧓 Пожилая женщина просит помочь донести сумки.",[["Помочь",()=>{S.rep+=3;S.mood+=6;const m=R(2)?100:0;S.money+=m;pass(1);say("😊 Помогли"+(m?" — и она дала 100 ₽ на чай":"")+". Репутация растёт.","g")}],["Отказаться",()=>{S.mood-=3}]]],
- [()=>chance(.03)&&S.hp<50,"🤒 Вас знобит. Похоже, простуда.",[["Отлежаться",()=>{pass(6);S.hp+=5}],["Терпеть",()=>{S.hp-=10}]]],
- [()=>chance(.03)&&S.rank>=2,"📢 Знакомый зовёт в бригаду на выходные: 3 000 ₽ за два дня.",[["Согласиться",()=>{pass(16);S.money+=3000;S.hp-=15;say("🔨 Отработали выходные: +3 000 ₽","g")}],["Не сейчас",()=>{}]]]
-];
-function modal(t,p,btns){$("mT").textContent=t;$("mP").textContent=p;const b=$("mB");b.innerHTML="";btns.forEach(([n,f],i)=>{const x=document.createElement("button");x.className="btn"+(i?"":" go");x.textContent=n;x.onclick=()=>{$("modal").hidden=true;f&&f();check();render()};b.append(x)});$("modal").hidden=false;b.firstChild&&b.firstChild.focus()}
+ [()=>!has("dog"),"🐕","Пёс","Бездомный пёс увязался за вами и смотрит грустными глазами.",[["Взять с собой",()=>{S.items.dog=1;S.mood+=15;say("Теперь у вас есть друг 🐕","y")}],["Погладить и уйти",()=>{S.mood+=3}]]],
+ [()=>S.money>300,"🎲","Напёрсточник","«Угадай, где шарик — удвою деньги!»",[["Сыграть (300 ₽)",()=>{S.money-=300;say("Конечно, проиграли. Это лохотрон.","r")}],["Пройти мимо",()=>{S.mood+=2}]]],
+ [()=>true,"👵","Бабушка","Пожилая женщина просит помочь донести сумки до остановки.",[["Помочь",()=>{S.rep+=3;S.mood+=6;pass(1);if(ch(.5)){S.money+=100;say("Бабушка дала 100 ₽ на чай","g")}}],["Извините, спешу",()=>{S.mood-=3}]]],
+ [()=>S.hp<50,"🤒","Простуда","Знобит. Похоже, простуда.",[["Отлежаться (6 ч)",()=>{pass(6);S.hp+=6}],["Терпеть",()=>{S.hp-=10}]]],
+ [()=>true,"🌧","Ливень","Начался ливень. Где переждать?",[["Под навесом",()=>{pass(2)}],["Идти дальше",()=>{S.clean-=15;S.hp-=4}]]],
+ [()=>S.rank>=2,"📢","Халтура","Знакомый зовёт на стройку на выходные: 3 000 ₽ за два дня.",[["Согласиться",()=>{pass(16);S.money+=3000;S.hp-=15;say("Отработали выходные: +3 000 ₽","g")}],["Не сейчас",()=>{}]]],
+ [()=>true,"👛","Находка","На тротуаре лежит кошелёк с документами и деньгами.",[["Отнести в полицию",()=>{S.rep+=5;S.mood+=8;say("Владелец нашёлся и поблагодарил. Репутация +5","g")}],["Забрать деньги",()=>{S.money+=600;S.mood-=10;S.rep-=4;say("+600 ₽, но на душе скверно. Репутация −4","r")}]]],
+ [()=>S.money>500&&!S.home,"🦹","Воришка","Ночью кто-то шарит по карманам!",[["Отбиваться",()=>{if(ch(.6)){say("Отбились!","g")}else{S.hp-=10;say("Получили синяк, но деньги целы","r")}}],["Отдать половину",()=>{S.money=Math.round(S.money/2);say("Лишились половины денег…","r")}]]],
+ [()=>S.rank>=1,"📰","Газета","В газете объявление: «Курсы бариста, бесплатно для малоимущих».",[["Записаться (4 ч)",()=>{pass(4);S.rep+=3;S.flags.barista=1;say("Получили сертификат бариста. Репутация +3","g")}],["Не интересно",()=>{}]]],
+ [()=>has("guitar"),"🎤","Уличный конкурс","На площади конкурс музыкантов. Приз — 5 000 ₽!",[["Выступить",()=>{pass(2);if(ch(.35)){S.money+=5000;S.mood+=15;say("Вы победили! +5 000 ₽","y")}else{S.mood+=4;say("Не победили, но публика хлопала","")}}],["Послушать",()=>{S.mood+=5}]]],
+ [()=>S.home==="room","🏚","Соседи","Сосед по коммуналке включил музыку на всю ночь.",[["Поговорить вежливо",()=>{S.rep+=1;say("Сосед извинился","g")}],["Терпеть",()=>{S.hp-=5;S.mood-=5}]]],
+ [()=>S.job==="office","🎉","Корпоратив","Коллеги зовут на корпоратив.",[["Пойти",()=>{pass(4);S.mood+=15;S.rep+=2;S.money-=500;say("Весело! −500 ₽, +настроение","y")}],["Домой",()=>{S.hp+=5}]]]];
+// ---------- время
+function pass(h){for(let i=0;i<h;i++){S.hour++;S.food-=S.home?2.2:2.8;S.clean-=1;S.evCd--;if(S.hour>=24){S.hour=0;newDay()}}if(S.food<=0){S.hp+=S.food*.8;S.food=0}if(S.clean<15)S.mood-=1;if(S.hp<30)S.mood-=1}
+function newDay(){S.day++;if(S.home==="room"){S.money-=150;say("🏠 Аренда: −150 ₽","r")}if(S.biz){S.money+=S.biz;say("☕ Кофейня: +"+fmt(S.biz)+" ₽","g")}if(S.items.dog)S.mood+=2;
+  if(S.money<0&&S.home==="room"){S.home=null;S.money=0;say("Не хватило на аренду — снова на улице.","r")}}
+// ---------- отрисовка сцены
+const skyAt=(L)=>{const h=S.hour;if(h>=21||h<6)return["#0E1430","#25305A"];if(h>=18)return["#E8875A","#5A3A6E"];return L.sky};
+function render(){const L=LOC[S.loc],r=RANKS[S.rank];$("ava").textContent=r[0];$("hero").textContent=r[0];$("rank").textContent=r[1];
+  $("where").textContent="День "+S.day+" · "+(S.home==="flat"?"своя квартира":S.home==="room"?"комната":"без жилья")+(S.job?" · офис":"")+" · репутация "+S.rep;
+  $("money").textContent=fmt(S.money)+" ₽";
+  const B=[["❤️",S.hp,"#4ADE95"],["🍞",S.food,"#E7BD52"],["🙂",S.mood,"#7AB8FF"],["🧼",S.clean,"#B79CFF"]];
+  $("bars").innerHTML=B.map(([n,v,c])=>`<div class="bar">${n} ${Math.max(0,Math.round(v))}<i><b style="width:${clamp(v,0,100)}%;background:${v<25?"#E8333F":c}"></b></i></div>`).join("");
+  const sk=skyAt(L);$("sky").style.background="linear-gradient(180deg,"+sk[0]+","+sk[1]+")";$("ground").style.background=L.gr;
+  const nt=S.hour>=21||S.hour<6;$("night").style.background=nt?"rgba(10,12,40,.35)":"transparent";
+  $("locName").textContent=L.n;$("clock").textContent=(nt?"🌙 ":"☀️ ")+String(S.hour).padStart(2,"0")+":00";
+  $("decos").innerHTML=L.deco.map(([e,x,y])=>`<span class="deco" style="left:${x}%;top:${y}%;transform:translate(-50%,-50%)">${e}</span>`).join("")+(nt?'<span class="deco" style="left:80%;top:12%;font-size:40px">🌙</span>':'');
+  const box=$("spots");box.innerHTML="";L.spots.forEach(sp=>{const [x,y,e,l,h,cond,act]=sp,ok=!S.dead&&cond();
+    if(!ok&&/—\s[\d\s]+₽/.test(l)&&(l.includes("Тележка")&&has("cart")||l.includes("гитара")&&has("guitar")||l.includes("Одежда")&&has("clothes")||l.includes("Телефон")&&has("phone")||l.includes("Документы")&&has("docs")||l.includes("Костюм")&&has("suit")||l.includes("комнату")&&S.home||l.includes("квартиру")&&S.home==="flat"||l.includes("кофейню")&&S.biz))return;
+    const b=document.createElement("button");b.type="button";b.className="hs"+(ok?"":" off");b.style.left=x+"%";b.style.top=y+"%";b.innerHTML='<span class="e"></span><span class="l"></span>';b.firstChild.textContent=e;b.lastChild.textContent=l+(h?" · "+h+" ч":"");b.setAttribute("aria-label",l);
+    b.onclick=()=>{if(!ok){bubble(hint(l),x);return}moveHero(x);setTimeout(()=>{const res=act();if(res){pass(h);bubble(res[0],x);say(res[0],res[1])}afterAct()},360)};box.append(b)});
+  $("inv").innerHTML=[["cart","🛒"],["guitar","🎸"],["clothes","👕"],["phone","📱"],["docs","🪪"],["suit","👔"],["dog","🐕"]].filter(([k])=>S.items[k]).map(([,e])=>`<span>${e}</span>`).join("");
+  const next=S.rank===0?"Накопите 200 ₽ и переночуйте в ночлежке (Фонд)":S.rank===1?"Восстановите документы в МФЦ (4 000 ₽)":S.rank===2?"Снимите комнату (Жильё, 5 000 ₽)":S.rank===3?"Костюм, репутация 15 — и к Лене в Деловой центр":S.rank===4?"Квартира (300 000 ₽) и кофейня (150 000 ₽)":S.rank===5?"Откройте кофейню в Деловом центре":"Цель достигнута — вы предприниматель!";
+  $("goal").textContent="🎯 "+next;$("log").innerHTML=S.log.slice(0,8).map(([t,c])=>`<p class="${c}">${t.replace(/</g,"&lt;")}</p>`).join("")}
+const hint=l=>/₽/.test(l)?"Не хватает денег или условий":l.includes("гитар")?"Сначала купите гитару на рынке":l.includes("Курьер")?"Нужны телефон, одежда и чистота от 30":l.includes("Рабочий")?"Сначала устройтесь в офис":l.includes("вагон")?"Нужно здоровье от 40":l.includes("Спать")?"Своего жилья пока нет":"Пока недоступно";
+function moveHero(x){$("hero").style.left=x+"%"}
+let bt=null;function bubble(t,x){const b=$("bubble");b.textContent=t;b.style.left=clamp(x,20,80)+"%";b.style.opacity=1;clearTimeout(bt);bt=setTimeout(()=>b.style.opacity=0,2600)}
+function dialog(p,n,t,chs){$("dP").textContent=p;$("dN").textContent=n;$("dT").textContent=t;const c=$("dC");c.innerHTML="";chs.forEach(([lab,f])=>{const b=document.createElement("button");b.type="button";b.textContent=lab;b.onclick=()=>{$("dlg").hidden=true;f();check();save();render()};c.append(b)});$("dlg").hidden=false;c.firstChild&&c.firstChild.focus()}
+function npc(k){const N=NPC[k],[t,chs]=N.lines();dialog(N.p,N.n,t,chs)}
+function afterAct(){check();if(!S.dead&&S.evCd<=0&&ch(.14)){const pool=EV.filter(e=>e[0]());if(pool.length){const e=pool[R(pool.length)];S.evCd=6+R(6);dialog(e[1],e[2],e[3],e[4])}}save();render()}
 function check(){S.hp=clamp(S.hp,-50,100);S.food=clamp(S.food,0,100);S.mood=clamp(S.mood,0,100);S.clean=clamp(S.clean,0,100);S.money=Math.round(S.money);
   const worth=S.money+(S.home==="flat"?300000:0)+S.biz*30;if(worth>S.best)S.best=worth;
-  if(S.mood<=0&&!S.dead){S.mood=20;S.hp-=15;say("😞 Совсем опустились руки… −15 здоровья. Погуляйте и поешьте.","r")}
-  if(S.hp<=0&&!S.dead){S.dead=true;save();submit(false);modal("Здоровье закончилось","Прожито дней: "+S.day+". Лучший капитал: "+fmt(S.best)+" ₽. Попробуйте ещё раз — теперь вы знаете, с чего начать.",[["Начать заново",()=>{S=fresh();say("☀️ Новое утро, новый шанс.","y")}]]);return}
-  if(S.rank===6&&!S.won){S.won=true;save();submit(true);modal("Вы — предприниматель! 🎉","От лавки в парке до своей квартиры и кофейни за "+S.day+" дн. Капитал: "+fmt(S.best)+" ₽.",[["Играть дальше",()=>{}],["Начать заново",()=>{S=fresh()}]])}}
+  if(S.mood<=0&&!S.dead){S.mood=20;S.hp-=15;say("Совсем опустились руки… −15 здоровья. Погуляйте в парке и поешьте.","r")}
+  if(S.hp<=0&&!S.dead){S.dead=true;submit(false);dialog("💔","Конец пути","Здоровье закончилось. Прожито дней: "+S.day+", лучший капитал: "+fmt(S.best)+" ₽. Попробуете ещё раз?",[["Начать заново",()=>{S=fresh();say("☀️ Новое утро, новый шанс.","y")}]]);return}
+  if(S.rank===6&&!S.won){S.won=true;submit(true);dialog("🎉","Победа!","От лавки в парке до своей квартиры и кофейни за "+S.day+" дн. Капитал: "+fmt(S.best)+" ₽.",[["Играть дальше",()=>{}],["Начать заново",()=>{S=fresh()}]])}}
 function submit(full){if(window.IIGRY_SCORE&&S.best>0)window.IIGRY_SCORE(Math.round(S.best/100),full?{full:true}:undefined)}
-const fmt=n=>Math.round(n).toLocaleString("ru-RU");
-function render(){const r=RANKS[S.rank];$("ava").textContent=r[0];$("rank").textContent=r[1]+(S.items.dog?" 🐕":"");$("money").textContent=fmt(S.money)+" ₽";
-  $("day").textContent="День "+S.day+", "+String(S.hour).padStart(2,"0")+":00 · "+(S.home==="flat"?"своя квартира":S.home==="room"?"съёмная комната":"без жилья")+(S.job?" · работа в офисе":"");
-  const B=[["❤️ Здоровье",S.hp,"#4ADE95"],["🍞 Сытость",S.food,"#E7BD52"],["🙂 Настроение",S.mood,"#7AB8FF"],["🧼 Чистота",S.clean,"#B79CFF"]];
-  $("bars").innerHTML=B.map(([n,v,c])=>`<div class="bar"><span>${n}: <b>${Math.max(0,Math.round(v))}</b></span><i><b style="width:${clamp(v,0,100)}%;background:${v<25?"#E8333F":c}"></b></i></div>`).join("");
-  const next=["Накопите 200 ₽ и переночуйте в ночлежке","Восстановите документы (4 000 ₽)","Снимите комнату (5 000 ₽ залога)","Купите костюм и устройтесь в офис (репутация 15)","Накопите на квартиру (300 000 ₽)","Откройте кофейню (150 000 ₽)","Цель достигнута — живите в своё удовольствие!"][Math.min(6,S.rank===4?4:S.rank===3&&S.job==="office"?4:S.rank)];
-  $("goal").textContent="🎯 Цель: "+next+" · репутация: "+S.rep;
-  $("tabs").innerHTML=TABS.map(([k,n])=>`<button class="tab" role="tab" data-t="${k}" aria-selected="${k===tab}">${n}</button>`).join("");
-  $("acts").innerHTML="";A.filter(a=>a[0]===tab).forEach(a=>{const ok=!S.dead&&a[5]();if(a[0]==="shop"&&!ok&&(S.items[a[1]]||(a[1]==="room"&&S.home)||(a[1]==="flat"&&S.home==="flat")))return;
-    const b=document.createElement("button");b.className="act";b.type="button";b.disabled=!ok;b.innerHTML=`<b></b><small></small><span class="fx"></span>`;b.querySelector("b").textContent=a[2];b.querySelector("small").textContent=a[3];b.querySelector(".fx").textContent=a[4]?"⏱ "+a[4]+" ч":"мгновенно";
-    b.onclick=()=>{a[6]();pass(a[4]);check();if(!S.dead){for(const e of EV)if(e[0]()){modal("Случай",e[1],e[2]);break}}save();render()};$("acts").append(b)});
-  $("log").innerHTML=S.log.map(([t,c])=>`<p class="${c}">${t.replace(/</g,"&lt;")}</p>`).join("")||'<p class="mu">Начните с бутылок или бесплатной еды у фонда.</p>'}
-$("tabs").onclick=e=>{const b=e.target.closest("[data-t]");if(b){tab=b.dataset.t;render()}};
-$("restart").onclick=()=>modal("Начать заново?","Прогресс этой жизни будет потерян.",[["Да, заново",()=>{S=fresh();save()}],["Отмена",()=>{}]]);
-window.IIGRY_TO_MENU=()=>{scrollTo({top:0,behavior:"smooth"})};
-S=load();if(!S.log.length)say("☀️ Вы проснулись на лавке. Холодно, но жить можно.","y");render();
+// ---------- карта
+function openMap(){const box=$("pins");box.innerHTML="";Object.entries(LOC).forEach(([k,L])=>{const b=document.createElement("button");b.type="button";b.className="pin"+(k===S.loc?" here":"");b.style.left=L.pin[0]+"%";b.style.top=L.pin[1]+"%";
+  const ic={park:"🌳",station:"🚉",market:"🏪",fund:"💚",mfc:"🏛",city:"🏙",home:"🏠"}[k];b.innerHTML="<span>"+ic+"</span>";b.append(L.n+(k===S.loc?" (вы здесь)":""));
+  b.onclick=()=>{$("map").hidden=true;if(k!==S.loc){S.loc=k;pass(1);$("hero").style.left="50%";afterAct()}};box.append(b)});$("map").hidden=false}
+$("mapBtn").onclick=()=>$("map").hidden?openMap():($("map").hidden=true);
+$("restart").onclick=()=>dialog("🔄","Начать заново?","Прогресс этой жизни пропадёт.",[["Да, заново",()=>{S=fresh();say("☀️ Новое утро.","y")}],["Отмена",()=>{}]]);
+window.IIGRY_TO_MENU=()=>{$("map").hidden=true;$("dlg").hidden=true;scrollTo({top:0,behavior:"smooth"})};
+try{S=JSON.parse(localStorage.getItem(KEY)||"null")}catch(_){}if(!S||!S.day)S=fresh();
+render();if(!S.log.length){say("☀️ Вы проснулись на лавке в парке.","y");dialog("🧓","Степаныч, сосед по лавке","Проснулся, бедолага? Вставай, утро уже. Жизнь с нуля начинается с первого шага — нажимай на предметы вокруг, а по городу ходи через карту.",[["Ну, поехали",()=>{S.met.stepanych=1}]])}
 })();
 </script>
 </body></html>
