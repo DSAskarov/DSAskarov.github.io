@@ -129,7 +129,31 @@ const SPECS=[
  {id:"dino",face:"🦖",name:"Аниматор в костюме динозавра",type:"hatch",col:"#2FA866",badge:"🦖",line:"Ррр! Я с детского праздника, не успел переодеться. Права — в лапе!",bias:{belt:.7},
   after:(k,r)=>{if(!r.wrong){G.score+=2;flash("Дети из соседней машины в восторге: +2","#4ADE95")}}},
  {id:"race",face:"😎",name:"Гонщик на суперкаре",type:"sedan",col:"#C9302C",badge:"🔥",line:"Что, командир, впечатлил разгон? Сто за три секунды!",bias:{speed:1},extra:c=>{c.speed=G.P.lim+55+R(30)},
-  after:(k,r)=>{if(k==="fine"&&r.ok){G.score+=3;flash("Самый быстрый штраф месяца: +3","#E7BD52")}}}];
+  after:(k,r)=>{if(k==="fine"&&r.ok){G.score+=3;flash("Самый быстрый штраф месяца: +3","#E7BD52")}}},
+ {id:"philo",face:"🧔",name:"Таксист-философ Аристарх",type:"taxi",col:"#E8B931",badge:"📚",line:"Командир, а что есть скорость? Лишь наше нетерпение перед вечностью…",bias:{speed:.5},
+  after:(k,r)=>{if(k==="fine"&&r.ok){grow("heart",1);flash("Аристарх: «Штраф — тоже опыт». Вы почему-то задумались о вечном","#7AB8FF")}else if(k==="warn"){G.score+=1;flash("Аристарх процитировал Сенеку и уехал. Очень медленно","#4ADE95")}}},
+ {id:"babka",face:"👵",name:"Бабушка с рассадой",type:"hatch",col:"#2FA866",badge:"🌱",line:"Сынок, только машину не тряси — у меня сорок кустов «Бычьего сердца»!",bias:{belt:.5},
+  after:(k,r)=>{if(k==="warn"||(k==="free"&&!r.v.length)){G.honorD+=3;flash("Бабушка подарила вам кустик помидоров 🍅","#4ADE95")}else if(k==="fine"){grow("law",2);G.honorD-=1;flash("Бабушка: «А с виду такой приличный…»","#F2C45A")}}},
+ {id:"robot",face:"🤖",name:"Беспилотное такси «Ё-Робот»",type:"sedan",col:"#E6E6EA",badge:"🤖",line:"ВОДИТЕЛЬ ОТСУТСТВУЕТ. ПРЕДЪЯВИТЕ, ПОЖАЛУЙСТА, QR-КОД ВАШЕГО ЖЕЗЛА.",bias:{lights:.3},extra:c=>{c.belt=true;c.phone=false;c.drunk=false;c.licence=true;c.speed=Math.min(c.speed,G.P.lim-3)},
+  after:(k,r)=>{if(r.wrong){G.compl++;flash("Робот подал жалобу в трёх экземплярах и с электронной подписью","#FF8A8F")}else if(!r.v.length){G.score+=2;flash("Робот поставил вам ★★★★★ и пожелал «хорошего дня, человек»","#4ADE95")}}},
+ {id:"pizza",face:"🧑‍🍳",name:"Курьер «Доставим за 15 минут»",type:"hatch",col:"#E36F2A",badge:"🍕",line:"Командир, заказ остывает! Хотите пиццу? Шучу, это не взятка… А вдруг взятка?",bias:{speed:.6,phone:.5},
+  after:(k,r)=>{if(k==="fine"&&r.ok)flash("Клиент получит пиццу с опозданием — и купон на скидку","#F2C45A");else if(!r.v.length){G.score+=1;flash("Курьер успел: 14 минут 59 секунд","#4ADE95")}}},
+ {id:"school",face:"👩‍🏫",name:"Инструктор с учеником Сеней",type:"sedan",col:"#E6E6EA",badge:"🎓",line:"Только не ругайте его, у него первый выезд в город. Сеня, дыши!",bias:{lights:.4,belt:.25},
+  after:(k,r)=>{if(k==="warn"||(k==="free"&&!r.v.length)){grow("heart",3);flash("Сеня сдаст экзамен с первого раза. Наверное","#4ADE95")}else if(k==="fine")flash("Сеня теперь уважает ПДД. И немного боится вас","#F2C45A")}},
+ {id:"fish",face:"🎣",name:"Рыбак Палыч",type:"suv",col:"#7A5232",badge:"🐟",line:"Командир, я за лещом! Клёв с пяти до семи — лещ ждать не будет.",bias:{speed:.45,belt:.3},
+  after:(k,r)=>{if(k!=="fine"){G.honorD+=1;flash("Палыч обещал занести леща. Это не взятка — это традиция","#7AB8FF")}else if(r.ok)flash("Палыч: «Ладно. Но лещ был бы вот такой!»","#F2C45A")}},
+ {id:"star",face:"🎤",name:"Поп-звезда Кристалл",type:"suv",col:"#8E6BD8",badge:"✨",line:"Вы меня не узнали? Ну хоть автограф возьмите… можно прямо на протоколе.",bias:{tint:.8,speed:.4},
+  after:(k,r)=>{if(k==="fine"&&r.ok){G.honorD+=3;flash("Протокол с автографом звезды уже продают на аукционе","#E7BD52")}else if(r.v.length&&k==="free"){G.honorD-=3;flash("Фанаты в восторге, водители — нет","#F2C45A")}}},
+ {id:"tour",face:"🧳",name:"Турист Тойво из Финляндии",type:"sedan",col:"#2E6BD6",badge:"🦌",line:"Здрав-ствуй-те! Я… эээ… ехать… мед-лен-но? Очень мед-лен-но!",bias:{lights:.5},extra:c=>{c.speed=Math.min(c.speed,G.P.lim-15)},
+  after:(k,r)=>{if(k==="warn"||(k==="free"&&!r.v.length)){G.honorD+=3;flash("Тойво подарил значок с оленем. Туризм области благодарит","#4ADE95")}else if(k==="fine")flash("Тойво старательно записал: «штраф» — первое русское слово","#F2C45A")}},
+ {id:"inv",face:"👴",name:"Изобретатель Кулибин-младший",type:"hatch",col:"#9AA3AD",badge:"⚙️",line:"Это не тонировка, это солнечные панели! Машина почти ездит на солнце.",bias:{tint:.9},
+  after:(k,r)=>{if(k==="fine"&&r.ok)flash("Изобретатель записал в блокнот: «Доработать: незаметность для ДПС»","#F2C45A");else if(k==="warn"){G.score+=1;flash("Кулибин подарил вам вечный двигатель. Не работает, но красиво","#7AB8FF")}}},
+ {id:"it",face:"🧑‍💻",name:"Айтишник после релиза",type:"hatch",col:"#2B2B33",badge:"☕",line:"Простите, я 36 часов не спал… У нас упал сервер. Вы же тоже на дежурстве — вы поймёте.",bias:{belt:.5,speed:.3},
+  after:(k,r)=>{if(k==="warn"){grow("heart",2);flash("Айтишник поехал спать. Сервер подождёт до понедельника","#4ADE95")}else if(k==="fine"&&r.ok)flash("Айтишник: «Ещё один баг в моей жизни». Закрыл тикет","#F2C45A")}},
+ {id:"twins",face:"🤱",name:"Мама с тройней",type:"van",col:"#E6E6EA",badge:"👶",line:"Тише, умоляю, не будите их! Если проснутся — оформлять будете вы.",bias:{belt:.25},
+  after:(k,r)=>{if(k!=="fine"){G.score+=2;flash("Тройня так и не проснулась. Вы настоящий профессионал: +2","#4ADE95")}else if(r.ok)flash("Двое проснулись. Мама смотрит на вас очень выразительно","#F2C45A")}},
+ {id:"volga",face:"🧓",name:"Владелец «Волги» 1972 года",type:"sedan",col:"#2B2B33",badge:"🚙",line:"Ей пятьдесят четыре года, и она ни разу не превышала. Просто не может.",bias:{lights:.5},extra:c=>{c.speed=Math.min(c.speed,G.P.lim-20)},
+  after:(k,r)=>{if(!r.wrong){G.score+=1;flash("Вы сфотографировались с «Волгой» на память: +1","#4ADE95")}}}];
 // ---------- сохранение карьеры
 const KEY="iigry-zhezl3";const store={get:()=>{try{return JSON.parse(localStorage.getItem(KEY)||"null")}catch(_){return null}},set:v=>{try{localStorage.setItem(KEY,JSON.stringify(v))}catch(_){}}};
 let C=store.get()||{earned:0,xp:0,rank:0,honor:50,trust:50,prem:0,shifts:0,gear:{},best:0,a:{eye:5,law:5,heart:5,auth:5},story:0,flags:{}};
@@ -187,7 +211,7 @@ function newCar(forceWanted){const P=G.P,lane=R(3),bad=ch(.42+G.lvl*.03);let typ
   c.bribe=!perk("law",20)&&ch(.15+G.lvl*.025);c.flee=!perk("auth",20)?(c.drunk&&ch(.5))||(!c.licence&&ch(.3))||forceWanted:(c.drunk&&ch(.25))||forceWanted&&ch(.6);
   if(!forceWanted){const onRoad=id=>G.cars.some(x=>(x.reg&&x.reg.id===id)||(x.sp&&x.sp.id===id));let pr=null;
     if(ch(.1)){const cand=REGS.filter(r=>(!r.post||r.post===G.post)&&!onRoad(r.id));if(cand.length){pr=pick(cand);c.reg=pr}}
-    else if(ch(.07)){const cand=SPECS.filter(x=>!G.spDone[x.id]&&!onRoad(x.id));if(cand.length){pr=pick(cand);c.sp=pr;G.spDone[pr.id]=1}}
+    else if(ch(.09)){const cand=SPECS.filter(x=>!G.spDone[x.id]&&!onRoad(x.id));if(cand.length){pr=pick(cand);c.sp=pr;G.spDone[pr.id]=1}}
     if(pr){const T=CARTYPES.find(x=>x.t===pr.type);Object.assign(c,{face:pr.face,name:pr.name,type:pr.type,w:T.w,h:T.h,col:pr.col});if(pr.plate!==undefined)c.plate=pr.plate;
       for(const [k,p] of Object.entries(pr.bias||{})){const on=ch(p);if(k==="speed")c.speed=on?lim+22+R(30):Math.min(c.speed,lim+10);else if(k==="belt")c.belt=!on;else if(k==="lights")c.lights=!on;else if(k==="osago")c.osago=!on;else if(k==="licence")c.licence=!on;else if(k==="plates"){c.noplates=on;if(on)c.plate=""}else c[k]=on}
       if(pr.extra)pr.extra(c);c.flee=false;c.badge=pr.badge||(C.reg[pr.id]?"⭐":"");c.vy=0}}
